@@ -5,7 +5,7 @@ from loguru import logger
 
 # Define the log format
 LOG_FORMAT = (
-    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    "<green>{time:YYYY-MM-DD HH:mm:ss.SSS!UTC} (UTC)</green> | "
     "<level>{level: <8}</level> | "
     "<level>{message}</level>"
 )
