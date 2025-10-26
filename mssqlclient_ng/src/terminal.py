@@ -19,6 +19,7 @@ from prompt_toolkit.document import Document
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.actions.factory import ActionFactory
 
+
 class Terminal:
     def __init__(self, database_context: DatabaseContext, prefix="!"):
 
@@ -56,19 +57,12 @@ class Terminal:
         mapped_user = user_service.mapped_user or "unknown"
         system_user = user_service.system_user or "unknown"
 
-        # Check if user is sysadmin
-        is_admin = user_service.is_admin()
-        admin_indicator = "*" if is_admin else ""
-
         # Build the prompt
-        prompt_str = f"[{system_user}({mapped_user}){admin_indicator}@{hostname}:{database}]> "
+        prompt_str = f"[{system_user}({mapped_user})@{hostname}:{database}]> "
 
         return prompt_str
 
-
-
     def start(self) -> None:
-        result = None
         user_input = ""
 
         while True:
@@ -98,5 +92,3 @@ class Terminal:
                             "Keyboard interruption received during remote command execution."
                         )
                     continue
-
-
