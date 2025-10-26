@@ -1,6 +1,7 @@
 """
 Query service for executing SQL queries against MSSQL servers using impacket's TDS.
 """
+
 from typing import Optional, Any, List, Dict
 
 from loguru import logger
@@ -8,6 +9,7 @@ from impacket.tds import MSSQL, SQLErrorException
 from impacket.tds import TDS_DONE_TOKEN, TDS_DONEINPROC_TOKEN, TDS_DONEPROC_TOKEN
 
 from mssqlclient_ng.src.models.linked_servers import LinkedServers
+
 
 class QueryService:
     """
@@ -60,7 +62,9 @@ class QueryService:
             if result:
                 server_name = str(result)
                 # Extract hostname before backslash (instance name)
-                return server_name.split('\\')[0] if '\\' in server_name else server_name
+                return (
+                    server_name.split("\\")[0] if "\\" in server_name else server_name
+                )
         except Exception as e:
             logger.warning(f"Failed to get server name: {e}")
 
@@ -81,7 +85,9 @@ class QueryService:
             ValueError: If query is empty
             SQLErrorException: If query execution fails
         """
-        return self._execute_with_handling(query, tuple_mode=tuple_mode, return_rows=True)
+        return self._execute_with_handling(
+            query, tuple_mode=tuple_mode, return_rows=True
+        )
 
     def execute_non_processing(self, query: str) -> int:
         """
@@ -94,7 +100,9 @@ class QueryService:
             Number of affected rows, or -1 on error
         """
         try:
-            result = self._execute_with_handling(query, tuple_mode=False, return_rows=False)
+            result = self._execute_with_handling(
+                query, tuple_mode=False, return_rows=False
+            )
             return result if result is not None else -1
         except Exception:
             return -1
@@ -136,10 +144,7 @@ class QueryService:
         return None
 
     def _execute_with_handling(
-        self,
-        query: str,
-        tuple_mode: bool = False,
-        return_rows: bool = True
+        self, query: str, tuple_mode: bool = False, return_rows: bool = True
     ) -> Any:
         """
         Shared execution logic with error handling.
@@ -191,15 +196,21 @@ class QueryService:
 
             # Handle RPC configuration error
             if "not configured for RPC" in error_message:
-                logger.warning("The targeted server is not configured for Remote Procedure Call (RPC)")
+                logger.warning(
+                    "The targeted server is not configured for Remote Procedure Call (RPC)"
+                )
                 logger.warning("Trying again with OPENQUERY")
                 self._linked_servers.use_remote_procedure_call = False
                 return self._execute_with_handling(query, tuple_mode, return_rows)
 
             # Handle metadata errors
             if "metadata could not be determined" in error_message:
-                logger.error("When you wrap a remote procedure in OPENQUERY, SQL Server wants a single, consistent set of columns.")
-                logger.error("Since sp_configure does not provide that, the metadata parser chokes.")
+                logger.error(
+                    "When you wrap a remote procedure in OPENQUERY, SQL Server wants a single, consistent set of columns."
+                )
+                logger.error(
+                    "Since sp_configure does not provide that, the metadata parser chokes."
+                )
                 logger.info("Enable RPC OUT option to allow the use of sp_configure.")
                 logger.info(f"Command: /a:rpc add {self.execution_server}")
 
@@ -226,7 +237,9 @@ class QueryService:
             logger.debug("Linked server detected")
 
             if self._linked_servers.use_remote_procedure_call:
-                final_query = self._linked_servers.build_remote_procedure_call_chain(query)
+                final_query = self._linked_servers.build_remote_procedure_call_chain(
+                    query
+                )
             else:
                 final_query = self._linked_servers.build_select_openquery_chain(query)
 
@@ -251,8 +264,8 @@ class QueryService:
                 if tokens:
                     # Get the last DONE token's row count
                     last_token = tokens[-1]
-                    if 'DoneRowCount' in last_token:
-                        affected = last_token['DoneRowCount']
+                    if "DoneRowCount" in last_token:
+                        affected = last_token["DoneRowCount"]
 
         return affected
 
