@@ -2,6 +2,7 @@
 import argparse
 import sys
 import re
+import shlex
 from getpass import getpass
 
 # Third party imports
@@ -13,7 +14,7 @@ from mssqlclient_ng.src.services.authentication import AuthenticationService
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.terminal import Terminal
 from mssqlclient_ng.src.utils import logbook
-from mssqlclient_ng.src.utils.helper import display_all_commands
+from mssqlclient_ng.src.utils import helper
 
 # Import actions to register them with the factory
 from mssqlclient_ng.src import actions
@@ -46,17 +47,6 @@ def build_parser() -> argparse.ArgumentParser:
         "-ts", action="store_true", help="Adds timestamp to every logging output"
     )
     parser.add_argument("-show", action="store_true", help="show the queries")
-    parser.add_argument(
-        "-command",
-        action="extend",
-        nargs="*",
-        help="Commands to execute in the SQL shell. Multiple commands can be passed.",
-    )
-    parser.add_argument(
-        "-file",
-        type=argparse.FileType("r"),
-        help="input file with commands to execute in the SQL shell",
-    )
 
     # Authentication arguments
     group_auth = parser.add_argument_group("Authentication")
@@ -64,6 +54,7 @@ def build_parser() -> argparse.ArgumentParser:
     group_auth.add_argument(
         "-hashes",
         action="store",
+        type=str,
         metavar="LMHASH:NTHASH",
         help="NTLM hashes, format is LMHASH:NTHASH",
     )
@@ -80,6 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     group_auth.add_argument(
         "-aesKey",
         action="store",
+        type=str,
         metavar="hex key",
         help="AES key to use for Kerberos Authentication " "(128 or 256 bits)",
     )
@@ -89,6 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     group_conn.add_argument(
         "-dc-ip",
         action="store",
+        type=str,
         metavar="ip address",
         help="IP Address of the domain controller. If "
         "ommited it use the domain part (FQDN) specified in the target parameter",
@@ -96,12 +89,44 @@ def build_parser() -> argparse.ArgumentParser:
     group_conn.add_argument(
         "-target-ip",
         action="store",
+        type=str,
         metavar="ip address",
         help="IP Address of the target machine. If omitted it will use whatever was specified as target. "
         "This is useful when target is the NetBIOS name and you cannot resolve it",
     )
     group_conn.add_argument(
-        "-port", action="store", default="1433", help="target MSSQL port (default 1433)"
+        "-port",
+        action="store",
+        type=str,
+        default="1433",
+        help="target MSSQL port (default 1433)",
+    )
+
+    actions_groups = parser.add_argument_group(
+        "Actions", "Actions to perform upon successful connection."
+    )
+
+    actions_groups.add_argument(
+        "-q",
+        "--query",
+        type=str,
+        default=None,
+        help="T-SQL command to execute upon successful connection.",
+    )
+
+    actions_groups.add_argument(
+        "-a",
+        "--action",
+        type=str,
+        nargs=argparse.REMAINDER,
+        default=None,
+        help="Action to perform upon successful connection, followed by its arguments.",
+    )
+
+    actions_groups.add_argument(
+        "--list-actions",
+        action="store_true",
+        help="List all available actions and exit.",
     )
 
     advanced_group = parser.add_argument_group(
@@ -113,14 +138,6 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         required=False,
         help="Enable debug logging mode.",
-    )
-
-    advanced_group.add_argument(
-        "-a",
-        "--actions",
-        action="store_true",
-        required=False,
-        help="Display all available actions and exit.",
     )
 
     return parser
@@ -142,8 +159,8 @@ def main() -> int:
         logbook.setup_logging(level="INFO")
 
     # Show available actions if requested
-    if args.actions:
-        display_all_commands()
+    if args.list_actions:
+        helper.display_all_commands()
         return 0
 
     target_regex = re.compile(r"(?:(?:([^/@:]*)/)?([^@:]*)(?::([^@]*))?@)?(.*)")
@@ -208,7 +225,31 @@ def main() -> int:
             )
             logger.info(f"Mapped to the user: {user_name}")
 
-            Terminal(database_context).start()
+            terminal_instance = Terminal(database_context)
+
+            if args.query or args.action:
+
+                # Execute query if provided
+                if args.query:
+                    action_name = "query"
+                    argument_list = [args.query]
+
+                elif args.action:
+                    # args.action is now a list: [action_name, arg1, arg2, ...]
+                    if isinstance(args.action, list) and len(args.action) > 0:
+                        action_name = args.action[0]
+                        argument_list = args.action[1:]
+                    else:
+                        logger.error("No action specified")
+                        return 1
+
+                terminal_instance.execute_action(
+                    action_name=action_name, argument_list=argument_list
+                )
+            else:
+                # Starting interactive fake-shell
+                terminal_instance.start()
+
     except Exception as exc:
         logger.error(f"Unexpected error: {exc}")
         return 1

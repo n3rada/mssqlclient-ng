@@ -1,5 +1,6 @@
 # Built-in imports
 import shlex
+from typing import List, Optional
 
 # External library imports
 from loguru import logger
@@ -100,6 +101,48 @@ class Terminal:
 
         return prompt_str
 
+    def execute_action(
+        self,
+        action_name: str,
+        argument_list: List[str],
+    ) -> Optional[object]:
+        """
+        Execute an action by its registered name with a list of arguments.
+
+        Args:
+            action_name: The name of the action to execute
+            argument_list: List of arguments for the action
+
+        Returns:
+            The result of the action's execution, or None on error
+        """
+        action = ActionFactory.get_action(action_name)
+        if action is None:
+            logger.error(f"Unknown action: {action_name}")
+            return None
+
+        try:
+            action.validate_arguments(additional_arguments=" ".join(argument_list))
+        except ValueError as ve:
+            logger.error(f"Argument validation error: {ve}")
+            return None
+
+        # Get server name from database context
+        server_name = self.__database_context.query_service.execution_server
+
+        logger.info(f"Executing action '{action_name}' against {server_name}")
+
+        try:
+            result = action.execute(database_context=self.__database_context)
+            return result
+        except KeyboardInterrupt:
+            print("\r", end="", flush=True)  # Clear the ^C
+            logger.warning("Keyboard interruption received during action execution.")
+            return None
+        except Exception as e:
+            logger.error(f"Error executing action '{action_name}': {e}")
+            return None
+
     def start(self) -> None:
         user_input = ""
 
@@ -130,7 +173,6 @@ class Terminal:
                         logger.error(f"Argument validation error: {ve}")
                         continue
 
-                    print()
                     try:
                         query_action.execute(database_context=self.__database_context)
                     except KeyboardInterrupt:
@@ -145,32 +187,7 @@ class Terminal:
                 command_line = user_input[len(self.__prefix) :].strip()
                 if not command_line:
                     continue
+
                 action_name, *args = shlex.split(command_line)
-                action = ActionFactory.get_action(action_name)
-                if action is None:
-                    logger.error(f"Unknown action: {action_name}")
-                    continue
 
-                try:
-                    action.validate_arguments(additional_arguments=" ".join(args))
-                except ValueError as ve:
-                    logger.error(f"Argument validation error: {ve}")
-                    continue
-
-                print()  # Spacing before action execution
-
-                logger.info(
-                    f"Executing action '{action_name}' against {self.__database_context.query_service.execution_server}"
-                )
-
-                try:
-                    action.execute(database_context=self.__database_context)
-                except KeyboardInterrupt:
-                    print("\r", end="", flush=True)  # Clear the ^C
-                    logger.warning(
-                        "Keyboard interruption received during action execution."
-                    )
-                except Exception as e:
-                    logger.error(f"Error executing action '{action_name}': {e}")
-                finally:
-                    print()  # Spacing after action (always)
+                self.execute_action(action_name, args)
