@@ -11,13 +11,11 @@ from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.utils import formatter
 
 
-@ActionFactory.register(
-    "rolemembers", "List members of a specified server role"
-)
+@ActionFactory.register("rolemembers", "List members of a specified server role")
 class RoleMembers(BaseAction):
     """
     Retrieves all members of a specified server role.
-    
+
     Common server roles: sysadmin, serveradmin, securityadmin, setupadmin,
     processadmin, diskadmin, dbcreator, bulkadmin, public
     """
@@ -56,7 +54,7 @@ class RoleMembers(BaseAction):
         logger.info(f"Retrieving members of server role: {self._role_name}")
 
         query = f"""
-            SELECT 
+            SELECT
                 l.name AS LoginName,
                 l.type_desc AS LoginType,
                 l.is_disabled AS IsDisabled,
