@@ -1,12 +1,10 @@
-
-
-
 from loguru import logger
 
 # Local library imports
 from mssqlclient_ng.src.services.authentication import AuthenticationService
 from mssqlclient_ng.src.services.query import QueryService
 from mssqlclient_ng.src.services.user import UserService
+from mssqlclient_ng.src.services.configuration import ConfigurationService
 
 
 class DatabaseContext:
@@ -15,6 +13,7 @@ class DatabaseContext:
         self._server = auth_service.server
         self._query_service = QueryService(auth_service.connection)
         self._user_service = UserService(self._query_service)
+        self._config_service = ConfigurationService(self._query_service, self._server)
 
         self._server.hostname = self._query_service.execution_server
 
@@ -41,6 +40,10 @@ class DatabaseContext:
     @property
     def query_service(self) -> QueryService:
         return self._query_service
+
+    @property
+    def config_service(self) -> ConfigurationService:
+        return self._config_service
 
     @property
     def authentication_service(self) -> AuthenticationService:
