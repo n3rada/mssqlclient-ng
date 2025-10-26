@@ -97,7 +97,7 @@ class ObjectLinkingEmbedding(BaseAction):
             print()  # Spacing before execution
             logger.info("Executing OLE Automation query")
 
-            database_context.query_service.execute_non_processing(query):
+            database_context.query_service.execute_non_processing(query)
 
             return None
         except Exception as e:
