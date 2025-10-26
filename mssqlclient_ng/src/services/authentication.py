@@ -83,10 +83,13 @@ class AuthenticationService:
             )
 
             # Establish TCP connection
-            self.connection.connect()
-            logger.debug(
-                f"TCP connection established to {self.server.hostname}:{self.server.port}"
-            )
+            chausette = self.connection.connect()
+
+            if not chausette:
+                logger.error(
+                    f"Failed to establish TCP connection to {self.server.hostname}:{self.server.port}"
+                )
+                return False
 
             # Perform authentication
             if self._kerberos_auth:
@@ -120,11 +123,12 @@ class AuthenticationService:
                 return False
 
             logger.success(f"Successfully authenticated to {self.server.hostname}")
+            logger.info(f"Database: {self._database}")
 
             # Update server version from connection
             if hasattr(self.connection, "mssql_version"):
                 self.server.version = str(self.connection.mssql_version)
-                logger.debug(f"Server version: {self.server.version}")
+                logger.info(f"Server version: {self.server.version}")
 
             return True
 
