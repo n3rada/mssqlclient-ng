@@ -78,7 +78,6 @@ class Sessions(BaseAction):
         # Display as markdown table
         result = rows_to_markdown_table(result_rows)
 
-        print()
         print(result)
 
         return result_rows
