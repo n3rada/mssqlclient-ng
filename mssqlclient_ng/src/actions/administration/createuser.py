@@ -99,7 +99,14 @@ class CreateUser(BaseAction):
                 CHECK_EXPIRATION = OFF;
             """
 
-            database_context.query_service.execute_non_processing(create_login_query)
+            if (
+                database_context.query_service.execute_non_processing(
+                    create_login_query
+                )
+                == -1
+            ):
+                return False
+
             logger.success(f"SQL login '{self._username}' created successfully")
 
             # Add the login to the specified server role
