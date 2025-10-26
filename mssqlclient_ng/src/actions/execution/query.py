@@ -1,6 +1,7 @@
 """
 Query action for executing T-SQL queries.
 """
+
 from typing import Optional, List, Dict, Any
 from loguru import logger
 
@@ -33,7 +34,9 @@ class Query(BaseAction):
             ValueError: If no query is provided
         """
         if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("Query action requires a valid SQL query as an additional argument.")
+            raise ValueError(
+                "Query action requires a valid SQL query as an additional argument."
+            )
 
         self._query = additional_arguments.strip()
 
@@ -47,14 +50,14 @@ class Query(BaseAction):
         Returns:
             List of result rows for SELECT queries, None for non-query commands
         """
-        if not database_context or not hasattr(database_context, 'query_service'):
+        if not database_context or not hasattr(database_context, "query_service"):
             logger.error("Database context with query_service is required")
             return None
 
         query_service = database_context.query_service
         execution_server = query_service.execution_server
 
-        logger.debug(f"Executing against {execution_server}: {self._query}")
+        logger.info(f"Executing against {execution_server}: {self._query}")
 
         try:
             # Detect if it's a non-query command
@@ -63,9 +66,13 @@ class Query(BaseAction):
                 rows_affected = query_service.execute_non_processing(self._query)
 
                 if rows_affected >= 0:
-                    logger.success(f"Query executed successfully. Rows affected: {rows_affected}")
+                    logger.success(
+                        f"Query executed successfully. Rows affected: {rows_affected}"
+                    )
                 else:
-                    logger.warning("Query executed but could not determine rows affected")
+                    logger.warning(
+                        "Query executed but could not determine rows affected"
+                    )
 
                 return None
 
@@ -81,18 +88,14 @@ class Query(BaseAction):
             # If only one row, display the result directly
             if rows == 1:
                 row = result_rows[0]
-                for key, value in row.items():
-                    if key:
-                        result = f"{key}: {value}"
-                    else:
-                        result = value
+                for _, value in row.items():
+                    result = value
             else:
                 # Format and print results as Markdown table
                 result = rows_to_markdown_table(result_rows)
 
             print()
             print(result)
-            print()
 
             return result_rows
 
@@ -101,13 +104,13 @@ class Query(BaseAction):
             logger.error(f"Error executing query: {error_message}")
 
             # Log additional details if available
-            if hasattr(e, 'number'):
+            if hasattr(e, "number"):
                 logger.debug(f"Error Number: {e.number}")
-            if hasattr(e, 'line_number'):
+            if hasattr(e, "line_number"):
                 logger.debug(f"Line Number: {e.line_number}")
-            if hasattr(e, 'procedure'):
+            if hasattr(e, "procedure"):
                 logger.debug(f"Procedure: {e.procedure}")
-            if hasattr(e, 'server'):
+            if hasattr(e, "server"):
                 logger.debug(f"Server: {e.server}")
 
             return None
@@ -127,8 +130,15 @@ class Query(BaseAction):
 
         # Keywords that indicate non-query commands
         non_query_keywords = [
-            "INSERT", "UPDATE", "DELETE", "DROP",
-            "ALTER", "CREATE", "TRUNCATE", "EXEC", "EXECUTE"
+            "INSERT",
+            "UPDATE",
+            "DELETE",
+            "DROP",
+            "ALTER",
+            "CREATE",
+            "TRUNCATE",
+            "EXEC",
+            "EXECUTE",
         ]
 
         # Normalize query for comparison
@@ -137,7 +147,9 @@ class Query(BaseAction):
         # Check if query starts with any non-query keyword
         # or contains it as a standalone word
         for keyword in non_query_keywords:
-            if normalized.startswith(keyword + " ") or normalized.startswith(keyword + ";"):
+            if normalized.startswith(keyword + " ") or normalized.startswith(
+                keyword + ";"
+            ):
                 return True
             if f" {keyword} " in normalized or f" {keyword};" in normalized:
                 return True
