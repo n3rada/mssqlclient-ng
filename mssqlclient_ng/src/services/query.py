@@ -4,10 +4,12 @@ Query service for executing SQL queries against MSSQL servers using impacket's T
 
 from typing import Optional, Any, List, Dict
 
+# Third party imports
 from loguru import logger
 from impacket.tds import MSSQL, SQLErrorException
 from impacket.tds import TDS_DONE_TOKEN, TDS_DONEINPROC_TOKEN, TDS_DONEPROC_TOKEN
 
+# Local library imports
 from mssqlclient_ng.src.models.linked_servers import LinkedServers
 
 

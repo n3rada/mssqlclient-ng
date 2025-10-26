@@ -2,13 +2,14 @@
 CreateUser action for creating SQL Server logins with server role privileges.
 """
 
-from typing import Optional, Dict, Any
+from typing import Optional
+
+# Third party imports
 from loguru import logger
 
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
 
 
 @ActionFactory.register(

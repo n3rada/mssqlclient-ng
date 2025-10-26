@@ -2,10 +2,14 @@
 Authentication service for managing SQL Server connections using impacket's TDS.
 """
 
+# Built-in imports
 from typing import Optional
+
+# Third party imports
 from loguru import logger
 from impacket.tds import MSSQL
 
+# Local library imports
 from mssqlclient_ng.src.models.server import Server
 
 

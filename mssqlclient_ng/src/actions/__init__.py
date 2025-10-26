@@ -7,10 +7,7 @@ import mssqlclient_ng.src.actions.execution as execution
 import mssqlclient_ng.src.actions.administration as administration
 import mssqlclient_ng.src.actions.network as network
 import mssqlclient_ng.src.actions.database as database
+import mssqlclient_ng.src.actions.filesystem as filesystem
 
-__all__ = [
-    "execution",
-    "administration",
-    "network",
-    "database",
-]
+
+__all__ = ["execution", "administration", "network", "database", "filesystem"]

@@ -2,9 +2,13 @@
 Extended Procedures action for enumerating extended stored procedures available on SQL Server.
 """
 
+# Built-in imports
 from typing import Optional, List, Dict, Any
+
+# Third party imports
 from loguru import logger
 
+# Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
@@ -138,7 +142,7 @@ class ExtendedProcs(BaseAction):
             enriched_procs = []
             for proc in result_rows:
                 proc_name = proc["Procedure Name"]
-                # Decode bytes if necessary
+
                 execute_val = proc["Execute"]
                 if isinstance(execute_val, bytes):
                     execute_val = execute_val.decode("utf-8")

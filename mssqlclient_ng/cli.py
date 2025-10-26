@@ -2,7 +2,6 @@
 import argparse
 import sys
 import re
-import shlex
 from getpass import getpass
 
 # Third party imports
