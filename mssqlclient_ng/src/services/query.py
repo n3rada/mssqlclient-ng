@@ -217,6 +217,19 @@ class QueryService:
             raise
 
         except Exception as e:
+            error_message = str(e).strip()
+
+            # Some stored procedures (like OLE Automation) may raise exceptions
+            # with just "0" as the message, which actually indicates success
+            if error_message == "0":
+                logger.debug("Query returned status code 0 (success)")
+                if return_rows:
+                    return (
+                        self.connection.rows if hasattr(self.connection, "rows") else []
+                    )
+                else:
+                    return 0
+
             logger.error(f"Unexpected error during query execution: {e}")
             raise
 
