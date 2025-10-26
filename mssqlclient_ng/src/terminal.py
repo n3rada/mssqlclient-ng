@@ -1,16 +1,11 @@
 # Built-in imports
 import shlex
-import os
-import re
-from pathlib import Path
-import tempfile
-from typing import Iterable
 
 # External library imports
 from loguru import logger
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
-from prompt_toolkit.history import ThreadedHistory, InMemoryHistory, FileHistory
+from prompt_toolkit.history import ThreadedHistory, InMemoryHistory
 from prompt_toolkit.cursor_shapes import CursorShape
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
@@ -20,12 +15,56 @@ from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.actions.factory import ActionFactory
 
 
+class ActionCompleter(Completer):
+    """
+    Auto-completer for action commands.
+    Suggests available actions when user starts typing with prefix.
+    """
+
+    def __init__(self, prefix: str = "!"):
+        self.prefix = prefix
+
+    def get_completions(self, document: Document, complete_event):
+        """
+        Generate completion suggestions.
+
+        Args:
+            document: The document being edited
+            complete_event: The completion event
+
+        Yields:
+            Completion objects for matching actions with descriptions
+        """
+        text = document.text_before_cursor
+
+        # Check if we're at the start with prefix
+        if text.startswith(self.prefix):
+            # Get the part after the prefix
+            command_part = text[len(self.prefix) :].strip()
+
+            # Get all available actions
+            actions = ActionFactory.list_actions()
+
+            # Filter actions that match what the user has typed
+            for action_name in actions:
+                if action_name.startswith(command_part.lower()):
+                    # Calculate how much we need to replace
+                    completion_text = action_name[len(command_part) :]
+
+                    # Get the description for this action
+                    description = ActionFactory.get_action_description(action_name)
+                    help_text = f"{description}" if description else ""
+
+                    yield Completion(completion_text, 0, display_meta=help_text)
+
+
 class Terminal:
     def __init__(self, database_context: DatabaseContext, prefix="!"):
 
         self.__database_context = database_context
+        self.__prefix = prefix
 
-        # Create prompt session with completer
+        # Create prompt session with completer and action auto-suggest
         self.__prompt_session = PromptSession(
             cursor=CursorShape.BLINKING_BEAM,
             multiline=False,
@@ -33,9 +72,8 @@ class Terminal:
             wrap_lines=True,
             auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
             history=ThreadedHistory(InMemoryHistory()),
+            completer=ActionCompleter(prefix=prefix),
         )
-
-        self.__prefix = prefix
 
     def __prompt(self) -> str:
         """
@@ -83,12 +121,56 @@ class Terminal:
                 continue
             else:
                 if not user_input.startswith(self.__prefix):
-                    action = ActionFactory.get_action("query", user_input)
+                    # Execute query without prefix
+                    query_action = ActionFactory.get_action("query")
+
                     try:
-                        action.execute(database_context=self.__database_context)
+                        query_action.validate_arguments(additional_arguments=user_input)
+                    except ValueError as ve:
+                        logger.error(f"Argument validation error: {ve}")
+                        continue
+
+                    print()
+                    try:
+                        query_action.execute(database_context=self.__database_context)
                     except KeyboardInterrupt:
                         print("\r", end="", flush=True)  # Clear the ^C
                         logger.warning(
                             "Keyboard interruption received during remote command execution."
                         )
+                    print()  # Spacing after
                     continue
+
+                # Process action command
+                command_line = user_input[len(self.__prefix) :].strip()
+                if not command_line:
+                    continue
+                action_name, *args = shlex.split(command_line)
+                action = ActionFactory.get_action(action_name)
+                if action is None:
+                    logger.error(f"Unknown action: {action_name}")
+                    continue
+
+                try:
+                    action.validate_arguments(additional_arguments=" ".join(args))
+                except ValueError as ve:
+                    logger.error(f"Argument validation error: {ve}")
+                    continue
+
+                print()  # Spacing before action execution
+
+                logger.info(
+                    f"Executing action '{action_name}' against {self.__database_context.query_service.execution_server}"
+                )
+
+                try:
+                    action.execute(database_context=self.__database_context)
+                except KeyboardInterrupt:
+                    print("\r", end="", flush=True)  # Clear the ^C
+                    logger.warning(
+                        "Keyboard interruption received during action execution."
+                    )
+                except Exception as e:
+                    logger.error(f"Error executing action '{action_name}': {e}")
+                finally:
+                    print()  # Spacing after action (always)

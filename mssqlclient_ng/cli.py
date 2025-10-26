@@ -13,6 +13,7 @@ from mssqlclient_ng.src.services.authentication import AuthenticationService
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.terminal import Terminal
 from mssqlclient_ng.src.utils import logbook
+from mssqlclient_ng.src.utils.helper import display_all_commands
 
 # Import actions to register them with the factory
 from mssqlclient_ng.src import actions
@@ -114,6 +115,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Enable debug logging mode.",
     )
 
+    advanced_group.add_argument(
+        "-a",
+        "--actions",
+        action="store_true",
+        required=False,
+        help="Display all available actions and exit.",
+    )
+
     return parser
 
 
@@ -131,6 +140,11 @@ def main() -> int:
         logbook.setup_logging(level="DEBUG")
     else:
         logbook.setup_logging(level="INFO")
+
+    # Show available actions if requested
+    if args.actions:
+        display_all_commands()
+        return 0
 
     target_regex = re.compile(r"(?:(?:([^/@:]*)/)?([^@:]*)(?::([^@]*))?@)?(.*)")
     domain, username, password, remote_name = target_regex.match(args.target).groups("")
