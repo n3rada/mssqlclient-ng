@@ -1,6 +1,7 @@
 """
 Action factory for creating and managing action instances.
 """
+
 from typing import Dict, Type, List, Tuple, Optional
 from loguru import logger
 
@@ -30,13 +31,17 @@ class ActionFactory:
             name: The action name (command)
             description: Human-readable description of the action
         """
+
         def decorator(action_class: Type[BaseAction]):
             cls._registry[name.lower()] = (action_class, description)
             return action_class
+
         return decorator
 
     @classmethod
-    def register_action(cls, name: str, action_class: Type[BaseAction], description: str) -> None:
+    def register_action(
+        cls, name: str, action_class: Type[BaseAction], description: str
+    ) -> None:
         """
         Manually register an action class.
 
@@ -48,37 +53,22 @@ class ActionFactory:
         cls._registry[name.lower()] = (action_class, description)
 
     @classmethod
-    def get_action(cls, action_type: str, additional_arguments: str = "") -> BaseAction:
-        """
-        Create and return an action instance.
+    def get_action(cls, action_type: str) -> BaseAction | None:
+        """_summary_
 
         Args:
-            action_type: The action name/type
-            additional_arguments: Additional arguments to pass to the action
+            action_type (str): _description_
 
         Returns:
-            An initialized action instance
-
-        Raises:
-            ValueError: If action type is not registered
+            BaseAction | None: _description_
         """
         action_key = action_type.lower()
 
         if action_key not in cls._registry:
-            available = ", ".join(cls._registry.keys())
-            raise ValueError(
-                f"Unsupported action type: '{action_type}'. "
-                f"Available actions: {available}"
-            )
+            return None
 
-        try:
-            action_class, _ = cls._registry[action_key]
-            action = action_class()
-            action.validate_arguments(additional_arguments)
-            return action
-        except Exception as e:
-            logger.error(f"Error creating action for type '{action_type}': {e}")
-            raise
+        action_class, _ = cls._registry[action_key]
+        return action_class()
 
     @classmethod
     def get_available_actions(cls) -> List[Tuple[str, str, List[str]]]:
@@ -94,7 +84,9 @@ class ActionFactory:
             try:
                 action = action_class()
                 # Assuming actions have a get_arguments method
-                arguments = action.get_arguments() if hasattr(action, 'get_arguments') else []
+                arguments = (
+                    action.get_arguments() if hasattr(action, "get_arguments") else []
+                )
                 result.append((name, description, arguments))
             except Exception as e:
                 logger.warning(f"Could not instantiate action '{name}': {e}")
@@ -161,4 +153,3 @@ class ActionFactory:
     def clear_registry(cls) -> None:
         """Clear all registered actions. Mainly for testing."""
         cls._registry.clear()
-
