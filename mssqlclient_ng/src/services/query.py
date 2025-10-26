@@ -106,7 +106,8 @@ class QueryService:
                 query, tuple_mode=False, return_rows=False
             )
             return result if result is not None else -1
-        except Exception:
+        except Exception as error:
+            logger.error(error)
             return -1
 
     def execute_table(self, query: str) -> List[Dict[str, Any]]:
