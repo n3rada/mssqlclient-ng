@@ -64,7 +64,7 @@ class XpCmd(BaseAction):
         output_lines: List[str] = []
 
         try:
-            logger.info("Executing xp_cmdshell...")
+            logger.info("Executing xp_cmdshell")
             result = database_context.query_service.execute(query, tuple_mode=True)
 
             if result:
@@ -75,16 +75,14 @@ class XpCmd(BaseAction):
                     # xp_cmdshell returns "NULL" string for empty lines
                     if output == "NULL":
                         output = ""
+
                     print(output)
                     output_lines.append(output)
 
-                logger.success(
-                    f"Command executed successfully ({len(output_lines)} lines)"
-                )
                 return output_lines
-            else:
-                logger.warning("The command executed but returned no results.")
-                return output_lines
+
+            logger.warning("The command executed but returned no results.")
+            return output_lines
         except Exception as ex:
             logger.error(f"Error executing xp_cmdshell: {ex}")
             return None
