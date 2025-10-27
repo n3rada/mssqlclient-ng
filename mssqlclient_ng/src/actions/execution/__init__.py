@@ -9,6 +9,7 @@ from mssqlclient_ng.src.actions.execution.powershell import PowerShell
 from mssqlclient_ng.src.actions.execution.remote_powershell import RemotePowerShell
 from mssqlclient_ng.src.actions.execution.ole import ObjectLinkingEmbedding
 from mssqlclient_ng.src.actions.execution.agents import Agents
+from mssqlclient_ng.src.actions.execution.clr import ClrExecution
 
 __all__ = [
     "Query",
@@ -17,4 +18,5 @@ __all__ = [
     "RemotePowerShell",
     "ObjectLinkingEmbedding",
     "Agents",
+    "ClrExecution",
 ]
