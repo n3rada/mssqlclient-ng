@@ -82,9 +82,9 @@ class Configure(BaseAction):
         if config_service.set_configuration_option(self._option_name, self._state):
             logger.success(f"Successfully {state_str}d {self._option_name}")
             return True
-        else:
-            logger.error(f"Failed to configure {self._option_name}")
-            return False
+
+        logger.error(f"Failed to configure {self._option_name}")
+        return False
 
     def get_arguments(self) -> List[str]:
         """
