@@ -87,16 +87,13 @@ class Query(BaseAction):
 
             # If only one row, display the result directly
             if rows == 1:
-                row = result_rows[0]
-                for _, value in row.items():
-                    result = value
+                result = result_rows[0][""]
+                print()
+                print(result)
+                print()
             else:
                 # Format and print results as Markdown table
-                result = rows_to_markdown_table(result_rows)
-
-            print()
-            print(result)
-
+                print(rows_to_markdown_table(result_rows))
             return result_rows
 
         except Exception as e:
