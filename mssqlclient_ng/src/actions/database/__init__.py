@@ -13,6 +13,7 @@ from mssqlclient_ng.src.actions.database.procedures import Procedures
 from mssqlclient_ng.src.actions.database.rolemembers import RoleMembers
 from mssqlclient_ng.src.actions.database.rows import Rows
 from mssqlclient_ng.src.actions.database.search import Search
+from mssqlclient_ng.src.actions.database.tables import Tables
 
 __all__ = [
     "Databases",
@@ -25,4 +26,5 @@ __all__ = [
     "RoleMembers",
     "Rows",
     "Search",
+    "Tables",
 ]
