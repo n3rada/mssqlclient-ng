@@ -11,6 +11,7 @@ from mssqlclient_ng.src.actions.database.oledb_providers import OleDbProviders
 from mssqlclient_ng.src.actions.database.permissions import Permissions
 from mssqlclient_ng.src.actions.database.procedures import Procedures
 from mssqlclient_ng.src.actions.database.rolemembers import RoleMembers
+from mssqlclient_ng.src.actions.database.rows import Rows
 
 __all__ = [
     "Databases",
@@ -21,4 +22,5 @@ __all__ = [
     "Permissions",
     "Procedures",
     "RoleMembers",
+    "Rows",
 ]
