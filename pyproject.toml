@@ -15,7 +15,8 @@ requires-python = ">=3.11,<4.0"
 dependencies = [
     "impacket[tds] (>=0.13.0,<0.14.0)",
     "loguru (>=0.7.3,<0.8.0)",
-    "prompt-toolkit (>=3.0.52,<4.0.0)"
+    "prompt-toolkit (>=3.0.52,<4.0.0)",
+    "pygments (>=2.19.2,<3.0.0)"
 ]
 
 
