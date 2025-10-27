@@ -14,6 +14,7 @@ from mssqlclient_ng.src.actions.database.rolemembers import RoleMembers
 from mssqlclient_ng.src.actions.database.rows import Rows
 from mssqlclient_ng.src.actions.database.search import Search
 from mssqlclient_ng.src.actions.database.tables import Tables
+from mssqlclient_ng.src.actions.database.users import Users
 
 __all__ = [
     "Databases",
@@ -27,4 +28,5 @@ __all__ = [
     "Rows",
     "Search",
     "Tables",
+    "Users",
 ]
