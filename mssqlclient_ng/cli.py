@@ -21,7 +21,14 @@ from mssqlclient_ng.src import actions
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    class BannerArgumentParser(argparse.ArgumentParser):
+        """Custom ArgumentParser that shows banner before help."""
+
+        def format_help(self):
+            banner_text = banner.display_banner(version=__version__)
+            return banner_text + "\n" + super().format_help()
+
+    parser = BannerArgumentParser(
         prog="mssqlclient-ng.py",
         add_help=True,
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
