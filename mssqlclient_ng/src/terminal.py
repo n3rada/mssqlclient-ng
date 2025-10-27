@@ -180,7 +180,6 @@ class Terminal:
                         logger.warning(
                             "Keyboard interruption received during remote command execution."
                         )
-                    print()  # Spacing after
                     continue
 
                 # Process action command
