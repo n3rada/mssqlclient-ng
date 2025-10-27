@@ -4,12 +4,18 @@ from typing import List, Optional
 
 # External library imports
 from loguru import logger
+
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
 from prompt_toolkit.history import ThreadedHistory, InMemoryHistory
 from prompt_toolkit.cursor_shapes import CursorShape
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
+from prompt_toolkit.styles import style_from_pygments_cls
+from prompt_toolkit.lexers import PygmentsLexer
+
+from pygments.lexers.sql import SqlLexer
+from pygments.styles.onedark import OneDarkStyle
 
 # Local library imports
 from mssqlclient_ng.src.services.database import DatabaseContext
@@ -60,21 +66,12 @@ class ActionCompleter(Completer):
 
 
 class Terminal:
-    def __init__(self, database_context: DatabaseContext, prefix="!"):
+    def __init__(
+        self,
+        database_context: DatabaseContext,
+    ):
 
         self.__database_context = database_context
-        self.__prefix = prefix
-
-        # Create prompt session with completer and action auto-suggest
-        self.__prompt_session = PromptSession(
-            cursor=CursorShape.BLINKING_BEAM,
-            multiline=False,
-            enable_history_search=True,
-            wrap_lines=True,
-            auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
-            history=ThreadedHistory(InMemoryHistory()),
-            completer=ActionCompleter(prefix=prefix),
-        )
 
     def __prompt(self) -> str:
         """
@@ -143,17 +140,39 @@ class Terminal:
             logger.error(f"Error executing action '{action_name}': {e}")
             return None
 
-    def start(self) -> None:
+    def start(
+        self,
+        prefix: str = "!",
+        multiline: bool = False,
+    ) -> None:
+
         user_input = ""
+
+        if multiline:
+            logger.warning(
+                "Multiline input mode enabled in terminal, use ESC + ENTER to submit."
+            )
+
+        prompt_session = PromptSession(
+            cursor=CursorShape.BLINKING_BEAM,
+            multiline=multiline,
+            enable_history_search=True,
+            wrap_lines=True,
+            auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
+            history=ThreadedHistory(InMemoryHistory()),
+            completer=ActionCompleter(prefix=prefix),
+            lexer=PygmentsLexer(SqlLexer),
+            style=style_from_pygments_cls(OneDarkStyle),
+        )
 
         while True:
             try:
-                user_input = self.__prompt_session.prompt(message=self.__prompt())
+                user_input = prompt_session.prompt(message=self.__prompt())
                 if not user_input:
                     continue
             except KeyboardInterrupt:
 
-                if self.__prompt_session.app.current_buffer.text:
+                if prompt_session.app.current_buffer.text:
                     # If there's text in the buffer, just clear it and continue
                     continue
 
@@ -163,7 +182,7 @@ class Terminal:
                 logger.warning(f"Exception occured: {exc}")
                 continue
             else:
-                if not user_input.startswith(self.__prefix):
+                if not user_input.startswith(prefix):
                     # Execute query without prefix
                     query_action = ActionFactory.get_action("query")
 
@@ -183,7 +202,7 @@ class Terminal:
                     continue
 
                 # Process action command
-                command_line = user_input[len(self.__prefix) :].strip()
+                command_line = user_input[len(prefix) :].strip()
                 if not command_line:
                     continue
 
