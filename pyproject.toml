@@ -23,4 +23,4 @@ dependencies = [
 repository  = "https://github.com/n3rada/mssqlclient-ng"
 
 [project.scripts]
-mssqlclient-ng = 'mssqlclient-ng.cli:main'
+mssqlclient-ng = 'mssqlclient_ng.cli:main'
