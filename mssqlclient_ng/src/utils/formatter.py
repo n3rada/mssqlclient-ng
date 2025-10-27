@@ -39,7 +39,7 @@ def dict_to_markdown_table(
         lines.append(
             f"| {normalize_value(k).ljust(col1_width)} | {normalize_value(v).ljust(col2_width)} |"
         )
-    return "\n" + "\n".join(lines)
+    return "\n" + "\n".join(lines) + "\n"
 
 
 def list_to_markdown_table(lst: Sequence[str], column_name: str) -> str:
@@ -52,7 +52,7 @@ def list_to_markdown_table(lst: Sequence[str], column_name: str) -> str:
     lines = [f"| {column_name.ljust(col_width)} |", f"| {'-' * col_width} |"]
     for item in lst:
         lines.append(f"| {normalize_value(item).ljust(col_width)} |")
-    return "\n" + "\n".join(lines)
+    return "\n" + "\n".join(lines) + "\n"
 
 
 def rows_to_markdown_table(rows: List[Dict[str, Any]]) -> str:
@@ -86,7 +86,7 @@ def rows_to_markdown_table(rows: List[Dict[str, Any]]) -> str:
             + " |"
         )
         data_lines.append(line)
-    return "\n" + "\n".join([header, separator] + data_lines)
+    return "\n" + "\n".join([header, separator] + data_lines) + "\n"
 
 
 def table_to_markdown(
@@ -124,4 +124,4 @@ def table_to_markdown(
             )
             + " |"
         )
-    return "\n" + "\n".join(lines)
+    return "\n" + "\n".join(lines) + "\n"
