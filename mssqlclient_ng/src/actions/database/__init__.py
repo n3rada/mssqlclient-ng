@@ -15,6 +15,7 @@ from mssqlclient_ng.src.actions.database.rows import Rows
 from mssqlclient_ng.src.actions.database.search import Search
 from mssqlclient_ng.src.actions.database.tables import Tables
 from mssqlclient_ng.src.actions.database.users import Users
+from mssqlclient_ng.src.actions.database.whoami import Whoami
 
 __all__ = [
     "Databases",
@@ -29,4 +30,5 @@ __all__ = [
     "Search",
     "Tables",
     "Users",
+    "Whoami",
 ]
