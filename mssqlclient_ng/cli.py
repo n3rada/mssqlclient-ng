@@ -144,6 +144,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     advanced_group.add_argument(
+        "--prefix",
+        action="store",
+        required=False,
+        type=str,
+        default="!",
+        help="Command prefix for actions.",
+    )
+
+    advanced_group.add_argument(
+        "--multiline",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable multiline input mode.",
+    )
+
+    advanced_group.add_argument(
         "--debug",
         action="store_true",
         required=False,
@@ -253,7 +270,7 @@ def main() -> int:
                 )
             else:
                 # Starting interactive fake-shell
-                terminal_instance.start()
+                terminal_instance.start(prefix=args.prefix, multiline=args.multiline)
 
     except Exception as exc:
         logger.error(f"Unexpected error: {exc}")
