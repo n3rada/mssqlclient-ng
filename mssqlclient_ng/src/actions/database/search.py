@@ -71,6 +71,10 @@ class Search(BaseAction):
         """
         databases_to_search = []
 
+        logger.info(
+            f"Lurking for '{self._keyword}' accross accessible user tables only (excluding Microsoft system tables)"
+        )
+
         if self._all_databases:
             logger.info("Searching across ALL accessible databases")
             # Get all accessible databases
