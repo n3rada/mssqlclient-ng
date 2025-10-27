@@ -8,6 +8,7 @@ import mssqlclient_ng.src.actions.administration as administration
 import mssqlclient_ng.src.actions.network as network
 import mssqlclient_ng.src.actions.database as database
 import mssqlclient_ng.src.actions.filesystem as filesystem
+import mssqlclient_ng.src.actions.domain as domain
 
 
-__all__ = ["execution", "administration", "network", "database", "filesystem"]
+__all__ = ["execution", "administration", "network", "database", "filesystem", "domain"]
