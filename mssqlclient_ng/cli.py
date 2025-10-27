@@ -1,19 +1,20 @@
 # Built-in imports
 import argparse
 import sys
-import re
 from getpass import getpass
 
 # Third party imports
 from loguru import logger
 
 # Local library imports
+from mssqlclient_ng import __version__
 from mssqlclient_ng.src.models import server
 from mssqlclient_ng.src.services.authentication import AuthenticationService
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.terminal import Terminal
 from mssqlclient_ng.src.utils import logbook
 from mssqlclient_ng.src.utils import helper
+from mssqlclient_ng.src.utils import banner
 
 # Import actions to register them with the factory
 from mssqlclient_ng.src import actions
@@ -27,52 +28,69 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     # Target arguments
-    parser.add_argument(
-        "target",
-        action="store",
-        help="[[domain/]username[:password]@]<targetName or address>",
+    group_target = parser.add_argument_group("Target")
+    group_target.add_argument(
+        "host",
+        type=str,
+        help="Target MS SQL Server IP or hostname.",
     )
-    parser.add_argument(
-        "-db", action="store", help="MSSQL database instance (default None)"
+
+    group_target.add_argument(
+        "-P",
+        "--port",
+        type=int,
+        required=False,
+        default=1433,
+        help="Target MS SQL Server port (default: 1433).",
     )
-    parser.add_argument(
+
+    group_target.add_argument("-d", "--domain", type=str, help="Domain name")
+
+    credentials_group = parser.add_argument_group(
+        "Credentials", "Options for credentials"
+    )
+    credentials_group.add_argument(
+        "-u", "--username", type=str, help="Username (either local or Windows)."
+    )
+    credentials_group.add_argument("-p", "--password", type=str, help="Password")
+    credentials_group.add_argument(
+        "-H", "--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes."
+    )
+    credentials_group.add_argument(
         "-windows-auth",
         action="store_true",
         default=False,
         help="whether or not to use Windows " "Authentication (default False)",
     )
-    parser.add_argument("-debug", action="store_true", help="Turn DEBUG output ON")
-    parser.add_argument(
-        "-ts", action="store_true", help="Adds timestamp to every logging output"
-    )
-    parser.add_argument("-show", action="store_true", help="show the queries")
 
-    # Authentication arguments
-    group_auth = parser.add_argument_group("Authentication")
-
-    group_auth.add_argument(
-        "-hashes",
-        action="store",
-        type=str,
-        metavar="LMHASH:NTHASH",
-        help="NTLM hashes, format is LMHASH:NTHASH",
+    kerberos_group = parser.add_argument_group(
+        "Kerberos", "Options for Kerberos authentication"
     )
-    group_auth.add_argument(
-        "-no-pass", action="store_true", help="don't ask for password (useful for -k)"
+    kerberos_group.add_argument(
+        "-k", "--kerberos", action="store_true", help="Use Kerberos authentication"
     )
-    group_auth.add_argument(
-        "-k",
+    kerberos_group.add_argument(
+        "--use-kcache",
         action="store_true",
-        help="Use Kerberos authentication. Grabs credentials from ccache file "
-        "(KRB5CCNAME) based on target parameters. If valid credentials cannot be found, it will use the "
-        "ones specified in the command line",
+        help="Use Kerberos authentication from ccache file (KRB5CCNAME)",
     )
-    group_auth.add_argument(
-        "-aesKey",
+    kerberos_group.add_argument(
+        "--aesKey",
+        metavar="AESKEY",
+        nargs="+",
+        help="AES key to use for Kerberos Authentication (128 or 256 bits)",
+    )
+    kerberos_group.add_argument(
+        "--kdcHost",
+        metavar="KDCHOST",
+        help="FQDN of the domain controller. If omitted it will use the domain part (FQDN) specified in the target parameter",
+    )
+
+    group_target.add_argument(
+        "-db",
+        "--database",
         action="store",
-        type=str,
-        metavar="hex key",
-        help="AES key to use for Kerberos Authentication " "(128 or 256 bits)",
+        help="MSSQL database instance (default None)",
     )
 
     group_conn = parser.add_argument_group("Connection")
@@ -92,13 +110,6 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="ip address",
         help="IP Address of the target machine. If omitted it will use whatever was specified as target. "
         "This is useful when target is the NetBIOS name and you cannot resolve it",
-    )
-    group_conn.add_argument(
-        "-port",
-        action="store",
-        type=str,
-        default="1433",
-        help="target MSSQL port (default 1433)",
     )
 
     actions_groups = parser.add_argument_group(
@@ -146,6 +157,8 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
+    print(banner.display_banner(version=__version__))
+
     # Show help if no cli args provided
     if len(sys.argv) <= 1:
         parser.print_help()
@@ -162,36 +175,29 @@ def main() -> int:
         helper.display_all_commands()
         return 0
 
-    target_regex = re.compile(r"(?:(?:([^/@:]*)/)?([^@:]*)(?::([^@]*))?@)?(.*)")
-    domain, username, password, remote_name = target_regex.match(args.target).groups("")
+    # Extract credentials
+    domain = args.domain if args.domain else ""
+    username = args.username if args.username else ""
+    password = args.password if args.password else ""
 
-    # In case the password contains '@'
-    if "@" in remote_name:
-        password = password + "@" + remote_name.rpartition("@")[0]
-        remote_name = remote_name.rpartition("@")[2]
+    # Prompt for password if username provided but no password/hashes/aesKey
+    if username and not password and args.hashes is None and args.aesKey is None:
+        password = getpass("Password: ")
 
-    if domain is None:
-        domain = ""
+    # Determine target host
+    host = args.target_ip if args.target_ip else args.host
+    remote_name = args.host
 
-    if (
-        password == ""
-        and username != ""
-        and args.hashes is None
-        and args.no_pass is False
-        and args.aesKey is None
-    ):
-        password = getpass("Password:")
+    # Enable Kerberos if AES key or use-kcache is provided
+    use_kerberos = args.kerberos or args.use_kcache or (args.aesKey is not None)
 
-    if args.target_ip is None:
-        host = remote_name
-    else:
-        host = args.target_ip
-
-    if args.aesKey is not None:
-        args.k = True
+    # Determine KDC host
+    kdc_host = args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
 
     server_instance = server.Server(
-        hostname=host, port=int(args.port), database=args.db if args.db else "master"
+        hostname=host,
+        port=args.port,
+        database=args.database if args.database else "master",
     )
 
     try:
@@ -205,8 +211,8 @@ def main() -> int:
             use_windows_auth=args.windows_auth,
             hashes=args.hashes,
             aes_key=args.aesKey,
-            kerberos_auth=args.k,
-            kdc_host=args.dc_ip,
+            kerberos_auth=use_kerberos,
+            kdc_host=kdc_host,
         ) as auth_service:
             try:
                 database_context = DatabaseContext(auth_service=auth_service)
