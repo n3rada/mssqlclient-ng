@@ -1,4 +1,5 @@
 from mssqlclient_ng.src.actions.filesystem.file_read import FileRead
 from mssqlclient_ng.src.actions.filesystem.tree import Tree
+from mssqlclient_ng.src.actions.filesystem.upload import Upload
 
-__all__ = ["FileRead", "Tree"]
+__all__ = ["FileRead", "Tree", "Upload"]
