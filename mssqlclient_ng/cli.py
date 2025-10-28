@@ -7,6 +7,7 @@ from getpass import getpass
 from loguru import logger
 
 # Local library imports
+from mssqlclient_ng import __version__
 from mssqlclient_ng.src.models import server
 from mssqlclient_ng.src.models.linked_servers import LinkedServers
 from mssqlclient_ng.src.services.authentication import AuthenticationService
@@ -32,6 +33,15 @@ def build_parser() -> argparse.ArgumentParser:
         prog="mssqlclient-ng.py",
         add_help=True,
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
+        allow_abbrev=True,
+        exit_on_error=True,
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show Toboggan version and exit.",
     )
 
     # Target arguments
