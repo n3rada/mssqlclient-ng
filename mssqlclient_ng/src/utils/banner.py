@@ -1,4 +1,7 @@
-def display_banner(version: str) -> str:
+# Local library imports
+from mssqlclient_ng import __version__ as version
+
+def display_banner() -> str:
     return (
         r"""
                           _      _ _            _
