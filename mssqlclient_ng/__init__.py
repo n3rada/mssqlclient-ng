@@ -1,7 +1,3 @@
-"""
-mssqlclient-ng: Modern MSSQL client for penetration testing and security assessments.
-"""
-
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 import tomllib
