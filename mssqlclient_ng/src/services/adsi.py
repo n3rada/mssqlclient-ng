@@ -269,9 +269,9 @@ class AdsiService:
         library_hex_bytes, library_hash = self._get_ldap_server_assembly()
 
         logger.info("Deploying the LDAP server assembly")
-        logger.bind(indent=1).info(f"Assembly name: {self.assembly_name}")
-        logger.bind(indent=1).info(f"Function name: {self.function_name}")
-        logger.bind(indent=1).info(f"Library name: {self.library_path}")
+        logger.info(f"Assembly name: {self.assembly_name}")
+        logger.info(f"Function name: {self.function_name}")
+        logger.info(f"Library name: {self.library_path}")
 
         drop_function = f"DROP FUNCTION IF EXISTS [{self.function_name}];"
         drop_assembly = f"DROP ASSEMBLY IF EXISTS [{self.assembly_name}];"
@@ -352,7 +352,7 @@ class AdsiService:
 
         except Exception as e:
             logger.error(f"Error occurred during the ADSI exploit: {e}")
-            logger.bind(indent=1).info(
+            logger.info(
                 f"Deleting LDAP server assembly '{self.assembly_name}', "
                 f"function '{self.function_name}' and trusted assembly hash"
             )
