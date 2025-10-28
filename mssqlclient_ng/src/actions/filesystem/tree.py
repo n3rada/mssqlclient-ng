@@ -8,6 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
+from mssqlclient_ng.src.utils.misc import normalize_windows_path
 
 
 @ActionFactory.register(
@@ -50,7 +51,8 @@ class Tree(BaseAction):
         if not parts:
             raise ValueError("Tree action requires a directory path as an argument")
 
-        self._path = parts[0].strip()
+        # Normalize Windows path to handle single backslashes
+        self._path = normalize_windows_path(parts[0].strip())
 
         # Optional depth parameter
         if len(parts) >= 2:

@@ -11,7 +11,11 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.misc import generate_random_string, get_hex_char
+from mssqlclient_ng.src.utils.misc import (
+    generate_random_string,
+    get_hex_char,
+    normalize_windows_path,
+)
 
 
 @ActionFactory.register(
@@ -179,7 +183,9 @@ class ClrExecution(BaseAction):
         if dll.lower().startswith("http://") or dll.lower().startswith("https://"):
             return self._convert_dll_to_sql_bytes_web(dll)
         else:
-            return self._convert_dll_to_sql_bytes_file(dll)
+            # Normalize Windows path for local files
+            normalized_dll = normalize_windows_path(dll)
+            return self._convert_dll_to_sql_bytes_file(normalized_dll)
 
     def _convert_dll_to_sql_bytes_file(self, dll: str) -> tuple[str, str]:
         """

@@ -10,6 +10,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
+from mssqlclient_ng.src.utils.misc import normalize_windows_path
 
 
 @ActionFactory.register("upload", "Upload a local file to the SQL Server filesystem")
@@ -50,7 +51,7 @@ class Upload(BaseAction):
             )
 
         local_path_str = parts[0].strip()
-        self._remote_path = parts[1].strip()
+        self._remote_path = normalize_windows_path(parts[1].strip())
 
         # Validate local file exists using pathlib
         self._local_path = Path(local_path_str)

@@ -141,3 +141,29 @@ def sid_bytes_to_string(sid_bytes: bytes) -> str:
     """
 
     return SID(bytes.fromhex(sid_bytes.decode())).formatCanonical()
+
+
+def normalize_windows_path(path: str) -> str:
+    r"""
+    Normalizes a Windows path to ensure proper backslash escaping.
+    Converts single backslashes to double backslashes for SQL queries.
+    If the path already has double backslashes, leaves them as-is.
+
+    Args:
+        path: Windows path that may have single or double backslashes
+
+    Returns:
+        Normalized path with proper backslash escaping
+
+    Examples:
+        normalize_windows_path("C:\\Users") -> "C:\\Users"
+        normalize_windows_path(r"C:\Users") -> "C:\\Users"
+    """
+    # If the string representation already has double backslashes, return as-is
+    # This handles cases where the user passed an already-escaped string
+    if "\\\\" in path:
+        return path
+
+    # Replace single backslashes with double backslashes
+    # This handles raw strings or strings with single backslashes
+    return path.replace("\\", "\\\\")

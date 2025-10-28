@@ -8,6 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
+from mssqlclient_ng.src.utils.misc import normalize_windows_path
 
 
 @ActionFactory.register(
@@ -36,7 +37,8 @@ class FileRead(BaseAction):
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError("Read action requires a file path as an argument.")
 
-        self._file_path = additional_arguments.strip()
+        # Normalize Windows path to handle single backslashes
+        self._file_path = normalize_windows_path(additional_arguments.strip())
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
