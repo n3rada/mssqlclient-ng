@@ -84,7 +84,7 @@ class Terminal:
         user_service = self.__database_context.user_service
 
         # Get hostname (execution server)
-        hostname = server.hostname or "unknown"
+        hostname = self.__database_context.query_service.execution_server
 
         # Get current database
         database = server.database or "master"

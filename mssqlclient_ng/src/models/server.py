@@ -1,6 +1,7 @@
 """
 Server model representing a SQL Server instance with connection details.
 """
+
 from typing import Optional
 from loguru import logger
 
@@ -24,18 +25,16 @@ class Server:
         hostname: str,
         port: int = 1433,
         database: str = "master",
+        impersonation_user: Optional[str] = None,
     ):
         """
         Initialize a Server instance.
 
         Args:
             hostname: The hostname or IP address of the server
-            version: The full version string (e.g., "15.00.2000")
             port: The SQL Server port (default: 1433)
             database: The database to connect to (default: "master")
             impersonation_user: The user to impersonate on this server (optional)
-            mapped_user: The mapped user for the connection
-            system_user: The system user for the connection
 
         Raises:
             ValueError: If hostname is empty or port is invalid
@@ -51,7 +50,7 @@ class Server:
         self.port = port
         self.database = database.strip() if database else "master"
 
-        self.impersonation_user = ""
+        self.impersonation_user = impersonation_user if impersonation_user else ""
         self.mapped_user = ""
         self.system_user = ""
 
@@ -71,7 +70,9 @@ class Server:
         if value is not None:
             major = self._parse_major_version(value)
             if major <= 13 and major > 0:
-                logger.warning(f"Legacy server detected: version {value} (major version {major})")
+                logger.warning(
+                    f"Legacy server detected: version {value} (major version {major})"
+                )
 
     @property
     def major_version(self) -> int:
@@ -105,7 +106,7 @@ class Server:
         if not version_string or not version_string.strip():
             return 0
 
-        version_parts = version_string.split('.')
+        version_parts = version_string.split(".")
 
         try:
             return int(version_parts[0])
@@ -113,12 +114,16 @@ class Server:
             return 0
 
     @classmethod
-    def parse_server(cls, server_input: str) -> "Server":
+    def parse_server(
+        cls, server_input: str, port: int = 1433, database: str = "master"
+    ) -> "Server":
         """
         Parses a server string in the format "hostname[:impersonation_user]".
 
         Args:
             server_input: Server string (e.g., "192.168.1.100" or "192.168.1.100:sa")
+            port: The SQL Server port (default: 1433)
+            database: The database to connect to (default: "master")
 
         Returns:
             A Server instance
@@ -134,14 +139,18 @@ class Server:
             >>> server.impersonation_user
             'sa'
         """
-        parts = server_input.split(':')
+        parts = server_input.split(":")
 
         if len(parts) < 1 or len(parts) > 2:
-            raise ValueError(f"Invalid target format: {server_input}. Expected 'hostname[:impersonation_user]'")
+            raise ValueError(
+                f"Invalid target format: {server_input}. Expected 'hostname[:impersonation_user]'"
+            )
 
         return cls(
             hostname=parts[0],
-            impersonation_user=parts[1] if len(parts) > 1 else None
+            port=port,
+            database=database,
+            impersonation_user=parts[1] if len(parts) > 1 else None,
         )
 
     def __str__(self) -> str:

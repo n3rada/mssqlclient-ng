@@ -9,6 +9,7 @@ from loguru import logger
 # Local library imports
 from mssqlclient_ng import __version__
 from mssqlclient_ng.src.models import server
+from mssqlclient_ng.src.models.linked_servers import LinkedServers
 from mssqlclient_ng.src.services.authentication import AuthenticationService
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.terminal import Terminal
@@ -98,6 +99,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--database",
         action="store",
         help="MSSQL database instance (default None)",
+    )
+
+    group_target.add_argument(
+        "-l",
+        "--links",
+        type=str,
+        help="Comma-separated list of linked servers to chain (e.g., 'SQL02:user,SQL03,SQL04:admin')",
     )
 
     group_conn = parser.add_argument_group("Connection")
@@ -208,21 +216,25 @@ def main() -> int:
     if username and not password and args.hashes is None and args.aesKey is None:
         password = getpass("Password: ")
 
-    # Determine target host
-    host = args.target_ip if args.target_ip else args.host
-    remote_name = args.host
+    # Parse server string (hostname[:impersonation_user])
+    server_instance = server.Server.parse_server(
+        server_input=args.host,
+        port=args.port,
+        database=args.database if args.database else "master",
+    )
+
+    # Override hostname with target_ip if provided
+    if args.target_ip:
+        remote_name = args.host
+        server_instance.hostname = args.target_ip
+    else:
+        remote_name = server_instance.hostname
 
     # Enable Kerberos if AES key or use-kcache is provided
     use_kerberos = args.kerberos or args.use_kcache or (args.aesKey is not None)
 
     # Determine KDC host
     kdc_host = args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
-
-    server_instance = server.Server(
-        hostname=host,
-        port=args.port,
-        database=args.database if args.database else "master",
-    )
 
     try:
         # Context manager will connect and ensure cleanup
@@ -253,6 +265,29 @@ def main() -> int:
                 f"Logged in on {database_context.server.hostname} as {system_user}"
             )
             logger.info(f"Mapped to the user: {user_name}")
+
+            # If linked servers are provided, set them up
+            if args.links:
+                try:
+                    linked_servers = LinkedServers(args.links)
+                    database_context.query_service.linked_servers = linked_servers
+
+                    chain_display = " -> ".join(linked_servers.server_names)
+                    logger.info(
+                        f"Server chain: {database_context.server.hostname} -> {chain_display}"
+                    )
+
+                    # Get info from the final server in the chain
+                    user_name, system_user = database_context.user_service.get_info()
+
+                    logger.info(
+                        f"Logged in on {database_context.query_service.execution_server} as {system_user}"
+                    )
+                    logger.info(f"Mapped to the user: {user_name}")
+
+                except Exception as exc:
+                    logger.error(f"Failed to set up linked servers: {exc}")
+                    return 1
 
             terminal_instance = Terminal(database_context)
 
