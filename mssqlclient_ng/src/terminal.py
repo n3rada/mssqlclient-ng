@@ -15,11 +15,14 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import PygmentsLexer
 
 from pygments.lexers.sql import SqlLexer
-from pygments.styles.onedark import OneDarkStyle
+from pygments.styles.friendly import FriendlyStyle
 
 # Local library imports
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.actions.factory import ActionFactory
+
+
+SQL_STYLE = style_from_pygments_cls(FriendlyStyle)
 
 
 class ActionCompleter(Completer):
@@ -162,7 +165,7 @@ class Terminal:
             history=ThreadedHistory(InMemoryHistory()),
             completer=ActionCompleter(prefix=prefix),
             lexer=PygmentsLexer(SqlLexer),
-            style=style_from_pygments_cls(OneDarkStyle),
+            style=SQL_STYLE,
         )
 
         while True:
