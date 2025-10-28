@@ -87,19 +87,33 @@ class Impersonation(BaseAction):
                 logger.info("Checking impersonation permissions individually")
                 enriched_users = []
 
+                # Get current user to skip checking self
+                current_user = database_context.user_service.get_mapped_user()
+
                 for user in result_rows:
                     username = user["name"]
-                    can_impersonate = database_context.user_service.can_impersonate(
-                        username
-                    )
 
-                    enriched_user = {
-                        "Impersonation": "Yes" if can_impersonate else "No",
-                        "Login": username,
-                        "Type": user["type_desc"],
-                        "Created Date": user["create_date"],
-                        "Modified Date": user["modify_date"],
-                    }
+                    # Skip checking impersonation for the current user
+                    if username.lower() == current_user.lower():
+                        enriched_user = {
+                            "Impersonation": "Self",
+                            "Login": username,
+                            "Type": user["type_desc"],
+                            "Created Date": user["create_date"],
+                            "Modified Date": user["modify_date"],
+                        }
+                    else:
+                        can_impersonate = database_context.user_service.can_impersonate(
+                            username
+                        )
+
+                        enriched_user = {
+                            "Impersonation": "Yes" if can_impersonate else "No",
+                            "Login": username,
+                            "Type": user["type_desc"],
+                            "Created Date": user["create_date"],
+                            "Modified Date": user["modify_date"],
+                        }
                     enriched_users.append(enriched_user)
 
             # Display results
