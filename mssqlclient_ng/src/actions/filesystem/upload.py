@@ -54,7 +54,8 @@ class Upload(BaseAction):
         local_path_str = parts[0].strip()
 
         # Validate local file exists using pathlib
-        self._local_path = Path(local_path_str)
+        # expanduser() handles ~ expansion, resolve() makes it absolute
+        self._local_path = Path(local_path_str).expanduser().resolve()
 
         if not self._local_path.exists():
             raise ValueError(f"Local file does not exist: {self._local_path}")
