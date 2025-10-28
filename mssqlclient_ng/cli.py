@@ -256,7 +256,11 @@ def main() -> int:
                 logger.error(f"Failed to establish database context: {exc}")
                 return 1
 
-            user_name, system_user = database_context.user_service.get_info()
+            try:
+                user_name, system_user = database_context.user_service.get_info()
+            except Exception as exc:
+                logger.error(f"Error retrieving user info: {exc}")
+                return 1
 
             database_context.server.mapped_user = user_name
             database_context.server.system_user = system_user
@@ -278,7 +282,15 @@ def main() -> int:
                     )
 
                     # Get info from the final server in the chain
-                    user_name, system_user = database_context.user_service.get_info()
+                    try:
+                        user_name, system_user = (
+                            database_context.user_service.get_info()
+                        )
+                    except Exception as exc:
+                        logger.error(
+                            f"Error retrieving user info from linked server: {exc}"
+                        )
+                        return 1
 
                     logger.info(
                         f"Logged in on {database_context.query_service.execution_server} as {system_user}"
