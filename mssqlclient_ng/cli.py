@@ -41,7 +41,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
-        help="Show Toboggan version and exit.",
+        help="Show version and exit.",
     )
 
     # Target arguments
