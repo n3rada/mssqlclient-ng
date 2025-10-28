@@ -32,6 +32,44 @@ class AdsiService:
         self.function_name = f"f_{generate_random_string(8)}"
         self.library_path = f"l_{generate_random_string(8)}"
 
+    def list_adsi_servers(self) -> Optional[List[str]]:
+        """
+        List all ADSI linked servers.
+
+        Returns:
+            A list of ADSI server names, or None if none found
+        """
+        try:
+            query = "SELECT srvname FROM master..sysservers WHERE srvproduct = 'ADSI'"
+            result = self._database_context.query_service.execute_table(query)
+
+            if not result:
+                return None
+
+            # Extract server names from the result
+            server_names = [row.get("srvname") for row in result if row.get("srvname")]
+            return server_names if server_names else None
+
+        except Exception as e:
+            logger.error(f"Error while listing ADSI servers: {e}")
+            return None
+
+    def adsi_server_exists(self, server_name: str) -> bool:
+        """
+        Check if an ADSI linked server exists.
+
+        Args:
+            server_name: The name of the ADSI server to check
+
+        Returns:
+            True if the server exists and is an ADSI provider; otherwise False
+        """
+        adsi_servers = self.list_adsi_servers()
+        if adsi_servers is None:
+            return False
+
+        return any(srv.lower() == server_name.lower() for srv in adsi_servers)
+
     def check_linked_server(self, linked_server_name: str) -> bool:
         """
         Check if a linked server exists and has the correct ADSDSOObject provider.
@@ -102,7 +140,6 @@ class AdsiService:
 
         try:
             self._database_context.query_service.execute_non_processing(query)
-            logger.success(f"Linked ADSI server '{server_name}' created successfully")
             return True
         except Exception as e:
             logger.error(f"Error while creating linked server: {e}")
