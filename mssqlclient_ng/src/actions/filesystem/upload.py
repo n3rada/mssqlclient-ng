@@ -37,21 +37,21 @@ class Upload(BaseAction):
         Validate arguments for the upload action.
 
         Args:
-            additional_arguments: Local file path and remote destination path
-                Format: <local_path> <remote_path>
+            additional_arguments: Local file path and optional remote destination path
+                Format: <local_path> [remote_path]
+                If remote_path is omitted, uses C:\\Windows\\Tasks\\
 
         Raises:
             ValueError: If arguments are invalid or file doesn't exist
         """
         parts = self.split_arguments(additional_arguments)
 
-        if len(parts) != 2:
+        if len(parts) < 1 or len(parts) > 2:
             raise ValueError(
-                "Upload action requires two arguments: <local_path> <remote_path>"
+                "Upload action requires one or two arguments: <local_path> [remote_path]"
             )
 
         local_path_str = parts[0].strip()
-        self._remote_path = normalize_windows_path(parts[1].strip())
 
         # Validate local file exists using pathlib
         self._local_path = Path(local_path_str)
@@ -62,13 +62,21 @@ class Upload(BaseAction):
         if not self._local_path.is_file():
             raise ValueError(f"Path is not a file: {self._local_path}")
 
-        if not self._remote_path:
-            raise ValueError("Remote path cannot be empty")
+        # If no remote path specified, use world-writable directory
+        if len(parts) == 1:
+            # C:\Windows\Tasks is writable by everyone and commonly used
+            self._remote_path = f"C:\\\\Windows\\\\Tasks\\\\{self._local_path.name}"
+            logger.info(f"No remote path specified, using default: {self._remote_path}")
+        else:
+            self._remote_path = normalize_windows_path(parts[1].strip())
 
-        # If remote path ends with backslash, it's a directory - append filename
-        if self._remote_path.endswith("\\"):
-            self._remote_path = self._remote_path + self._local_path.name
-            logger.info(f"Remote path is a directory, appending filename")
+            if not self._remote_path:
+                raise ValueError("Remote path cannot be empty")
+
+            # If remote path ends with backslash, it's a directory - append filename
+            if self._remote_path.endswith("\\"):
+                self._remote_path = self._remote_path + self._local_path.name
+                logger.info(f"Remote path is a directory, appending filename")
 
         logger.info(f"Local file: {self._local_path}")
         logger.info(f"File size: {self._local_path.stat().st_size} bytes")
@@ -347,5 +355,5 @@ class Upload(BaseAction):
         """
         return [
             "Local file path (must exist)",
-            "Remote destination path on SQL Server",
+            "Optional: Remote destination path (defaults to C:\\Windows\\Tasks\\)",
         ]
