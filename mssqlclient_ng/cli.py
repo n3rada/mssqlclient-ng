@@ -7,7 +7,6 @@ from getpass import getpass
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng import __version__
 from mssqlclient_ng.src.models import server
 from mssqlclient_ng.src.models.linked_servers import LinkedServers
 from mssqlclient_ng.src.services.authentication import AuthenticationService
@@ -186,10 +185,10 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    print(banner.display_banner())
+    
     parser = build_parser()
     args = parser.parse_args()
-
-    print(banner.display_banner(version=__version__))
 
     # Show help if no cli args provided
     if len(sys.argv) <= 1:
