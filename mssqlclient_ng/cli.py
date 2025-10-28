@@ -25,7 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
         """Custom ArgumentParser that shows banner before help."""
 
         def format_help(self):
-            banner_text = banner.display_banner(version=__version__)
+            banner_text = banner.display_banner()
             return banner_text + "\n" + super().format_help()
 
     parser = BannerArgumentParser(
