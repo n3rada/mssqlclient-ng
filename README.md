@@ -120,9 +120,8 @@ Here, no one will be erased from Git history. No fear to have here—no one will
 ## 🙏 Acknowledgments
 
 - Built upon [Impacket](https://github.com/fortra/impacket) by Fortra.
-- Design is really tied to [MSSQLand](https://github.com/n3rada/MSSQLand).
+- OOP design is really tied to [MSSQLand](https://github.com/n3rada/MSSQLand).
 - Terminal interface powered by [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit).
-
 
 ## ⚠️ Disclaimer
 
