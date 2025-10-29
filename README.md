@@ -12,7 +12,7 @@ Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Micro
 
 To install `mssqlclient-ng`, you can use `pip`, `pip3` or `pipx`. Either from `pypi` repository or from `GitHub` source. Prefer using [`pipx`](https://pypa.github.io/pipx/), since it install Python applications in isolated virtual environments.
 
-### From PyPI
+### From [PyPI](https://pypi.org/project/mssqlclientng/)
 
 ```bash
 pipx install smbclientng
