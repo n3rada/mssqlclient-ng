@@ -5,6 +5,8 @@ Enhanced version of impacket's `mssqlclient.py`, based on the core [tds.py](http
     <img src="./media/example.png" alt="mssqlclient-ng example">
 </p>
 
+> [!TIP]
+> If you have only access through your implant/beacon, use [MSSQLand](https://github.com/n3rada/MSSQLand) the `C#` version built with assembly execution in mind. 
 
 ## 📦 Installation
 
