@@ -1,5 +1,8 @@
 # Built-in imports
 import shlex
+import os
+from pathlib import Path
+import tempfile
 from typing import List, Optional
 
 # External library imports
@@ -7,7 +10,7 @@ from loguru import logger
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
-from prompt_toolkit.history import ThreadedHistory, InMemoryHistory
+from prompt_toolkit.history import ThreadedHistory, InMemoryHistory, FileHistory
 from prompt_toolkit.cursor_shapes import CursorShape
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
@@ -147,7 +150,36 @@ class Terminal:
         self,
         prefix: str = "!",
         multiline: bool = False,
+        history: bool = False,
     ) -> None:
+
+        if history:
+            # Create temp directory for history files
+            self.__temp_dir = Path(tempfile.gettempdir()) / "mssqlclientng"
+            self.__temp_dir.mkdir(exist_ok=True)
+
+            # Create unique history file using hostname
+            self.__history_file = (
+                self.__temp_dir
+                / f"{self.__database_context.server.hostname}_{self.__database_context.server.system_user}_history"
+            )
+
+            # Create the history file first if it doesn't exist
+            self.__history_file.touch(exist_ok=True)
+
+            # Set permissions to 0600 (rw-------)
+            try:
+                os.chmod(self.__history_file, 0o600)
+            except PermissionError as e:
+                logger.warning(
+                    f"⚠️ Could not set secure permissions on history file: {e}"
+                )
+
+            history_backend = ThreadedHistory(FileHistory(str(self.__history_file)))
+            logger.info("💾 Persistent command history enabled.")
+        else:
+            logger.debug("🗑️ In-memory command history enabled.")
+            history_backend = ThreadedHistory(InMemoryHistory())  # in-memory history
 
         user_input = ""
 
@@ -162,7 +194,7 @@ class Terminal:
             enable_history_search=True,
             wrap_lines=True,
             auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
-            history=ThreadedHistory(InMemoryHistory()),
+            history=history_backend,
             completer=ActionCompleter(prefix=prefix),
             lexer=PygmentsLexer(SqlLexer),
             style=SQL_STYLE,

@@ -177,6 +177,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     advanced_group.add_argument(
+        "--history",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Enable persistent command history (stored in temporary folder).",
+    )
+
+    advanced_group.add_argument(
         "--multiline",
         action="store_true",
         required=False,
@@ -344,7 +352,9 @@ def main() -> int:
                 )
             else:
                 # Starting interactive fake-shell
-                terminal_instance.start(prefix=args.prefix, multiline=args.multiline)
+                terminal_instance.start(
+                    prefix=args.prefix, multiline=args.multiline, history=args.history
+                )
 
     except Exception as exc:
         logger.error(f"Unexpected error: {exc}")
