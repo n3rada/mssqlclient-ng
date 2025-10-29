@@ -22,14 +22,8 @@ from mssqlclientng.src import actions
 
 
 def build_parser() -> argparse.ArgumentParser:
-    class BannerArgumentParser(argparse.ArgumentParser):
-        """Custom ArgumentParser that shows banner before help."""
 
-        def format_help(self):
-            banner_text = banner.display_banner()
-            return banner_text + "\n" + super().format_help()
-
-    parser = BannerArgumentParser(
+    parser = argparse.ArgumentParser(
         prog="mssqlclientng",
         add_help=True,
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
