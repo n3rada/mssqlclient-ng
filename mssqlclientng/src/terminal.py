@@ -171,6 +171,8 @@ class Terminal:
                 user_input = prompt_session.prompt(message=self.__prompt())
                 if not user_input:
                     continue
+            except EOFError:
+                break  # Control-D pressed.
             except KeyboardInterrupt:
 
                 if prompt_session.app.current_buffer.text:
