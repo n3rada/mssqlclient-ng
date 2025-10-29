@@ -3,7 +3,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
-name = "mssqlclient-ng"
+name = "mssqlclientng"
 version = "0.1.0"
 description = "Enhanced version of impacket's mssqlclient.py. It lets you interact with Microsoft SQL Server (MS SQL / MSSQL) servers and their linked instances, impersonating any account encountered along the way, without requiring complex T-SQL queries."
 authors = [
@@ -24,4 +24,5 @@ dependencies = [
 repository  = "https://github.com/n3rada/mssqlclient-ng"
 
 [project.scripts]
-mssqlclient-ng = 'mssqlclient_ng.cli:main'
+mssqlclient-ng = 'mssqlclientng.cli:main'
+mssqlclientng = 'mssqlclientng.cli:main'
