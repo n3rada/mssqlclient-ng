@@ -42,7 +42,6 @@ def setup_logging(level: str = "INFO"):
     # Validate log level
     valid_levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
     if level not in valid_levels:
-        print(f"Invalid log level: {level}. Using INFO.")
         level = "INFO"
 
     # Remove all Loguru handlers to avoid duplicates
