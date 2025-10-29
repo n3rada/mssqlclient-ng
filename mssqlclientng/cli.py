@@ -187,8 +187,15 @@ def build_parser() -> argparse.ArgumentParser:
     advanced_group.add_argument(
         "--debug",
         action="store_true",
-        required=False,
-        help="Enable debug logging mode.",
+        help="Enable debug logging (shortcut for --log-level DEBUG).",
+    )
+
+    advanced_group.add_argument(
+        "--log-level",
+        type=str,
+        choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default=None,
+        help="Set the logging level explicitly (overrides --debug).",
     )
 
     return parser
@@ -205,11 +212,15 @@ def main() -> int:
         parser.print_help()
         return 1
 
-    # Set log level to DEBUG if --debug is passed
-    if args.debug:
-        logbook.setup_logging(level="DEBUG")
+    # Determine log level: --log-level takes precedence, then --debug, then default INFO
+    if args.log_level:
+        log_level = args.log_level
+    elif args.debug:
+        log_level = "DEBUG"
     else:
-        logbook.setup_logging(level="INFO")
+        log_level = "INFO"
+
+    logbook.setup_logging(level=log_level)
 
     # Show available actions if requested
     if args.list_actions:
