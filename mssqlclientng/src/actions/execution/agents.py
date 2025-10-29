@@ -10,7 +10,7 @@ from loguru import logger
 from mssqlclientng.src.actions.base import BaseAction
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.services.database import DatabaseContext
-from mssqlclientng.src.utils import misc, formatter
+from mssqlclientng.src.utils import common, formatter
 
 
 class ActionMode(Enum):
@@ -223,8 +223,8 @@ class Agents(BaseAction):
         )
 
         # Generate unique job and step names
-        job_name = f"AZ_Job_{misc.generate_random_string(8)}"
-        step_name = f"AZ_Step_{misc.generate_random_string(8)}"
+        job_name = f"AZ_Job_{common.generate_random_string(8)}"
+        step_name = f"AZ_Step_{common.generate_random_string(8)}"
 
         try:
             # Create job

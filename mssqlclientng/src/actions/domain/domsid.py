@@ -9,7 +9,7 @@ from mssqlclientng.src.actions.base import BaseAction
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.utils import formatter
-from mssqlclientng.src.utils import misc
+from mssqlclientng.src.utils import common
 
 
 @ActionFactory.register(
@@ -78,7 +78,7 @@ class DomainSid(BaseAction):
                 return None
 
             # Parse the binary SID
-            domain_sid_string = misc.sid_bytes_to_string(sid_result)
+            domain_sid_string = common.sid_bytes_to_string(sid_result)
             if not domain_sid_string:
                 logger.error("Failed to parse domain SID")
                 return None

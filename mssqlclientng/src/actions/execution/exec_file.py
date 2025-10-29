@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclientng.src.actions.base import BaseAction
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.services.database import DatabaseContext
-from mssqlclientng.src.utils.misc import normalize_windows_path
+from mssqlclientng.src.utils.common import normalize_windows_path
 
 
 @ActionFactory.register("exec", "Execute a remote file on the SQL Server")

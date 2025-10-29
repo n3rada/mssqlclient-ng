@@ -10,7 +10,7 @@ from mssqlclientng.src.actions.base import BaseAction
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.services.adsi import AdsiService
-from mssqlclientng.src.utils.misc import generate_random_string
+from mssqlclientng.src.utils.common import generate_random_string
 from mssqlclientng.src.utils import formatter
 
 

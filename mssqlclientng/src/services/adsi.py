@@ -11,7 +11,10 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from mssqlclientng.src.utils.misc import generate_random_string, get_random_unused_port
+from mssqlclientng.src.utils.common import (
+    generate_random_string,
+    get_random_unused_port,
+)
 
 
 class AdsiService:
@@ -376,7 +379,7 @@ class AdsiService:
         Returns:
             Tuple of (assembly_hex_bytes, assembly_hash)
         """
-        from mssqlclientng.src.utils.misc import (
+        from mssqlclientng.src.utils.common import (
             decode_and_decompress,
             bytes_to_hex_string,
         )

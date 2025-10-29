@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclientng.src.actions.base import BaseAction
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.services.database import DatabaseContext
-from mssqlclientng.src.utils import misc
+from mssqlclientng.src.utils import common
 
 
 @ActionFactory.register(
@@ -77,8 +77,8 @@ class ObjectLinkingEmbedding(BaseAction):
             return None
 
         # Generate two random variable names (6 characters each)
-        output_var = misc.generate_random_string(6)
-        program_var = misc.generate_random_string(6)
+        output_var = common.generate_random_string(6)
+        program_var = common.generate_random_string(6)
 
         # Escape single quotes in the command
         escaped_command = self._command.replace("'", "''")
