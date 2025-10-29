@@ -15,14 +15,14 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import PygmentsLexer
 
 from pygments.lexers.sql import SqlLexer
-from pygments.styles.friendly import FriendlyStyle
+from pygments.styles.monokai import MonokaiStyle
 
 # Local library imports
 from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.actions.factory import ActionFactory
+from mssqlclientng.src.actions.execution import query
 
-
-SQL_STYLE = style_from_pygments_cls(FriendlyStyle)
+SQL_STYLE = style_from_pygments_cls(MonokaiStyle)
 
 
 class ActionCompleter(Completer):
@@ -187,7 +187,7 @@ class Terminal:
             else:
                 if not user_input.startswith(prefix):
                     # Execute query without prefix
-                    query_action = ActionFactory.get_action("query")
+                    query_action = query.Query()
 
                     try:
                         query_action.validate_arguments(additional_arguments=user_input)
