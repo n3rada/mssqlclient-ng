@@ -1,4 +1,4 @@
-Enhanced version of impacket's `mssqlclient.py`, based on the core [tds.py](https://github.com/fortra/impacket/blob/master/impacket/tds.py). It lets you interact with Microsoft SQL Server (MS SQL / MSSQL) servers and their linked instances, impersonating any account encountered along the way, without requiring complex T-SQL queries.
+Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Microsoft SQL Server (MS SQL / MSSQL) servers and their linked instances, impersonating any account encountered along the way, without requiring complex T-SQL queries.
 
 
 <p align="center">
@@ -121,7 +121,7 @@ Here, no one will be erased from Git history. No fear to have here. No one will 
 
 ## 🙏 Acknowledgments
 
-- Built upon [Impacket](https://github.com/fortra/impacket) by Fortra.
+- Built upon [Impacket](https://github.com/fortra/impacket), based on the core [tds.py](https://github.com/fortra/impacket/blob/master/impacket/tds.py).
 - OOP design is really tied to [MSSQLand](https://github.com/n3rada/MSSQLand).
 - Terminal interface powered by [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit).
 
