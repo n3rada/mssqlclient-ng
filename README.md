@@ -117,7 +117,7 @@ mssqlclientng SQLDEV.box -u 'jacquard' -p 'FQqU^XQ-*|xcv' -windows-auth -l "SQL0
 Contributions are welcome and appreciated! Whether it's fixing bugs, adding new features, improving the documentation, or sharing feedback, your effort is valued and makes a difference.
 Open-source thrives on collaboration and recognition. Contributions, large or small, help improve the tool and its community. Your time and effort are truly valued. 
 
-Here, no one will be erased from Git history. No fear to have here—no one will copy-paste your code without adhering to the collaborative ethos of open-source.
+Here, no one will be erased from Git history. No fear to have here. No one will copy-paste your code without adhering to the collaborative ethos of open-source.
 
 ## 🙏 Acknowledgments
 
