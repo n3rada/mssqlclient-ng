@@ -30,7 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
             return banner_text + "\n" + super().format_help()
 
     parser = BannerArgumentParser(
-        prog="mssqlclient-ng",
+        prog="mssqlclientng",
         add_help=True,
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
         allow_abbrev=True,
