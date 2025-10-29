@@ -12,8 +12,8 @@ from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHistory
 from prompt_toolkit.history import ThreadedHistory, InMemoryHistory, FileHistory
 from prompt_toolkit.cursor_shapes import CursorShape
-from prompt_toolkit.completion import Completer, Completion
-from prompt_toolkit.document import Document
+from prompt_toolkit.completion import merge_completers
+
 from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import PygmentsLexer
 
@@ -21,63 +21,24 @@ from pygments.lexers.sql import SqlLexer
 from pygments.styles.monokai import MonokaiStyle
 
 # Local library imports
+from mssqlclientng.src.utils import logbook
 from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.actions.execution import query
+from mssqlclientng.src.utils.completions import ActionCompleter, SQLBuiltinCompleter
 
 SQL_STYLE = style_from_pygments_cls(MonokaiStyle)
-
-
-class ActionCompleter(Completer):
-    """
-    Auto-completer for action commands.
-    Suggests available actions when user starts typing with prefix.
-    """
-
-    def __init__(self, prefix: str = "!"):
-        self.prefix = prefix
-
-    def get_completions(self, document: Document, complete_event):
-        """
-        Generate completion suggestions.
-
-        Args:
-            document: The document being edited
-            complete_event: The completion event
-
-        Yields:
-            Completion objects for matching actions with descriptions
-        """
-        text = document.text_before_cursor
-
-        # Check if we're at the start with prefix
-        if text.startswith(self.prefix):
-            # Get the part after the prefix
-            command_part = text[len(self.prefix) :].strip()
-
-            # Get all available actions
-            actions = ActionFactory.list_actions()
-
-            # Filter actions that match what the user has typed
-            for action_name in actions:
-                if action_name.startswith(command_part.lower()):
-                    # Calculate how much we need to replace
-                    completion_text = action_name[len(command_part) :]
-
-                    # Get the description for this action
-                    description = ActionFactory.get_action_description(action_name)
-                    help_text = f"{description}" if description else ""
-
-                    yield Completion(completion_text, 0, display_meta=help_text)
 
 
 class Terminal:
     def __init__(
         self,
         database_context: DatabaseContext,
+        log_level: str = "INFO",
     ):
 
         self.__database_context = database_context
+        self.__log_level = log_level
 
     def __prompt(self) -> str:
         """
@@ -188,6 +149,11 @@ class Terminal:
                 "Multiline input mode enabled in terminal, use ESC + ENTER to submit."
             )
 
+        # Merge action completer and SQL builtin completer
+        combined_completer = merge_completers(
+            [ActionCompleter(prefix=prefix), SQLBuiltinCompleter()]
+        )
+
         prompt_session = PromptSession(
             cursor=CursorShape.BLINKING_BEAM,
             multiline=multiline,
@@ -195,7 +161,7 @@ class Terminal:
             wrap_lines=True,
             auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
             history=history_backend,
-            completer=ActionCompleter(prefix=prefix),
+            completer=combined_completer,
             lexer=PygmentsLexer(SqlLexer),
             style=SQL_STYLE,
         )
@@ -238,7 +204,21 @@ class Terminal:
 
                 # Process action command
                 command_line = user_input[len(prefix) :].strip()
+
                 if not command_line:
+                    continue
+
+                if command_line == "debug":
+                    # Toggle debug mode
+                    if self.__log_level == "DEBUG":
+                        self.__log_level = "INFO"
+                        logbook.setup_logging(self.__log_level)
+                        logger.info("🔇 Debug mode disabled")
+                    else:
+                        self.__log_level = "DEBUG"
+                        logbook.setup_logging(self.__log_level)
+                        logger.info("🔊 Debug mode enabled")
+
                     continue
 
                 action_name, *args = shlex.split(command_line)
