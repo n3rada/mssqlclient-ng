@@ -15,7 +15,7 @@ To install `mssqlclient-ng`, you can use `pip`, `pip3` or `pipx`. Either from `p
 ### From [PyPI](https://pypi.org/project/mssqlclientng/)
 
 ```bash
-pipx install smbclientng
+pipx install mssqlclientng
 ```
 
 ```bash
