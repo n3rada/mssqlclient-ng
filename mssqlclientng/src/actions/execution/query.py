@@ -10,7 +10,7 @@ from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.utils.formatter import rows_to_markdown_table
 
 
-@ActionFactory.register("query", "Execute a custom T-SQL query")
+# We do not register this action automatically to avoid it appearing in help
 class Query(BaseAction):
     """
     Execute a T-SQL query against the SQL Server.
