@@ -2,7 +2,7 @@ Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Micro
 
 
 <p align="center">
-    <img src="./media/example.png" alt="mssqlclient-ng example">
+    <img src="./media/example.png" alt="example">
 </p>
 
 > [!TIP]
