@@ -215,11 +215,6 @@ def main() -> int:
 
     logbook.setup_logging(level=log_level)
 
-    # Show available actions if requested
-    if args.list_actions:
-        helper.display_all_commands()
-        return 0
-
     # Extract credentials
     domain = args.domain if args.domain else ""
     username = args.username if args.username else ""
