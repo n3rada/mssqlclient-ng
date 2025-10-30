@@ -123,6 +123,7 @@ Here, no one will be erased from Git history. No fear to have here. No one will 
 
 - Built upon [Impacket](https://github.com/fortra/impacket), based on the core [tds.py](https://github.com/fortra/impacket/blob/master/impacket/tds.py).
 - OOP design is really tied to [MSSQLand](https://github.com/n3rada/MSSQLand).
+- Naming convention inspired by the rebuild of [smbclient-ng](https://github.com/p0dalirius/smbclient-ng).
 - Terminal interface powered by [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit).
 
 ## ⚠️ Disclaimer
