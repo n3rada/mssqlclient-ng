@@ -40,8 +40,9 @@ pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
                        | |
                @n3rada |_| New Gen - 0.9.0
 
-usage: mssqlclientng [-h] [--version] [-P PORT] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-H [LMHASH:]NTHASH] [-windows-auth] [-k] [--use-kcache] [--aesKey AESKEY [AESKEY ...]] [--kdcHost KDCHOST] [-db DATABASE] [-l LINKS] [-dc-ip ip address] [-target-ip ip address] [-q QUERY]
-                     [-a ...] [--list-actions] [--prefix PREFIX] [--history] [--multiline] [--debug] [--log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+usage: mssqlclientng [-h] [--version] [-P PORT] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-H [LMHASH:]NTHASH] [-windows-auth] [-k] [--aesKey AESKEY [AESKEY ...]] [--kdcHost KDCHOST] [-db DATABASE]
+                     [-l LINKS] [-dc-ip ip address] [-target-ip ip address] [-q QUERY] [-a ...] [--prefix PREFIX] [--history] [--multiline] [--debug]
+                     [--log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}]
                      host
 
 Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.
@@ -73,7 +74,6 @@ Kerberos:
   Options for Kerberos authentication
 
   -k, --kerberos        Use Kerberos authentication
-  --use-kcache          Use Kerberos authentication from ccache file (KRB5CCNAME)
   --aesKey AESKEY [AESKEY ...]
                         AES key to use for Kerberos Authentication (128 or 256 bits)
   --kdcHost KDCHOST     FQDN of the domain controller. If omitted it will use the domain part (FQDN) specified in the target parameter
@@ -88,7 +88,6 @@ Actions:
 
   -q, --query QUERY     T-SQL command to execute upon successful connection.
   -a, --action ...      Action to perform upon successful connection, followed by its arguments.
-  --list-actions        List all available actions and exit.
 
 Advanced Options:
   Additional advanced or debugging options.
@@ -99,7 +98,6 @@ Advanced Options:
   --debug               Enable debug logging (shortcut for --log-level DEBUG).
   --log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}
                         Set the logging level explicitly (overrides --debug).
-
 ```
 
 
