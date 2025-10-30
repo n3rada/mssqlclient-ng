@@ -19,6 +19,7 @@ from mssqlclientng.src.utils import banner
 
 # Import actions to register them with the factory
 from mssqlclientng.src import actions
+from mssqlclientng.src.actions.execution import query
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -80,11 +81,7 @@ def build_parser() -> argparse.ArgumentParser:
     kerberos_group.add_argument(
         "-k", "--kerberos", action="store_true", help="Use Kerberos authentication"
     )
-    kerberos_group.add_argument(
-        "--use-kcache",
-        action="store_true",
-        help="Use Kerberos authentication from ccache file (KRB5CCNAME)",
-    )
+
     kerberos_group.add_argument(
         "--aesKey",
         metavar="AESKEY",
@@ -252,8 +249,8 @@ def main() -> int:
     else:
         remote_name = server_instance.hostname
 
-    # Enable Kerberos if AES key or use-kcache is provided
-    use_kerberos = args.kerberos or args.use_kcache or (args.aesKey is not None)
+    # Enable Kerberos if AES key is provided
+    use_kerberos = args.kerberos or (args.aesKey is not None)
 
     # Determine KDC host
     kdc_host = args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
@@ -326,13 +323,7 @@ def main() -> int:
             terminal_instance = Terminal(database_context)
 
             if args.query or args.action:
-
-                # Execute query if provided
-                if args.query:
-                    action_name = "query"
-                    argument_list = [args.query]
-
-                elif args.action:
+                if args.action:
                     # args.action is now a list: [action_name, arg1, arg2, ...]
                     if isinstance(args.action, list) and len(args.action) > 0:
                         action_name = args.action[0]
@@ -341,14 +332,38 @@ def main() -> int:
                         logger.error("No action specified")
                         return 1
 
-                terminal_instance.execute_action(
-                    action_name=action_name, argument_list=argument_list
-                )
+                    # Execute specified action
+                    if action_name == "query":
+                        args.query = " ".join(argument_list)
+                    else:
+                        terminal_instance.execute_action(
+                            action_name=action_name, argument_list=argument_list
+                        )
+                        return 0
+
+                # Execute query if provided
+                if args.query:
+
+                    # Execute query without prefix
+                    query_action = query.Query()
+                    try:
+                        query_action.validate_arguments(additional_arguments=args.query)
+                    except ValueError as ve:
+                        logger.error(f"Argument validation error: {ve}")
+                        return 1
+
+                    query_action.execute(database_context)
+                    return 0
+
             else:
                 # Starting interactive fake-shell
                 terminal_instance.start(
                     prefix=args.prefix, multiline=args.multiline, history=args.history
                 )
+                return 0
+
+            logger.error("No action or query specified to execute.")
+            return 1
 
     except Exception as exc:
         logger.error(f"Unexpected error: {exc}")

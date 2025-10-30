@@ -57,7 +57,7 @@ class Query(BaseAction):
         query_service = database_context.query_service
         execution_server = query_service.execution_server
 
-        logger.info(f"Executing against {execution_server}: {self._query}")
+        logger.info(f"Executing T-SQL query against {execution_server}: {self._query}")
 
         try:
             # Detect if it's a non-query command
