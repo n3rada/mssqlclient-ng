@@ -148,12 +148,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Action to perform upon successful connection, followed by its arguments.",
     )
 
-    actions_groups.add_argument(
-        "--list-actions",
-        action="store_true",
-        help="List all available actions and exit.",
-    )
-
     advanced_group = parser.add_argument_group(
         "Advanced Options", "Additional advanced or debugging options."
     )
