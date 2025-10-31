@@ -6,7 +6,13 @@ Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Micro
 </p>
 
 > [!TIP]
-> If you have only access to a MS SQL instance through your implant/beacon, use [MSSQLand](https://github.com/n3rada/MSSQLand), the `C#` version built with assembly execution in mind. 
+> If you have only access to a MS SQL instance through your implant/beacon, use [MSSQLand](https://github.com/n3rada/MSSQLand), the `C#` version built with assembly execution in mind.
+
+P.S. It can handle NTLM relaying 🔄
+
+<p align="center">
+    <img src="./media/relay.png" alt="relaying">
+</p>
 
 ## 📦 Installation
 
@@ -38,11 +44,11 @@ pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
  | | | | | \__ \__ \ (_| | | (__| | |  __/ | | | |_
  |_| |_| |_|___/___/\__, |_|\___|_|_|\___|_| |_|\__|
                        | |
-               @n3rada |_| New Gen - 0.9.0
+               @n3rada |_| New Gen - 0.9.1
 
-usage: mssqlclientng [-h] [--version] [-P PORT] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-H [LMHASH:]NTHASH] [-windows-auth] [-k] [--aesKey AESKEY [AESKEY ...]] [--kdcHost KDCHOST] [-db DATABASE]
-                     [-l LINKS] [-dc-ip ip address] [-target-ip ip address] [-q QUERY] [-a ...] [--prefix PREFIX] [--history] [--multiline] [--debug]
-                     [--log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+usage: mssqlclientng [-h] [--version] [-P PORT] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-no-pass] [-H [LMHASH:]NTHASH] [-windows-auth] [-k] [--aesKey AESKEY [AESKEY ...]] [--kdcHost KDCHOST]
+                     [-db DATABASE] [-l LINKS] [-r] [-smb2support] [-ntlmchallenge NTLMCHALLENGE] [-t TIMEOUT] [-dc-ip ip address] [-target-ip ip address] [-q QUERY] [-a ...] [--prefix PREFIX]
+                     [--history] [--multiline] [--debug] [--log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}]
                      host
 
 Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.
@@ -66,6 +72,7 @@ Credentials:
                         Username (either local or Windows).
   -p, --password PASSWORD
                         Password
+  -no-pass              Do not ask for password
   -H, --hashes [LMHASH:]NTHASH
                         NT/LM hashes.
   -windows-auth         whether or not to use Windows Authentication (default False)
@@ -77,6 +84,14 @@ Kerberos:
   --aesKey AESKEY [AESKEY ...]
                         AES key to use for Kerberos Authentication (128 or 256 bits)
   --kdcHost KDCHOST     FQDN of the domain controller. If omitted it will use the domain part (FQDN) specified in the target parameter
+
+NTLM Relay:
+  -r, --ntlm-relay      Start a NTLM relay listener to capture and relay incoming authentication attempts.
+  -smb2support          SMB2 Support
+  -ntlmchallenge NTLMCHALLENGE
+                        Specifies the NTLM server challenge used by the SMB Server (16 hex bytes long. eg: 1122334455667788)
+  -t, --timeout TIMEOUT
+                        Timeout in seconds to wait for relayed connection (default: 60)
 
 Connection:
   -dc-ip ip address     IP Address of the domain controller. If ommited it use the domain part (FQDN) specified in the target parameter
