@@ -8,7 +8,7 @@ Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Micro
 N.B. It can handle NTLM relaying 🔄
 
 <p align="center">
-    <img src="./media/relay.png" alt="relaying">
+    <img src="./media/ntlm-relay.png" alt="relaying">
 </p>
 
 
