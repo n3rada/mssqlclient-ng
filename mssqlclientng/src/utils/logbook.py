@@ -17,6 +17,7 @@ Is this message about...
 
 import os
 import sys
+import logging
 from pathlib import Path
 
 # Third party library imports
@@ -78,6 +79,39 @@ def _xdg_state_dir(app_name: str = "mssqlclientng") -> Path:
     return Path.home() / ".local" / "state" / app_name / "logs"
 
 
+class InterceptHandler(logging.Handler):
+    """Intercept standard logging and redirect to Loguru."""
+
+    def emit(self, record: logging.LogRecord):
+        # Get corresponding Loguru level if it exists
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where the logged message originated
+        frame, depth = sys._getframe(6), 6
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+
+def setup_impacket_logging():
+    """Configure Impacket's logging to use Loguru."""
+    # Intercept standard logging (used by Impacket)
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+
+    # Specifically configure Impacket's logger
+    for logger_name in ["impacket", "impacket.examples"]:
+        impacket_logger = logging.getLogger(logger_name)
+        impacket_logger.handlers = [InterceptHandler()]
+        impacket_logger.propagate = False
+
+
 def setup_logging(level: str = "INFO"):
     """
     Setup logging with compact, visually intuitive output.
@@ -132,3 +166,7 @@ def setup_logging(level: str = "INFO"):
 
     logger.trace(f"Logger initialized at level {level}")
     logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
+
+    # Setup Impacket logging interception
+    setup_impacket_logging()
+    logger.trace("Impacket logging intercepted and redirected to Loguru")
