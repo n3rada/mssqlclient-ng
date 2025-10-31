@@ -49,7 +49,7 @@ class AuthenticationService:
         """
         self.server = server
         self._database: Optional[str] = self.server.database
-        self.connection: Optional[MSSQL] = None
+        self.mssql_instance: Optional[MSSQL] = None
 
         # Store authentication parameters
         self._remote_name = remote_name
@@ -80,14 +80,14 @@ class AuthenticationService:
         """
         try:
             # Create MSSQL connection
-            self.connection = MSSQL(
+            self.mssql_instance = MSSQL(
                 address=self.server.hostname,
                 port=self.server.port,
                 remoteName=self._remote_name,
             )
 
             # Establish TCP connection
-            chausette = self.connection.connect()
+            chausette = self.mssql_instance.connect()
 
             if not chausette:
                 logger.error(
@@ -99,7 +99,7 @@ class AuthenticationService:
             if self._kerberos_auth:
                 # Kerberos authentication
                 logger.info("Attempting Kerberos authentication")
-                success = self.connection.kerberosLogin(
+                success = self.mssql_instance.kerberosLogin(
                     database=self._database,
                     username=self._username,
                     password=self._password or "",
@@ -112,7 +112,7 @@ class AuthenticationService:
                 # SQL or Windows authentication
                 auth_type = "Windows" if self._use_windows_auth else "SQL"
                 logger.info(f"Attempting {auth_type} authentication")
-                success = self.connection.login(
+                success = self.mssql_instance.login(
                     database=self._database,
                     username=self._username or "",
                     password=self._password or "",
@@ -130,8 +130,8 @@ class AuthenticationService:
             logger.info(f"Database: {self._database}")
 
             # Update server version from connection
-            if hasattr(self.connection, "mssql_version"):
-                self.server.version = str(self.connection.mssql_version)
+            if hasattr(self.mssql_instance, "mssql_version"):
+                self.server.version = str(self.mssql_instance.mssql_version)
                 logger.info(f"Server version: {self.server.version}")
 
             return True
@@ -143,14 +143,14 @@ class AuthenticationService:
 
     def disconnect(self) -> None:
         """Close the connection if it exists."""
-        if self.connection:
+        if self.mssql_instance:
             try:
-                self.connection.disconnect()
+                self.mssql_instance.disconnect()
                 logger.debug("Connection closed")
             except Exception as e:
                 logger.warning(f"Error closing connection: {e}")
             finally:
-                self.connection = None
+                self.mssql_instance = None
 
     def is_connected(self) -> bool:
         """
@@ -159,7 +159,9 @@ class AuthenticationService:
         Returns:
             True if connected; otherwise False
         """
-        return self.connection is not None and self.connection.socket is not None
+        return (
+            self.mssql_instance is not None and self.mssql_instance.socket is not None
+        )
 
     def __enter__(self) -> "AuthenticationService":
         """

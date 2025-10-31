@@ -14,7 +14,6 @@ from mssqlclientng.src.services.authentication import AuthenticationService
 from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.terminal import Terminal
 from mssqlclientng.src.utils import logbook
-from mssqlclientng.src.utils import helper
 from mssqlclientng.src.utils import banner
 
 # Import actions to register them with the factory
@@ -109,6 +108,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--links",
         type=str,
         help="Comma-separated list of linked servers to chain (e.g., 'SQL02:user,SQL03,SQL04:admin')",
+    )
+
+    group_relay = parser.add_argument_group("NTLM Relay")
+    group_relay.add_argument(
+        "-r",
+        "--ntlm-relay",
+        action="store_true",
+        help="Start a NTLM relay listener to capture and relay incoming authentication attempts.",
+    )
+    group_relay.add_argument(
+        "-smb2support", action="store_true", default=False, help="SMB2 Support"
+    )
+    group_relay.add_argument(
+        "-ntlmchallenge",
+        action="store",
+        default=None,
+        help="Specifies the NTLM server challenge used by the "
+        "SMB Server (16 hex bytes long. eg: 1122334455667788)",
     )
 
     group_conn = parser.add_argument_group("Connection")
@@ -218,20 +235,13 @@ def main() -> int:
 
     logbook.setup_logging(level=log_level)
 
-    # Extract credentials
-    domain = args.domain if args.domain else ""
-    username = args.username if args.username else ""
-    password = args.password if args.password else ""
+    # Suppress impacket's verbose logging BEFORE any imports if relay mode
+    if args.ntlm_relay:
+        import logging
 
-    # Prompt for password if username provided but no password/hashes/aesKey
-    if (
-        username
-        and not password
-        and args.hashes is None
-        and args.aesKey is None
-        and not args.no_pass
-    ):
-        password = getpass("Password: ")
+        impacket_logger = logging.getLogger("impacket")
+        impacket_logger.setLevel(logging.WARNING)
+        impacket_logger.propagate = False
 
     # Parse server string (hostname[:impersonation_user])
     server_instance = server.Server.parse_server(
@@ -240,131 +250,174 @@ def main() -> int:
         database=args.database if args.database else "master",
     )
 
-    # Override hostname with target_ip if provided
-    if args.target_ip:
-        remote_name = args.host
-        server_instance.hostname = args.target_ip
-    else:
-        remote_name = server_instance.hostname
+    if args.ntlm_relay:
+        from mssqlclientng.src.services.ntlmrelay import RelayMSSQL
 
-    # Enable Kerberos if AES key is provided
-    use_kerberos = args.kerberos or (args.aesKey is not None)
+        relay = RelayMSSQL(hostname=server_instance.hostname)
+        relay.start(smb2support=args.smb2support, ntlmchallenge=args.ntlmchallenge)
 
-    # Determine KDC host
-    kdc_host = args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
+        # Wait for relayed connection and create DatabaseContext
+        database_context = relay.wait_for_connection(
+            timeout=60, database=server_instance.database
+        )
 
-    try:
-        # Context manager will connect and ensure cleanup
-        with AuthenticationService(
-            server=server_instance,
-            remote_name=remote_name,
-            username=username,
-            password=password,
-            domain=domain,
-            use_windows_auth=args.windows_auth,
-            hashes=args.hashes,
-            aes_key=args.aesKey,
-            kerberos_auth=use_kerberos,
-            kdc_host=kdc_host,
-        ) as auth_service:
-            try:
-                database_context = DatabaseContext(auth_service=auth_service)
-            except Exception as exc:
-                logger.error(f"Failed to establish database context: {exc}")
-                return 1
-
-            try:
-                user_name, system_user = database_context.user_service.get_info()
-            except Exception as exc:
-                logger.error(f"Error retrieving user info: {exc}")
-                return 1
-
-            database_context.server.mapped_user = user_name
-            database_context.server.system_user = system_user
-
-            logger.info(
-                f"Logged in on {database_context.server.hostname} as {system_user}"
-            )
-            logger.info(f"Mapped to the user: {user_name}")
-
-            # If linked servers are provided, set them up
-            if args.links:
-                try:
-                    linked_servers = LinkedServers(args.links)
-                    database_context.query_service.linked_servers = linked_servers
-
-                    chain_display = " -> ".join(linked_servers.server_names)
-                    logger.info(
-                        f"Server chain: {database_context.server.hostname} -> {chain_display}"
-                    )
-
-                    # Get info from the final server in the chain
-                    try:
-                        user_name, system_user = (
-                            database_context.user_service.get_info()
-                        )
-                    except Exception as exc:
-                        logger.error(
-                            f"Error retrieving user info from linked server: {exc}"
-                        )
-                        return 1
-
-                    logger.info(
-                        f"Logged in on {database_context.query_service.execution_server} as {system_user}"
-                    )
-                    logger.info(f"Mapped to the user: {user_name}")
-
-                except Exception as exc:
-                    logger.error(f"Failed to set up linked servers: {exc}")
-                    return 1
-
-            terminal_instance = Terminal(database_context)
-
-            if args.query or args.action:
-                if args.action:
-                    # args.action is now a list: [action_name, arg1, arg2, ...]
-                    if isinstance(args.action, list) and len(args.action) > 0:
-                        action_name = args.action[0]
-                        argument_list = args.action[1:]
-                    else:
-                        logger.error("No action specified")
-                        return 1
-
-                    # Execute specified action
-                    if action_name == "query":
-                        args.query = " ".join(argument_list)
-                    else:
-                        terminal_instance.execute_action(
-                            action_name=action_name, argument_list=argument_list
-                        )
-                        return 0
-
-                # Execute query if provided
-                if args.query:
-
-                    # Execute query without prefix
-                    query_action = query.Query()
-                    try:
-                        query_action.validate_arguments(additional_arguments=args.query)
-                    except ValueError as ve:
-                        logger.error(f"Argument validation error: {ve}")
-                        return 1
-
-                    query_action.execute(database_context)
-                    return 0
-
-            else:
-                # Starting interactive fake-shell
-                terminal_instance.start(
-                    prefix=args.prefix, multiline=args.multiline, history=args.history
-                )
-                return 0
-
-            logger.error("No action or query specified to execute.")
+        if not database_context:
+            logger.error("No relayed connection captured within timeout period")
+            relay.stop_servers()
             return 1
 
-    except Exception as exc:
-        logger.error(f"Unexpected error: {exc}")
+        # Stop relay servers immediately after capturing connection
+        logger.info("Shutting down relay servers")
+        relay.stop_servers()
+
+        logger.success("Using relayed connection for interactive session")
+        # Fall through to common execution path below
+
+    # If not relay mode, perform normal authentication
+    if not args.ntlm_relay:
+        # Extract credentials
+        domain = args.domain if args.domain else ""
+        username = args.username if args.username else ""
+        password = args.password if args.password else ""
+
+        # Prompt for password if username provided but no password/hashes/aesKey
+        if (
+            username
+            and not password
+            and args.hashes is None
+            and args.aesKey is None
+            and not args.no_pass
+        ):
+            password = getpass("Password: ")
+
+        # Override hostname with target_ip if provided
+        if args.target_ip:
+            remote_name = args.host
+            server_instance.hostname = args.target_ip
+        else:
+            remote_name = server_instance.hostname
+
+        # Enable Kerberos if AES key is provided
+        use_kerberos = args.kerberos or (args.aesKey is not None)
+
+        # Determine KDC host
+        kdc_host = (
+            args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
+        )
+
+        try:
+            # Context manager will connect and ensure cleanup
+            with AuthenticationService(
+                server=server_instance,
+                remote_name=remote_name,
+                username=username,
+                password=password,
+                domain=domain,
+                use_windows_auth=args.windows_auth,
+                hashes=args.hashes,
+                aes_key=args.aesKey,
+                kerberos_auth=use_kerberos,
+                kdc_host=kdc_host,
+            ) as auth_service:
+                try:
+                    database_context = DatabaseContext(
+                        server=server_instance,
+                        mssql_instance=auth_service.mssql_instance,
+                    )
+                except Exception as exc:
+                    logger.error(f"Failed to establish database context: {exc}")
+                    return 1
+
+        except Exception as exc:
+            logger.error(f"Unexpected error: {exc}")
+            return 1
+
+    # Common execution path for both relay and normal authentication
+    try:
+        user_name, system_user = database_context.user_service.get_info()
+        database_context.server.mapped_user = user_name
+        database_context.server.system_user = system_user
+
+        logger.info(f"Logged in on {database_context.server.hostname} as {system_user}")
+        logger.info(f"Mapped to the user: {user_name}")
+
+        # If linked servers are provided, set them up
+        if args.links:
+            try:
+                linked_servers = LinkedServers(args.links)
+                database_context.query_service.linked_servers = linked_servers
+
+                chain_display = " -> ".join(linked_servers.server_names)
+                logger.info(
+                    f"Server chain: {database_context.server.hostname} -> {chain_display}"
+                )
+
+                # Get info from the final server in the chain
+                try:
+                    user_name, system_user = database_context.user_service.get_info()
+                except Exception as exc:
+                    logger.error(
+                        f"Error retrieving user info from linked server: {exc}"
+                    )
+                    return 1
+
+                logger.info(
+                    f"Logged in on {database_context.query_service.execution_server} as {system_user}"
+                )
+                logger.info(f"Mapped to the user: {user_name}")
+
+            except Exception as exc:
+                logger.error(f"Failed to set up linked servers: {exc}")
+                return 1
+
+        terminal_instance = Terminal(database_context)
+
+        if args.query or args.action:
+            if args.action:
+                # args.action is now a list: [action_name, arg1, arg2, ...]
+                if isinstance(args.action, list) and len(args.action) > 0:
+                    action_name = args.action[0]
+                    argument_list = args.action[1:]
+                else:
+                    logger.error("No action specified")
+                    return 1
+
+                # Execute specified action
+                if action_name == "query":
+                    args.query = " ".join(argument_list)
+                else:
+                    terminal_instance.execute_action(
+                        action_name=action_name, argument_list=argument_list
+                    )
+                    return 0
+
+            # Execute query if provided
+            if args.query:
+                # Execute query without prefix
+                query_action = query.Query()
+                try:
+                    query_action.validate_arguments(additional_arguments=args.query)
+                except ValueError as ve:
+                    logger.error(f"Argument validation error: {ve}")
+                    return 1
+
+                query_action.execute(database_context)
+                return 0
+
+        else:
+            # Starting interactive fake-shell
+            terminal_instance.start(
+                prefix=args.prefix, multiline=args.multiline, history=args.history
+            )
+            return 0
+
+        logger.error("No action or query specified to execute.")
         return 1
 
-    return 0
+    except Exception as exc:
+        logger.error(f"Error in execution: {exc}")
+        return 1
+    finally:
+        # Clean up relay servers if they were started
+        if args.ntlm_relay and "relay" in locals():
+            relay.stop_servers()

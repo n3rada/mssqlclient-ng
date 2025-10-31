@@ -25,7 +25,7 @@ class QueryService:
         Args:
             mssql: An active MSSQL connection instance from impacket
         """
-        self.connection = mssql
+        self.mssql_instance = mssql
         self.execution_server: Optional[str] = None
         self._linked_servers = LinkedServers()
         self.command_timeout = 20  # Default timeout in seconds
@@ -167,7 +167,7 @@ class QueryService:
         if not query or not query.strip():
             raise ValueError("Query cannot be null or empty.")
 
-        if not self.connection or not self.connection.socket:
+        if not self.mssql_instance or not self.mssql_instance.socket:
             logger.error("Database connection is not initialized or not open.")
             raise ValueError("Database connection is not open.")
 
@@ -176,18 +176,18 @@ class QueryService:
 
         try:
             # Execute the query using impacket's batch method
-            self.connection.batch(final_query, tuplemode=tuple_mode)
+            self.mssql_instance.batch(final_query, tuplemode=tuple_mode)
 
             # Print replies to capture any errors
-            self.connection.printReplies()
+            self.mssql_instance.printReplies()
 
             # Check for errors
-            if self.connection.lastError:
-                raise self.connection.lastError
+            if self.mssql_instance.lastError:
+                raise self.mssql_instance.lastError
 
             # Return results based on request
             if return_rows:
-                return self.connection.rows
+                return self.mssql_instance.rows
             else:
                 # For non-query operations, return affected row count
                 # This information is in the DONE token replies
@@ -228,7 +228,9 @@ class QueryService:
                 logger.debug("Query returned status code 0 (success)")
                 if return_rows:
                     return (
-                        self.connection.rows if hasattr(self.connection, "rows") else []
+                        self.mssql_instance.rows
+                        if hasattr(self.mssql_instance, "rows")
+                        else []
                     )
                 else:
                     return 0
@@ -275,8 +277,8 @@ class QueryService:
 
         # Check for DONE tokens in replies
         for token_type in [TDS_DONE_TOKEN, TDS_DONEINPROC_TOKEN, TDS_DONEPROC_TOKEN]:
-            if token_type in self.connection.replies:
-                tokens = self.connection.replies[token_type]
+            if token_type in self.mssql_instance.replies:
+                tokens = self.mssql_instance.replies[token_type]
                 if tokens:
                     # Get the last DONE token's row count
                     last_token = tokens[-1]
@@ -292,9 +294,9 @@ class QueryService:
         Args:
             database: The database name to switch to
         """
-        if database != self.connection.currentDB:
-            self.connection.changeDB(database)
-            self.connection.printReplies()
+        if database != self.mssql_instance.currentDB:
+            self.mssql_instance.changeDB(database)
+            self.mssql_instance.printReplies()
 
     def get_current_database(self) -> str:
         """
@@ -303,4 +305,4 @@ class QueryService:
         Returns:
             The current database name
         """
-        return self.connection.currentDB
+        return self.mssql_instance.currentDB

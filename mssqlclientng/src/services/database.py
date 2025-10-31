@@ -1,17 +1,22 @@
+from typing import TYPE_CHECKING
+
+# Third party imports
 from loguru import logger
 
 # Local library imports
-from mssqlclientng.src.services.authentication import AuthenticationService
 from mssqlclientng.src.services.query import QueryService
 from mssqlclientng.src.services.user import UserService
 from mssqlclientng.src.services.configuration import ConfigurationService
 
+if TYPE_CHECKING:
+    from impacket.tds import MSSQL
+    from mssqlclientng.src.models.server import Server
+
 
 class DatabaseContext:
-    def __init__(self, auth_service: AuthenticationService):
-        self._authentication_service = auth_service
-        self._server = auth_service.server
-        self._query_service = QueryService(auth_service.connection)
+    def __init__(self, server: "Server", mssql_instance: "MSSQL"):
+        self._server = server
+        self._query_service = QueryService(mssql_instance)
         self._user_service = UserService(self._query_service)
         self._config_service = ConfigurationService(self._query_service, self._server)
 
@@ -44,10 +49,6 @@ class DatabaseContext:
     @property
     def config_service(self) -> ConfigurationService:
         return self._config_service
-
-    @property
-    def authentication_service(self) -> AuthenticationService:
-        return self._authentication_service
 
     @property
     def server(self):

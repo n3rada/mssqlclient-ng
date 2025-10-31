@@ -47,7 +47,7 @@ class Server:
 
         self.hostname = hostname.strip()
         self._version: Optional[str] = None
-        self.port = port
+        self.port = port or 1433
         self.database = database.strip() if database else "master"
 
         self.impersonation_user = impersonation_user if impersonation_user else ""
