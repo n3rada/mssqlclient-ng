@@ -66,6 +66,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     credentials_group.add_argument("-p", "--password", type=str, help="Password")
     credentials_group.add_argument(
+        "-no-pass", action="store_true", help="Do not ask for password"
+    )
+    credentials_group.add_argument(
         "-H", "--hashes", type=str, metavar="[LMHASH:]NTHASH", help="NT/LM hashes."
     )
     credentials_group.add_argument(
@@ -221,7 +224,13 @@ def main() -> int:
     password = args.password if args.password else ""
 
     # Prompt for password if username provided but no password/hashes/aesKey
-    if username and not password and args.hashes is None and args.aesKey is None:
+    if (
+        username
+        and not password
+        and args.hashes is None
+        and args.aesKey is None
+        and not args.no_pass
+    ):
         password = getpass("Password: ")
 
     # Parse server string (hostname[:impersonation_user])
