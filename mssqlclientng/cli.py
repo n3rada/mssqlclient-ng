@@ -127,6 +127,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Specifies the NTLM server challenge used by the "
         "SMB Server (16 hex bytes long. eg: 1122334455667788)",
     )
+    group_relay.add_argument(
+        "-t",
+        "--timeout",
+        type=int,
+        default=60,
+        help="Timeout in seconds to wait for relayed connection (default: 60)",
+    )
 
     group_conn = parser.add_argument_group("Connection")
 
@@ -258,7 +265,7 @@ def main() -> int:
 
         # Wait for relayed connection and create DatabaseContext
         database_context = relay.wait_for_connection(
-            timeout=60, database=server_instance.database
+            server_instance=server_instance, timeout=args.timeout
         )
 
         if not database_context:
