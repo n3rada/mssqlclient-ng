@@ -7,10 +7,6 @@ Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Micro
 
 N.B. It can handle NTLM relaying 🔄
 
-<p align="center">
-    <img src="./media/ntlm-relaying.png" alt="relaying">
-</p>
-
 
 > [!TIP]
 > If you have only access to a MS SQL instance through your implant/beacon, use [MSSQLand](https://github.com/n3rada/MSSQLand), the `C#` version built with assembly execution in mind.
