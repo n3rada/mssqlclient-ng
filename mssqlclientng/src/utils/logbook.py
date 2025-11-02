@@ -100,15 +100,34 @@ class InterceptHandler(logging.Handler):
         )
 
 
-def setup_impacket_logging():
-    """Configure Impacket's logging to use Loguru."""
+def setup_impacket_logging(level: str = "INFO"):
+    """
+    Configure Impacket's logging to use Loguru.
+
+    Args:
+        level: Log level to use for Impacket logs
+    """
+    # Map Loguru levels to standard logging levels
+    level_mapping = {
+        "TRACE": logging.DEBUG,  # Trace is more detailed than debug
+        "DEBUG": logging.DEBUG,
+        "INFO": logging.INFO,
+        "SUCCESS": logging.INFO,  # Success treated as info
+        "WARNING": logging.WARNING,
+        "ERROR": logging.ERROR,
+        "CRITICAL": logging.CRITICAL,
+    }
+
+    std_level = level_mapping.get(level.upper(), logging.INFO)
+
     # Intercept standard logging (used by Impacket)
-    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    logging.basicConfig(handlers=[InterceptHandler()], level=std_level, force=True)
 
     # Specifically configure Impacket's logger
     for logger_name in ["impacket", "impacket.examples"]:
         impacket_logger = logging.getLogger(logger_name)
         impacket_logger.handlers = [InterceptHandler()]
+        impacket_logger.setLevel(std_level)
         impacket_logger.propagate = False
 
 
@@ -167,6 +186,8 @@ def setup_logging(level: str = "INFO"):
     logger.trace(f"Logger initialized at level {level}")
     logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
 
-    # Setup Impacket logging interception
-    setup_impacket_logging()
-    logger.trace("Impacket logging intercepted and redirected to Loguru")
+    # Setup Impacket logging interception with same level
+    setup_impacket_logging(level=level)
+    logger.trace(
+        f"Impacket logging intercepted and redirected to Loguru at level {level}"
+    )
