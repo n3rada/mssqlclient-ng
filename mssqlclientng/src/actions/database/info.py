@@ -30,8 +30,6 @@ INFO_QUERIES = {
     "SQL Service Pack": "SELECT CAST(SERVERPROPERTY('ProductLevel') AS NVARCHAR(256));",
     "OS Architecture": "SELECT SUBSTRING(@@VERSION, CHARINDEX('x', @@VERSION), 3);",
     "OS Version Number": "SELECT RIGHT(SUBSTRING(@@VERSION, CHARINDEX('Windows Server', @@VERSION), 19), 4);",
-    "Logged-in User": "SELECT SYSTEM_USER;",
-    "Active SQL Sessions": "SELECT COUNT(*) FROM sys.dm_exec_sessions WHERE status = 'running';",
 }
 
 
