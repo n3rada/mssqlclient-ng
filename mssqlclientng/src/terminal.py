@@ -13,7 +13,6 @@ from prompt_toolkit.auto_suggest import ThreadedAutoSuggest, AutoSuggestFromHist
 from prompt_toolkit.history import ThreadedHistory, InMemoryHistory, FileHistory
 from prompt_toolkit.cursor_shapes import CursorShape
 from prompt_toolkit.completion import merge_completers
-
 from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import PygmentsLexer
 
@@ -22,6 +21,7 @@ from pygments.styles.monokai import MonokaiStyle
 
 # Local library imports
 from mssqlclientng.src.utils import logbook
+from mssqlclientng.src.utils.common import yes_no_prompt
 from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.actions.execution import query
@@ -179,8 +179,12 @@ class Terminal:
                     # If there's text in the buffer, just clear it and continue
                     continue
 
-                logger.warning("Keyboard interrupt detected. Exiting terminal.")
-                break
+                logger.warning("Keyboard interrupt detected.")
+                if yes_no_prompt("Exit?", default=True):
+                    logger.info("Exiting terminal.")
+                    break
+                else:
+                    continue
             except Exception as exc:
                 logger.warning(f"Exception occured: {exc}")
                 continue

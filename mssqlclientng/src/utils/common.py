@@ -167,3 +167,49 @@ def normalize_windows_path(path: str) -> str:
     # Replace single backslashes with double backslashes
     # This handles raw strings or strings with single backslashes
     return path.replace("\\", "\\\\")
+
+
+def yes_no_prompt(question: str, default: bool = True) -> bool:
+    """
+    Prompts the user with a yes/no question in terminal style (like apt install).
+
+    Args:
+        question: The question to ask the user
+        default: If True, default is 'Yes' (Y/n), if False, default is 'No' (y/N)
+
+    Returns:
+        True if user confirms, False otherwise
+
+    Examples:
+        >>> yes_no_prompt("Continue?")
+        Continue? [Y/n]:
+
+        >>> yes_no_prompt("Delete files?", default=False)
+        Delete files? [y/N]:
+    """
+    # Format the prompt based on default value
+    if default:
+        prompt = f"{question} [Y/n]: "
+    else:
+        prompt = f"{question} [y/N]: "
+
+    try:
+        response = input(prompt).strip().lower()
+
+        # Empty response uses the default
+        if not response:
+            return default
+
+        # Check first character for y/n
+        if response[0] == "y":
+            return True
+        elif response[0] == "n":
+            return False
+        else:
+            # Invalid input, use default
+            return default
+
+    except (EOFError, KeyboardInterrupt):
+        # Ctrl+C or Ctrl+D during prompt
+        print()  # New line
+        return True
