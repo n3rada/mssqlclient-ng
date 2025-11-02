@@ -163,21 +163,6 @@ class AuthenticationService:
             self.mssql_instance is not None and self.mssql_instance.socket is not None
         )
 
-    def __enter__(self) -> "AuthenticationService":
-        """
-        Context manager entry - establishes connection.
-
-        Raises:
-            Exception: If connection fails
-        """
-        if not self.connect():
-            raise Exception("Failed to establish connection")
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager exit - disconnect on exit."""
-        self.disconnect()
-
     def __del__(self) -> None:
         """Destructor - ensure connection is closed."""
         self.disconnect()

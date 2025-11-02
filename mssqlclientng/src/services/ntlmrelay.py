@@ -162,3 +162,8 @@ class RelayMSSQL:
         for thread in todelete:
             self.threads.remove(thread)
             del thread
+
+    def __del__(self) -> None:
+        """Destructor - ensure relay servers are stopped."""
+        if self.threads:
+            self.stop_servers()

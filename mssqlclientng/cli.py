@@ -257,31 +257,34 @@ def main() -> int:
         database=args.database if args.database else "master",
     )
 
+    # Establish connection - either via relay or direct authentication
+    auth_service = None
+    database_context = None
+
     if args.ntlm_relay:
         from mssqlclientng.src.services.ntlmrelay import RelayMSSQL
 
         relay = RelayMSSQL(hostname=server_instance.hostname)
         relay.start(smb2support=args.smb2support, ntlmchallenge=args.ntlmchallenge)
 
-        # Wait for relayed connection and create DatabaseContext
-        database_context = relay.wait_for_connection(
-            server_instance=server_instance, timeout=args.timeout
-        )
+        try:
+            # Wait for relayed connection and create DatabaseContext
+            database_context = relay.wait_for_connection(
+                server_instance=server_instance, timeout=args.timeout
+            )
 
-        if not database_context:
-            logger.error("No relayed connection captured within timeout period")
+            if not database_context:
+                logger.error("No relayed connection captured within timeout period")
+                return 1
+
+            logger.success("Using relayed connection for interactive session")
+
+        finally:
+            # Always cleanup relay servers
+            logger.info("Shutting down relay servers")
             relay.stop_servers()
-            return 1
 
-        # Stop relay servers immediately after capturing connection
-        logger.info("Shutting down relay servers")
-        relay.stop_servers()
-
-        logger.success("Using relayed connection for interactive session")
-        # Fall through to common execution path below
-
-    # If not relay mode, perform normal authentication
-    if not args.ntlm_relay:
+    else:
         # Extract credentials
         domain = args.domain if args.domain else ""
         username = args.username if args.username else ""
@@ -312,31 +315,32 @@ def main() -> int:
             args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
         )
 
-        try:
-            # Context manager will connect and ensure cleanup
-            with AuthenticationService(
-                server=server_instance,
-                remote_name=remote_name,
-                username=username,
-                password=password,
-                domain=domain,
-                use_windows_auth=args.windows_auth,
-                hashes=args.hashes,
-                aes_key=args.aesKey,
-                kerberos_auth=use_kerberos,
-                kdc_host=kdc_host,
-            ) as auth_service:
-                try:
-                    database_context = DatabaseContext(
-                        server=server_instance,
-                        mssql_instance=auth_service.mssql_instance,
-                    )
-                except Exception as exc:
-                    logger.error(f"Failed to establish database context: {exc}")
-                    return 1
+        # Create authentication service and connect (long-lived connection)
+        auth_service = AuthenticationService(
+            server=server_instance,
+            remote_name=remote_name,
+            username=username,
+            password=password,
+            domain=domain,
+            use_windows_auth=args.windows_auth,
+            hashes=args.hashes,
+            aes_key=args.aesKey,
+            kerberos_auth=use_kerberos,
+            kdc_host=kdc_host,
+        )
 
+        if not auth_service.connect():
+            logger.error("Failed to authenticate")
+            return 1
+
+        try:
+            database_context = DatabaseContext(
+                server=server_instance,
+                mssql_instance=auth_service.mssql_instance,
+            )
         except Exception as exc:
-            logger.error(f"Unexpected error: {exc}")
+            logger.error(f"Failed to establish database context: {exc}")
+            auth_service.disconnect()
             return 1
 
     # Common execution path for both relay and normal authentication
@@ -425,6 +429,6 @@ def main() -> int:
         logger.error(f"Error in execution: {exc}")
         return 1
     finally:
-        # Clean up relay servers if they were started
-        if args.ntlm_relay and "relay" in locals():
-            relay.stop_servers()
+        # Clean up authentication service if it was created (non-relay mode)
+        if auth_service is not None:
+            auth_service.disconnect()
