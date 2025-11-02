@@ -242,14 +242,6 @@ def main() -> int:
 
     logbook.setup_logging(level=log_level)
 
-    # Suppress impacket's verbose logging BEFORE any imports if relay mode
-    if args.ntlm_relay:
-        import logging
-
-        impacket_logger = logging.getLogger("impacket")
-        impacket_logger.setLevel(logging.WARNING)
-        impacket_logger.propagate = False
-
     # Parse server string (hostname[:impersonation_user])
     server_instance = server.Server.parse_server(
         server_input=args.host,
@@ -274,14 +266,14 @@ def main() -> int:
             )
 
             if not database_context:
-                logger.error("No relayed connection captured within timeout period")
                 return 1
 
             logger.success("Using relayed connection for interactive session")
-
+        except KeyboardInterrupt:
+            logger.info("Interrupted by user")
+            return 0
         finally:
             # Always cleanup relay servers
-            logger.info("Shutting down relay servers")
             relay.stop_servers()
 
     else:

