@@ -11,9 +11,6 @@ from mssqlclientng.src.services.database import DatabaseContext
 from mssqlclientng.src.utils import formatter
 
 
-# Information queries using DMVs and SERVERPROPERTY (no registry access)
-# NOTE: SERVERPROPERTY() returns SQL_VARIANT type which Impacket doesn't support
-# All SERVERPROPERTY() calls must be explicitly CAST to a supported type
 INFO_QUERIES = {
     "Server Name": "SELECT @@SERVERNAME;",
     "Default Domain": "SELECT DEFAULT_DOMAIN();",
