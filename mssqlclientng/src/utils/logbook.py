@@ -183,7 +183,7 @@ def setup_logging(level: str = "INFO"):
         enqueue=True,  # Thread-safe
     )
 
-    logger.success(f"Logger initialized at level {level}")
+    logger.trace(f"Logger initialized at level {level}")
     logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
 
     # Setup Impacket logging interception with same level
