@@ -215,7 +215,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default=None,
-        help="Set the logging level explicitly (overrides --debug).",
+        help="Set the logging level explicitly.",
     )
 
     return parser
