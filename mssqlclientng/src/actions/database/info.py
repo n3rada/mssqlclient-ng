@@ -17,7 +17,7 @@ INFO_QUERIES = {
     "Host Name": "SELECT CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(256));",
     "Operating System Version": "SELECT TOP(1) windows_release + ISNULL(' ' + windows_service_pack_level, '') FROM sys.dm_os_windows_info;",
     "SQL Service Process ID": "SELECT CAST(SERVERPROPERTY('ProcessId') AS INT);",
-    "SQL Service Account": "SELECT CAST(SERVERPROPERTY('ServiceAccountName') AS NVARCHAR(256));",
+    "SQL Service Account": "SELECT TOP 1 service_account FROM sys.dm_server_services WHERE servicename LIKE 'SQL Server (%)';",
     "Instance Name": "SELECT ISNULL(CAST(SERVERPROPERTY('InstanceName') AS NVARCHAR(256)), 'DEFAULT');",
     "Authentication Mode": "SELECT CASE CAST(SERVERPROPERTY('IsIntegratedSecurityOnly') AS INT) WHEN 1 THEN 'Windows Authentication only' ELSE 'Mixed mode (Windows + SQL)' END;",
     "Clustered Server": "SELECT CASE CAST(SERVERPROPERTY('IsClustered') AS INT) WHEN 0 THEN 'No' ELSE 'Yes' END;",
