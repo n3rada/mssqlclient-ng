@@ -24,7 +24,7 @@ class RelayMSSQL:
     Manages relay servers and captured authenticated clients.
     """
 
-    def __init__(self, hostname: str):
+    def __init__(self, hostname: str, port: int = 1433):
         self.threads = set()
         self.captured_client = None  # Store single captured client
         self.server_instance = None  # Will be set when waiting for connection
@@ -33,7 +33,7 @@ class RelayMSSQL:
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
         self.targets_processor = TargetsProcessor(
-            singleTarget=f"mssql://{hostname}",
+            singleTarget=f"mssql://{hostname}:{port}",
             protocolClients=minimal_protocol_clients,
         )
 

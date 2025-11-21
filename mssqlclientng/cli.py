@@ -256,7 +256,7 @@ def main() -> int:
     if args.ntlm_relay:
         from mssqlclientng.src.services.ntlmrelay import RelayMSSQL
 
-        relay = RelayMSSQL(hostname=server_instance.hostname)
+        relay = RelayMSSQL(hostname=server_instance.hostname, port=server_instance.port)
         relay.start(smb2support=args.smb2support, ntlmchallenge=args.ntlmchallenge)
 
         try:
