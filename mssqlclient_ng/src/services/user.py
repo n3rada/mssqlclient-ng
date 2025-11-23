@@ -1,6 +1,7 @@
 """
 User service for managing SQL Server user information and permissions.
 """
+
 from typing import Optional, Tuple
 from loguru import logger
 
@@ -23,7 +24,7 @@ class UserService:
 
         # Cache admin status for each execution server
         self._admin_status_cache: dict[str, bool] = {}
-        
+
         # Cache domain user status for each execution server
         self._is_domain_user_cache: dict[str, bool] = {}
 
@@ -75,9 +76,9 @@ class UserService:
 
     @property
     def is_domain_user(self) -> bool:
-        """
+        r"""
         Check if the current system user is a Windows domain user.
-        Uses username format (DOMAIN\\username) as primary check.
+        Uses username format (DOMAIN\username) as primary check.
         Results are cached per execution server.
 
         Returns:
@@ -126,14 +127,16 @@ class UserService:
             True if the user is a member of the role; otherwise False
         """
         try:
-            result = self._query_service.execute_scalar(f"SELECT IS_SRVROLEMEMBER('{role}');")
+            result = self._query_service.execute_scalar(
+                f"SELECT IS_SRVROLEMEMBER('{role}');"
+            )
             return int(result) == 1 if result is not None else False
         except Exception as e:
             logger.warning(f"Error checking role membership for role {role}: {e}")
             return False
 
     def _check_if_domain_user(self) -> bool:
-        """
+        r"""
         Checks if the current system user is a Windows domain user.
         Uses username format (DOMAIN\username) as primary check.
         Linked server connections don't have sys.login_token, so format check is more reliable.
@@ -145,7 +148,7 @@ class UserService:
             return False
 
         # Check if username has the DOMAIN\username format
-        backslash_index = self._system_user.find('\\')
+        backslash_index = self._system_user.find("\\")
         if backslash_index <= 0 or backslash_index >= len(self._system_user) - 1:
             # No backslash or invalid format - not a domain user
             return False
@@ -154,7 +157,7 @@ class UserService:
         return True
 
     def _get_effective_user_and_source(self) -> Tuple[str, str]:
-        """
+        r"""
         Gets the effective database user and the source principal (AD group or login) that granted access.
         This handles cases where access is granted through AD group membership
         rather than direct login mapping (e.g., DOMAIN\User -> AD Group -> Database User).
@@ -166,7 +169,11 @@ class UserService:
         """
         try:
             # If there's a direct mapping (MappedUser != SystemUser), use it
-            if self._mapped_user and self._system_user and self._mapped_user.lower() != self._system_user.lower():
+            if (
+                self._mapped_user
+                and self._system_user
+                and self._mapped_user.lower() != self._system_user.lower()
+            ):
                 return (self._mapped_user, self._system_user)
 
             # Query user_token to find effective database user and login_token for source
@@ -213,8 +220,16 @@ ORDER BY dp.principal_id;"""
 
             if rows and len(rows) > 0:
                 row = rows[0]
-                name = str(row.get("U", "Unknown")) if row.get("U") is not None else "Unknown"
-                logged_in_user_name = str(row.get("S", "Unknown")) if row.get("S") is not None else "Unknown"
+                name = (
+                    str(row.get("U", "Unknown"))
+                    if row.get("U") is not None
+                    else "Unknown"
+                )
+                logged_in_user_name = (
+                    str(row.get("S", "Unknown"))
+                    if row.get("S") is not None
+                    else "Unknown"
+                )
         except Exception as e:
             logger.warning(f"Error retrieving user info: {e}")
 
@@ -225,20 +240,24 @@ ORDER BY dp.principal_id;"""
         return (name, logged_in_user_name)
 
     def compute_effective_user_and_source(self) -> None:
-        """
+        r"""
         Gets the effective database user and the source principal (AD group or login) that granted access.
         This handles cases where access is granted through AD group membership
-        rather than direct login mapping (e.g., DOMAIN\\User -> AD Group -> Database User).
+        rather than direct login mapping (e.g., DOMAIN\User -> AD Group -> Database User).
         Uses the token from integrated Windows authentication.
-        
+
         IMPORTANT: Only works on direct connections. Does NOT work through linked servers
         as sys.login_token is not available in remote execution contexts.
-        
+
         https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-login-token-transact-sql
         """
         try:
             # If there's a direct mapping (MappedUser != SystemUser), use it
-            if self._mapped_user and self._system_user and self._mapped_user.lower() != self._system_user.lower():
+            if (
+                self._mapped_user
+                and self._system_user
+                and self._mapped_user.lower() != self._system_user.lower()
+            ):
                 self.effective_user = self._mapped_user
                 self.source_principal = self._system_user
                 return
@@ -264,7 +283,9 @@ ORDER BY dp.principal_id;"""
                 return
 
             row = rows[0]
-            self.effective_user = row.get("effective_user") or self._mapped_user or "Unknown"
+            self.effective_user = (
+                row.get("effective_user") or self._mapped_user or "Unknown"
+            )
             self.source_principal = row.get("source_principal") or self.effective_user
         except Exception as ex:
             logger.warning(f"Error determining effective user and source: {ex}")
@@ -315,7 +336,9 @@ ORDER BY dp.principal_id;"""
         """
         # A sysadmin user can impersonate anyone
         if self.is_admin():
-            logger.info(f"You can impersonate anyone on {self._query_service.execution_server} as a sysadmin")
+            logger.info(
+                f"You can impersonate anyone on {self._query_service.execution_server} as a sysadmin"
+            )
             return True
 
         query = (

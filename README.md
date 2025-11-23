@@ -36,7 +36,7 @@ pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ## 🚀 Quick Start
 
 ```shell
-mssqlclient-ng <host> [options] <action> [action-options]
+mssqlclient-ng <host> [options]
 ```
 
 > [!TIP]
@@ -49,8 +49,7 @@ Format: `server,port:user@database` or any combination `server:user@database,por
 - `@database` (optional) - Database context (defaults to 'master' if not specified)
 
 ```shell
-mssqlclient-ng localhost -c token info
-mssqlclient-ng localhost,1434@db03 -c token info
+mssqlclient-ng localhost -c token
 ```
 
 > [!IMPORTANT]
@@ -62,39 +61,6 @@ mssqlclient-ng localhost,1434@db03 -c token info
 
 > [!NOTE]
 > Port specification (`,port`) only applies to the initial host connection. Linked server chains (`-l`) use the linked server names as configured in `sys.servers`, not `hostname:port` combinations.
-
-**Format examples:**
-```shell
-# Simple: connect to SQL01 using master database
-mssqlclient-ng SQL01 -c token info
-
-# Custom port: connect to SQL01 on port 1434
-mssqlclient-ng SQL01,1434 -c token info
-
-# Impersonate user: connect to SQL01, impersonate webapp01, use master database
-mssqlclient-ng SQL01:webapp01 -c token info
-
-# Port with impersonation: connect to SQL01:1434, impersonate webapp01
-mssqlclient-ng SQL01,1434:webapp01 -c token info
-
-# Specify database: connect to SQL01, use myapp database (no impersonation)
-mssqlclient-ng SQL01@myapp -c token info
-
-# Full format: connect to SQL01:1434, impersonate webapp01, use myapp database
-mssqlclient-ng SQL01,1434:webapp01@myapp -c token info
-
-# Linked servers (using configured linked server names, not hostname:port)
-mssqlclient-ng SQL01 -c token -l SQL02:webapp02@appdb,SQL03:webapp03@analytics,SQL04@proddb links
-
-# Mixed linked servers (some with database, some without)
-mssqlclient-ng SQL01 -c token -l SQL02:webapp02,SQL03:webapp03@mydb,SQL04@reporting links
-```
-
-## 🫤 Help
-
-- `-h` or `--help` - Show all available actions
-- `-h search_term` - Filter actions (e.g., `-h adsi` shows all ADSI-related actions)
-- `localhost -c token createuser -h` - Show detailed help for a specific action
 
 ## 🤝 Contributing 
 
