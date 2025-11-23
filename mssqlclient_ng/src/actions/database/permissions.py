@@ -17,29 +17,81 @@ from mssqlclient_ng.src.utils.formatters import OutputFormatter
 )
 class Permissions(BaseAction):
     """
-    Lists permissions for the current user.
+    Enumerate user and role permissions at server, database, and object levels.
 
-    Without arguments: Shows server permissions, database permissions, and accessible databases.
-    With FQTN (database.schema.table or database..table): Shows permissions on the specified table.
+    Usage:
+    - No arguments: Show current user's server, database, and database access permissions
+    - schema.table: Show permissions on a specific table in the current database
+    - database.schema.table: Show permissions on a specific table in a specific database
+
+    Uses fn_my_permissions to check what the current user can do.
+    Schema defaults to the user's default schema if not explicitly specified.
     """
 
     def __init__(self):
         super().__init__()
         self._fqtn: str = ""
         self._database: str = ""
-        self._schema: str = "dbo"  # Default schema
+        self._schema: Optional[str] = None  # Let SQL Server use user's default schema
         self._table: str = ""
+
+    def _sort_permissions_by_importance(self, permissions: list[dict]) -> list[dict]:
+        """
+        Sorts permissions by exploitation value - most interesting permissions first.
+
+        Args:
+            permissions: List of permission dictionaries
+
+        Returns:
+            Sorted list of permissions
+        """
+        # Define permission priority order (lower number = higher priority)
+        permission_priority = {
+            # Most powerful permissions
+            "CONTROL": 0,
+            "CONTROL SERVER": 0,
+            "ALTER": 1,
+            "ALTER ANY DATABASE": 1,
+            "IMPERSONATE": 2,
+            "IMPERSONATE ANY LOGIN": 2,
+            "TAKE OWNERSHIP": 3,
+            # Execute permissions
+            "EXECUTE": 10,
+            "EXECUTE ANY EXTERNAL SCRIPT": 10,
+            # Data modification
+            "INSERT": 20,
+            "UPDATE": 21,
+            "DELETE": 22,
+            # Read permissions
+            "SELECT": 30,
+            "VIEW DEFINITION": 31,
+            "VIEW SERVER STATE": 32,
+            "VIEW DATABASE STATE": 32,
+            # Other permissions
+            "REFERENCES": 40,
+            "CONNECT": 50,
+            "CONNECT SQL": 50,
+        }
+
+        def get_priority(perm_dict):
+            perm_name = perm_dict.get("Permission", "")
+            # Get priority from dict, default to 100 for unknown permissions
+            priority = permission_priority.get(perm_name, 100)
+            return (priority, perm_name)
+
+        return sorted(permissions, key=get_priority)
 
     def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validates the arguments for the permissions action.
 
         Args:
-            additional_arguments: Empty for server/database permissions, or
-                                 fully qualified table name (database.schema.table or database..table)
+            additional_arguments: Empty for server/database permissions,
+                                 schema.table for current database, or
+                                 database.schema.table for specific database
 
         Raises:
-            ValueError: If the FQTN format is invalid.
+            ValueError: If the format is invalid.
         """
         if not additional_arguments or not additional_arguments.strip():
             # No arguments - will show server and database permissions
@@ -50,17 +102,15 @@ class Permissions(BaseAction):
 
         if len(parts) == 3:  # Format: database.schema.table
             self._database = parts[0]
-
-            if parts[1]:
-                self._schema = parts[1]
-            else:
-                self._schema = "dbo"  # Default if empty (e.g., database..table)
-
+            self._schema = parts[1]  # Use explicitly specified schema
             self._table = parts[2]
+        elif len(parts) == 2:  # Format: schema.table (current database)
+            self._database = ""  # Use current database
+            self._schema = parts[0]  # Use explicitly specified schema
+            self._table = parts[1]
         else:
             raise ValueError(
-                "Invalid format for the argument. Expected 'database.schema.table' or "
-                "'database..table' or nothing to return current server permissions."
+                "Invalid format. Expected 'database.schema.table', 'schema.table', or nothing for server permissions."
             )
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
@@ -83,28 +133,39 @@ class Permissions(BaseAction):
             server_perms = database_context.query_service.execute_table(
                 "SELECT permission_name AS Permission FROM fn_my_permissions(NULL, 'SERVER');"
             )
-            print(OutputFormatter.convert_list_of_dicts(server_perms))
+            sorted_server_perms = self._sort_permissions_by_importance(server_perms)
+            print(OutputFormatter.convert_list_of_dicts(sorted_server_perms))
 
             logger.info("Database permissions")
             db_perms = database_context.query_service.execute_table(
                 "SELECT permission_name AS Permission FROM fn_my_permissions(NULL, 'DATABASE');"
             )
-            print(OutputFormatter.convert_list_of_dicts(db_perms))
+            sorted_db_perms = self._sort_permissions_by_importance(db_perms)
+            print(OutputFormatter.convert_list_of_dicts(sorted_db_perms))
 
             logger.info("Database access")
             accessible_dbs = database_context.query_service.execute_table(
-                "SELECT name AS [Accessible Database] FROM sys.databases WHERE HAS_DBACCESS(name) = 1;"
+                "SELECT name AS [Accessible Database] FROM master.sys.databases WHERE HAS_DBACCESS(name) = 1;"
             )
             print(OutputFormatter.convert_list_of_dicts(accessible_dbs))
 
             return None
 
-        # Show table-specific permissions
-        target_table = f"[{self._schema}].[{self._table}]"
+        # Use the execution database if no database is specified
+        if not self._database:
+            self._database = database_context.query_service.execution_database
+
+        # Build the target table name based on what was specified
+        if self._schema:
+            target_table = f"[{self._schema}].[{self._table}]"
+        else:
+            # No schema specified - let SQL Server use the user's default schema
+            target_table = f"..[{self._table}]"
+
         mapped_user = database_context.user_service.mapped_user
 
         logger.info(
-            f"Listing permissions for {mapped_user} on [{self._database}].{target_table}"
+            f"Listing permissions for {mapped_user} on [{self._database}]{target_table}"
         )
 
         query = f"""
@@ -122,9 +183,10 @@ class Permissions(BaseAction):
                 logger.warning("No permissions found or table does not exist")
                 return []
 
-            print(OutputFormatter.convert_list_of_dicts(result))
+            sorted_result = self._sort_permissions_by_importance(result)
+            print(OutputFormatter.convert_list_of_dicts(sorted_result))
 
-            return result
+            return sorted_result
 
         except Exception as e:
             logger.error(f"Failed to retrieve permissions: {e}")
@@ -135,6 +197,6 @@ class Permissions(BaseAction):
         Returns the list of expected arguments for this action.
 
         Returns:
-            List containing the optional FQTN argument.
+            List containing the optional table name argument.
         """
-        return ["[database.schema.table]"]
+        return ["[database.schema.table or schema.table]"]

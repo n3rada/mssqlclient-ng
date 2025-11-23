@@ -64,7 +64,7 @@ def _format_message(record):
     )
 
 
-def _xdg_state_dir(app_name: str = "mssqlclient_ng") -> Path:
+def _xdg_state_dir(app_name: str = "mssqlclient-ng") -> Path:
     """Get platform-appropriate log directory following XDG standards."""
 
     if os.name == "nt":
@@ -163,7 +163,7 @@ def setup_logging(level: str = "INFO"):
     # --- File handler (rotating, UTC timestamps)
     log_dir = _xdg_state_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "mssqlclient_ng.log"
+    log_file = log_dir / "mssqlclient-ng.log"
 
     # File format without colors
     file_format = (

@@ -252,10 +252,10 @@ class Procedures(BaseAction):
                 "Execution context depends on the statements used inside the stored procedure."
             )
             logger.warning(
-                "  → Dynamic SQL executed with EXEC or sp_executesql runs under caller permissions by default."
+                "Dynamic SQL executed with EXEC or sp_executesql runs under caller permissions by default."
             )
             logger.warning(
-                "  → Static SQL inside a procedure uses ownership chaining, which may allow operations (e.g., SELECT) that the caller is not directly permitted to perform."
+                "Static SQL inside a procedure uses ownership chaining, which may allow operations (e.g., SELECT) that the caller is not directly permitted to perform."
             )
 
             return sorted_procedures

@@ -1,6 +1,7 @@
 """
 Linked servers model for managing SQL Server linked server chains.
 """
+
 from typing import List, Optional
 from loguru import logger
 
@@ -14,7 +15,9 @@ class LinkedServers:
     Supports both OPENQUERY and EXEC AT (RPC) methods for chaining.
     """
 
-    def __init__(self, chain_input: Optional[str | List[Server] | "LinkedServers"] = None):
+    def __init__(
+        self, chain_input: Optional[str | List[Server] | "LinkedServers"] = None
+    ):
         """
         Initialize the linked server chain.
 
@@ -25,7 +28,9 @@ class LinkedServers:
         if chain_input is None:
             self.server_chain: List[Server] = []
         elif isinstance(chain_input, str):
-            self.server_chain = self._parse_server_chain(chain_input) if chain_input.strip() else []
+            self.server_chain = (
+                self._parse_server_chain(chain_input) if chain_input.strip() else []
+            )
         elif isinstance(chain_input, list):
             self.server_chain = chain_input
         elif isinstance(chain_input, LinkedServers):
@@ -35,12 +40,14 @@ class LinkedServers:
                     hostname=server.hostname,
                     port=server.port,
                     database=server.database,
-                    impersonation_user=server.impersonation_user
+                    impersonation_user=server.impersonation_user,
                 )
                 for server in chain_input.server_chain
             ]
         else:
-            raise TypeError("chain_input must be a string, list of Server objects, LinkedServers instance, or None")
+            raise TypeError(
+                "chain_input must be a string, list of Server objects, LinkedServers instance, or None"
+            )
 
         # Recompute internal arrays
         self._recompute_chain()
@@ -61,7 +68,9 @@ class LinkedServers:
     def _recompute_chain(self) -> None:
         """Recompute internal arrays (server names, impersonation users, databases)."""
         # Computable server names starts with "0" as convention
-        self._computable_server_names: List[str] = ["0"] + [server.hostname for server in self.server_chain]
+        self._computable_server_names: List[str] = ["0"] + [
+            server.hostname for server in self.server_chain
+        ]
 
         # Extract impersonation users
         self._computable_impersonation_names: List[str] = [
@@ -71,14 +80,17 @@ class LinkedServers:
 
         # Extract database contexts
         self._computable_database_names: List[str] = [
-            server.database if server.database else ""
-            for server in self.server_chain
+            server.database if server.database else "" for server in self.server_chain
         ]
 
         # Public server names (without "0" prefix)
-        self._server_names: List[str] = [server.hostname for server in self.server_chain]
+        self._server_names: List[str] = [
+            server.hostname for server in self.server_chain
+        ]
 
-    def add_to_chain(self, new_server: str, impersonation_user: Optional[str] = None) -> None:
+    def add_to_chain(
+        self, new_server: str, impersonation_user: Optional[str] = None
+    ) -> None:
         """
         Add a new server to the linked server chain.
 
@@ -94,11 +106,18 @@ class LinkedServers:
         if not new_server or not new_server.strip():
             raise ValueError("Server name cannot be null or empty.")
 
-        self.server_chain.append(Server(
-            hostname=new_server,
-            impersonation_user=impersonation_user
-        ))
+        self.server_chain.append(
+            Server(hostname=new_server, impersonation_user=impersonation_user)
+        )
 
+        self._recompute_chain()
+
+    def clear(self) -> None:
+        """
+        Clear the linked server chain, removing all servers.
+        """
+        logger.debug("Clearing linked server chain.")
+        self.server_chain = []
         self._recompute_chain()
 
     def get_chain_parts(self) -> List[str]:
@@ -154,7 +173,7 @@ class LinkedServers:
 
         return [
             Server.parse_server(server_string.strip())
-            for server_string in chain_input.split(',')
+            for server_string in chain_input.split(",")
         ]
 
     def build_select_openquery_chain(self, query: str) -> str:
@@ -174,7 +193,7 @@ class LinkedServers:
             linked_servers=self._computable_server_names,
             query=query,
             linked_impersonation=self._computable_impersonation_names,
-            linked_databases=self._computable_database_names
+            linked_databases=self._computable_database_names,
         )
 
     def _build_select_openquery_chain_recursive(
@@ -183,7 +202,7 @@ class LinkedServers:
         query: str,
         ticks_counter: int = 0,
         linked_impersonation: Optional[List[str]] = None,
-        linked_databases: Optional[List[str]] = None
+        linked_databases: Optional[List[str]] = None,
     ) -> str:
         """
         Recursively construct a nested OPENQUERY statement for querying linked SQL servers.
@@ -218,21 +237,21 @@ class LinkedServers:
             database = linked_databases[0]
             linked_databases = linked_databases[1:]
 
-        ticks_repr = "'" * (2 ** ticks_counter)
+        ticks_repr = "'" * (2**ticks_counter)
 
         # Base case: if this is the last server in the chain
         if len(linked_servers) == 1:
             base_query = []
-            
+
             if login:
                 base_query.append(f"EXECUTE AS LOGIN = '{login}'; ")
-            
+
             if database:
                 base_query.append(f"USE [{database}]; ")
-            
-            base_query.append(current_query.rstrip(';'))
+
+            base_query.append(current_query.rstrip(";"))
             base_query.append(";")
-            
+
             current_query = "".join(base_query).replace("'", ticks_repr)
             return current_query
 
@@ -262,7 +281,7 @@ class LinkedServers:
             linked_impersonation=linked_impersonation,
             linked_databases=linked_databases,
             query=current_query,
-            ticks_counter=ticks_counter + 1
+            ticks_counter=ticks_counter + 1,
         )
         result.append(recursive_call)
 
@@ -289,7 +308,7 @@ class LinkedServers:
             linked_servers=self._computable_server_names,
             query=query,
             linked_impersonation=self._computable_impersonation_names,
-            linked_databases=self._computable_database_names
+            linked_databases=self._computable_database_names,
         )
 
     @staticmethod
@@ -297,7 +316,7 @@ class LinkedServers:
         linked_servers: List[str],
         query: str,
         linked_impersonation: Optional[List[str]] = None,
-        linked_databases: Optional[List[str]] = None
+        linked_databases: Optional[List[str]] = None,
     ) -> str:
         """
         Recursively construct a nested EXEC AT statement for querying linked SQL servers.
@@ -330,7 +349,7 @@ class LinkedServers:
                 if database:
                     query_builder.append(f"USE [{database}]; ")
 
-            query_builder.append(current_query.rstrip(';'))
+            query_builder.append(current_query.rstrip(";"))
             query_builder.append(";")
 
             # Double single quotes to escape them in the SQL string
@@ -351,7 +370,7 @@ class LinkedServers:
                 hostname=server.hostname,
                 impersonation_user=server.impersonation_user,
                 port=server.port,
-                database=server.database
+                database=server.database,
             )
             for server in self.server_chain
         ]

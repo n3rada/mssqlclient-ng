@@ -22,6 +22,7 @@ from pygments.styles.monokai import MonokaiStyle
 # Local library imports
 from mssqlclient_ng.src.utils import logbook
 from mssqlclient_ng.src.utils.common import yes_no_prompt
+from mssqlclient_ng.src.models.server import Server
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.actions.execution import query
@@ -40,6 +41,13 @@ class Terminal:
 
         self.__database_context = database_context
         self.__log_level = log_level
+
+        # Store original user information for restoration after unlinking
+        self.__original_mapped_user = database_context.server.mapped_user
+        self.__original_system_user = database_context.server.system_user
+        self.__original_execution_server = (
+            database_context.query_service.execution_server
+        )
 
     def __prompt(self) -> str:
         """
@@ -249,6 +257,285 @@ class Terminal:
                             )
                         except ValueError as e:
                             logger.error(str(e))
+
+                    continue
+
+                if command_line == "link" or command_line.startswith("link "):
+                    # Handle link command: !link <server>[:<user>][,<server>[:<user>]]...
+                    parts = command_line.split(maxsplit=1)
+                    if len(parts) == 1:
+                        # No server specified, show current linked server chain
+                        if (
+                            self.__database_context.query_service.linked_servers.is_empty
+                        ):
+                            logger.info("No linked servers currently configured")
+                        else:
+                            chain_parts = (
+                                self.__database_context.query_service.linked_servers.get_chain_parts()
+                            )
+                            logger.info(
+                                f"Current linked server chain: {' -> '.join(chain_parts)}"
+                            )
+                    else:
+                        # Parse and set linked servers
+                        link_spec = parts[1]
+                        try:
+
+                            # Clear existing chain
+                            self.__database_context.query_service.linked_servers.clear()
+
+                            # Parse the link specification: server1,server2:user,server3
+                            for server_spec in link_spec.split(","):
+                                server_spec = server_spec.strip()
+                                if ":" in server_spec:
+                                    server_name, user = server_spec.split(":", 1)
+                                    server = Server(
+                                        hostname=server_name.strip(),
+                                        impersonation_user=user.strip(),
+                                    )
+                                else:
+                                    server = Server(hostname=server_spec)
+
+                                self.__database_context.query_service.linked_servers.add_to_chain(
+                                    server.hostname
+                                )
+
+                                # Handle impersonation if specified
+                                if server.impersonation_user:
+                                    if self.__database_context.user_service.can_impersonate(
+                                        server.impersonation_user
+                                    ):
+                                        self.__database_context.user_service.impersonate_user(
+                                            server.impersonation_user
+                                        )
+                                        logger.success(
+                                            f"Impersonated user: {server.impersonation_user}"
+                                        )
+                                    else:
+                                        logger.warning(
+                                            f"Cannot impersonate user: {server.impersonation_user}"
+                                        )
+
+                            # Update execution server
+                            last_server = self.__database_context.query_service.linked_servers.server_chain[
+                                -1
+                            ]
+                            self.__database_context.query_service.execution_server = (
+                                last_server.hostname
+                            )
+
+                            # Compute execution database after linked server chain is set up
+                            self.__database_context.query_service.compute_execution_database()
+
+                            # Get user info from the final server in the chain
+                            try:
+                                user_name, system_user = (
+                                    self.__database_context.user_service.get_info()
+                                )
+                                self.__database_context.server.mapped_user = user_name
+                                self.__database_context.server.system_user = system_user
+
+                                logger.info(
+                                    f"Logged in on {self.__database_context.query_service.execution_server} as {system_user}"
+                                )
+                                logger.info(f"Mapped to the user: {user_name}")
+                            except Exception as exc:
+                                logger.error(
+                                    f"Error retrieving user info from linked server: {exc}"
+                                )
+
+                            chain_parts = (
+                                self.__database_context.query_service.linked_servers.get_chain_parts()
+                            )
+                            logger.success(
+                                f"Linked server chain set: {' -> '.join(chain_parts)}"
+                            )
+
+                        except Exception as e:
+                            logger.error(f"Failed to set linked servers: {e}")
+
+                    continue
+
+                if command_line == "unlink":
+                    # Clear linked server chain and revert impersonations
+                    if self.__database_context.query_service.linked_servers.is_empty:
+                        logger.info("No linked servers to remove")
+                    else:
+                        # Revert any impersonations
+                        # Note: REVERT is idempotent - calling it when not impersonated is safe
+                        # We call it once to revert any active impersonation from the linked server chain
+                        self.__database_context.user_service.revert_impersonation()
+
+                        # Clear the chain
+                        self.__database_context.query_service.linked_servers.clear()
+
+                        # Reset execution server to original
+                        self.__database_context.query_service.execution_server = (
+                            self.__original_execution_server
+                        )
+
+                        # Restore original user info (don't re-query)
+                        self.__database_context.server.mapped_user = (
+                            self.__original_mapped_user
+                        )
+                        self.__database_context.server.system_user = (
+                            self.__original_system_user
+                        )
+
+                        logger.success("Linked server chain cleared")
+
+                    continue
+
+                if command_line.startswith("add-link "):
+                    # Add a server to the existing chain: !add-link <server>[:<user>]
+                    parts = command_line.split(maxsplit=1)
+                    if len(parts) < 2:
+                        logger.error("Usage: !add-link <server>[:<user>]")
+                        continue
+
+                    server_spec = parts[1].strip()
+                    try:
+                        # Parse server specification
+                        if ":" in server_spec:
+                            server_name, user = server_spec.split(":", 1)
+                            server = Server(
+                                hostname=server_name.strip(),
+                                impersonation_user=user.strip(),
+                            )
+                        else:
+                            server = Server(hostname=server_spec)
+
+                        # Add to existing chain
+                        self.__database_context.query_service.linked_servers.add_to_chain(
+                            server.hostname
+                        )
+
+                        # Handle impersonation if specified
+                        if server.impersonation_user:
+                            if self.__database_context.user_service.can_impersonate(
+                                server.impersonation_user
+                            ):
+                                self.__database_context.user_service.impersonate_user(
+                                    server.impersonation_user
+                                )
+                                logger.success(
+                                    f"Impersonated user: {server.impersonation_user}"
+                                )
+                            else:
+                                logger.warning(
+                                    f"Cannot impersonate user: {server.impersonation_user}"
+                                )
+                                # Remove the server we just added since impersonation failed
+                                self.__database_context.query_service.linked_servers.server_chain.pop()
+                                self.__database_context.query_service.linked_servers._recompute_chain()
+                                continue
+
+                        # Update execution server
+                        last_server = self.__database_context.query_service.linked_servers.server_chain[
+                            -1
+                        ]
+                        self.__database_context.query_service.execution_server = (
+                            last_server.hostname
+                        )
+
+                        # Compute execution database
+                        self.__database_context.query_service.compute_execution_database()
+
+                        # Get user info from the new server
+                        try:
+                            user_name, system_user = (
+                                self.__database_context.user_service.get_info()
+                            )
+                            self.__database_context.server.mapped_user = user_name
+                            self.__database_context.server.system_user = system_user
+
+                            logger.info(
+                                f"Logged in on {self.__database_context.query_service.execution_server} as {system_user}"
+                            )
+                            logger.info(f"Mapped to the user: {user_name}")
+                        except Exception as exc:
+                            logger.error(
+                                f"Error retrieving user info from linked server: {exc}"
+                            )
+                            # Rollback the addition
+                            self.__database_context.query_service.linked_servers.server_chain.pop()
+                            self.__database_context.query_service.linked_servers._recompute_chain()
+                            continue
+
+                        chain_parts = (
+                            self.__database_context.query_service.linked_servers.get_chain_parts()
+                        )
+                        logger.success(f"Added to chain: {' -> '.join(chain_parts)}")
+
+                    except Exception as e:
+                        logger.error(f"Failed to add linked server: {e}")
+
+                    continue
+
+                if command_line == "pop-link":
+                    # Pop the last server from the linked server chain
+                    if self.__database_context.query_service.linked_servers.is_empty:
+                        logger.info("Already at the original server, cannot go back")
+                    elif (
+                        len(
+                            self.__database_context.query_service.linked_servers.server_chain
+                        )
+                        == 1
+                    ):
+                        # Going back from a single-server chain means unlinking completely
+                        self.__database_context.user_service.revert_impersonation()
+                        self.__database_context.query_service.linked_servers.clear()
+                        self.__database_context.query_service.execution_server = (
+                            self.__original_execution_server
+                        )
+                        self.__database_context.server.mapped_user = (
+                            self.__original_mapped_user
+                        )
+                        self.__database_context.server.system_user = (
+                            self.__original_system_user
+                        )
+                        logger.success("Returned to original server")
+                    else:
+                        # Remove the last server from chain
+                        removed_server = (
+                            self.__database_context.query_service.linked_servers.server_chain.pop()
+                        )
+                        self.__database_context.query_service.linked_servers._recompute_chain()
+
+                        # Revert impersonation (if any was used for that server)
+                        if removed_server.impersonation_user:
+                            self.__database_context.user_service.revert_impersonation()
+
+                        # Update execution server to the new last server
+                        last_server = self.__database_context.query_service.linked_servers.server_chain[
+                            -1
+                        ]
+                        self.__database_context.query_service.execution_server = (
+                            last_server.hostname
+                        )
+
+                        # Compute execution database
+                        self.__database_context.query_service.compute_execution_database()
+
+                        # Get user info from the previous server
+                        try:
+                            user_name, system_user = (
+                                self.__database_context.user_service.get_info()
+                            )
+                            self.__database_context.server.mapped_user = user_name
+                            self.__database_context.server.system_user = system_user
+
+                            logger.info(
+                                f"Returned to {self.__database_context.query_service.execution_server} as {system_user}"
+                            )
+                            logger.info(f"Mapped to the user: {user_name}")
+                        except Exception as exc:
+                            logger.error(f"Error retrieving user info: {exc}")
+
+                        chain_parts = (
+                            self.__database_context.query_service.linked_servers.get_chain_parts()
+                        )
+                        logger.success(f"Current chain: {' -> '.join(chain_parts)}")
 
                     continue
 

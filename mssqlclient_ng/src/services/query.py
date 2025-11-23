@@ -265,19 +265,33 @@ class QueryService:
 
                 logger.warning("Retrying with wrapped query")
                 return self._execute_with_handling(
-                    wrapped_query, tuple_mode, return_rows, timeout, self.MAX_RETRIES - 1
+                    wrapped_query,
+                    tuple_mode,
+                    return_rows,
+                    timeout,
+                    self.MAX_RETRIES - 1,
                 )
 
             # Handle database prefix not supported on remote server
-            if "is not supported" in error_message and "master." in error_message and "master." in query:
-                logger.warning("Database prefix 'master.' not supported on remote server")
+            if (
+                "is not supported" in error_message
+                and "master." in error_message
+                and "master." in query
+            ):
+                logger.warning(
+                    "Database prefix 'master.' not supported on remote server"
+                )
                 logger.warning("Retrying without database prefix")
 
                 # Remove all master. prefixes from the query
                 query_without_prefix = query.replace("master.", "")
 
                 return self._execute_with_handling(
-                    query_without_prefix, tuple_mode, return_rows, timeout, self.MAX_RETRIES - 1
+                    query_without_prefix,
+                    tuple_mode,
+                    return_rows,
+                    timeout,
+                    self.MAX_RETRIES - 1,
                 )
 
             raise
@@ -431,12 +445,16 @@ class QueryService:
             if last_server.database:
                 # Use explicitly specified database from chain
                 self.execution_database = last_server.database
-                logger.debug(f"Using explicitly specified database: {self.execution_database}")
+                logger.debug(
+                    f"Using explicitly specified database: {self.execution_database}"
+                )
             else:
                 # No explicit database: query to detect actual database where the link landed us
                 try:
                     self.execution_database = self.execute_scalar("SELECT DB_NAME();")
-                    logger.debug(f"Detected execution database: {self.execution_database}")
+                    logger.debug(
+                        f"Detected execution database: {self.execution_database}"
+                    )
                 except Exception as ex:
                     # If detection fails, database remains unknown
                     self.execution_database = None
