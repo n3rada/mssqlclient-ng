@@ -8,6 +8,7 @@ from mssqlclient_ng.src.actions.database.dabases import Databases
 from mssqlclient_ng.src.actions.database.xprocs import ExtendedProcs
 from mssqlclient_ng.src.actions.database.impersonate import Impersonation
 from mssqlclient_ng.src.actions.database.info import Info
+from mssqlclient_ng.src.actions.database.loginmap import LoginMap
 from mssqlclient_ng.src.actions.database.oledb_providers import OleDbProviders
 from mssqlclient_ng.src.actions.database.permissions import Permissions
 from mssqlclient_ng.src.actions.database.procedures import Procedures
@@ -24,6 +25,7 @@ __all__ = [
     "ExtendedProcs",
     "Impersonation",
     "Info",
+    "LoginMap",
     "OleDbProviders",
     "Permissions",
     "Procedures",
