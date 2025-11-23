@@ -19,21 +19,23 @@ class ProcedureMode(Enum):
     LIST = "list"
     EXEC = "exec"
     READ = "read"
+    SEARCH = "search"
     CREATE = "create"
 
 
 @ActionFactory.register(
-    "procedures", "List, execute, read, or create stored procedure definitions"
+    "procedures", "List, execute, read, search, or create stored procedures"
 )
 class Procedures(BaseAction):
     """
     Manages stored procedures in the database.
 
     Modes:
-    - list: Lists all stored procedures (default)
-    - exec <procedure_name> [args]: Executes a stored procedure with optional arguments
-    - read <procedure_name>: Reads the definition of a stored procedure
-    - create <file_path> [database_name]: Creates a stored procedure from a file
+    - list: Lists all stored procedures with permissions (default)
+    - exec <schema.procedure> [args]: Executes a stored procedure with optional arguments
+    - read <schema.procedure>: Reads the definition of a stored procedure
+    - search <keyword>: Searches for procedures containing a keyword in their definition
+    - create <file_path> [database_name]: Creates a stored procedure from a SQL file
     """
 
     def __init__(self):
@@ -41,8 +43,24 @@ class Procedures(BaseAction):
         self._mode: ProcedureMode = ProcedureMode.LIST
         self._procedure_name: Optional[str] = None
         self._procedure_args: str = ""
+        self._search_keyword: Optional[str] = None
         self._procedure_file_path: Optional[Path] = None
         self._target_database: Optional[str] = None
+
+    def _validate_procedure_format(self, procedure_name: str) -> None:
+        """
+        Validates that procedure name is in schema.procedure format.
+
+        Args:
+            procedure_name: The procedure name to validate
+
+        Raises:
+            ValueError: If the procedure name is not in schema.procedure format
+        """
+        if not procedure_name or "." not in procedure_name:
+            raise ValueError(
+                f"Procedure name must be in 'schema.procedure' format. Got: '{procedure_name}'"
+            )
 
     def validate_arguments(self, additional_arguments: str) -> None:
         """
@@ -58,7 +76,7 @@ class Procedures(BaseAction):
             # Default to listing stored procedures
             return
 
-        parts = additional_arguments.strip().split(None, 3)  # Split into max 3 parts
+        parts = additional_arguments.strip().split(None, 2)  # Split into max 3 parts
 
         command = parts[0].lower()
 
@@ -67,16 +85,27 @@ class Procedures(BaseAction):
         elif command == "exec":
             if len(parts) < 2:
                 raise ValueError(
-                    "Missing procedure name. Example: procedures exec sp_GetUsers 'param1, param2'"
+                    "Missing procedure name. Example: procedures exec dbo.sp_GetUsers 'param1, param2'"
                 )
             self._mode = ProcedureMode.EXEC
             self._procedure_name = parts[1]
+            self._validate_procedure_format(self._procedure_name)
             self._procedure_args = parts[2] if len(parts) > 2 else ""
         elif command == "read":
             if len(parts) < 2:
-                raise ValueError("Missing procedure name for reading definition.")
+                raise ValueError(
+                    "Missing procedure name. Example: procedures read dbo.sp_GetUsers"
+                )
             self._mode = ProcedureMode.READ
             self._procedure_name = parts[1]
+            self._validate_procedure_format(self._procedure_name)
+        elif command == "search":
+            if len(parts) < 2:
+                raise ValueError(
+                    "Missing search keyword. Example: procedures search EXEC"
+                )
+            self._mode = ProcedureMode.SEARCH
+            self._search_keyword = parts[1]
         elif command == "create":
             if len(parts) < 2:
                 raise ValueError(
@@ -91,7 +120,7 @@ class Procedures(BaseAction):
             self._target_database = parts[2] if len(parts) > 2 else None
         else:
             raise ValueError(
-                "Invalid mode. Use 'list', 'exec <procedure_name> [args]', 'read <procedure_name>', or 'create <file_path> [database_name]'"
+                "Invalid mode. Use 'list', 'exec <schema.procedure> [args]', 'read <schema.procedure>', 'search <keyword>', or 'create <file_path> [database_name]'"
             )
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
@@ -110,6 +139,8 @@ class Procedures(BaseAction):
             return self._execute_procedure(database_context)
         elif self._mode == ProcedureMode.READ:
             return self._read_procedure_definition(database_context)
+        elif self._mode == ProcedureMode.SEARCH:
+            return self._search_procedures(database_context)
         elif self._mode == ProcedureMode.CREATE:
             return self._create_procedure(database_context)
         else:
@@ -118,7 +149,7 @@ class Procedures(BaseAction):
 
     def _list_procedures(self, database_context: DatabaseContext) -> list[dict]:
         """
-        Lists all stored procedures in the database.
+        Lists all stored procedures in the database with permissions.
 
         Args:
             database_context: The DatabaseContext instance.
@@ -126,16 +157,23 @@ class Procedures(BaseAction):
         Returns:
             List of stored procedures.
         """
-        logger.info("Retrieving all stored procedures in the database")
+        exec_db = database_context.query_service.execution_database
+        logger.info(f"Retrieving all stored procedures in [{exec_db}]")
 
         query = """
             SELECT
-                SCHEMA_NAME(schema_id) AS schema_name,
-                name AS procedure_name,
-                create_date,
-                modify_date
-            FROM sys.procedures
-            ORDER BY modify_date DESC;
+                SCHEMA_NAME(p.schema_id) AS [Schema],
+                p.name AS [Name],
+                USER_NAME(OBJECTPROPERTY(p.object_id, 'OwnerId')) AS [Owner],
+                CASE
+                    WHEN m.execute_as_principal_id IS NULL THEN ''
+                    WHEN m.execute_as_principal_id = -2 THEN 'OWNER'
+                    ELSE USER_NAME(m.execute_as_principal_id)
+                END AS [ExecuteAsContext],
+                p.create_date AS [Created],
+                p.modify_date AS [Modified]
+            FROM sys.procedures p
+            INNER JOIN sys.sql_modules m ON p.object_id = m.object_id;
         """
 
         try:
@@ -145,10 +183,82 @@ class Procedures(BaseAction):
                 logger.warning("No stored procedures found")
                 return []
 
-            logger.success(f"Found {len(procedures)} stored procedure(s)")
-            print(OutputFormatter.convert_list_of_dicts(procedures))
+            # Get all permissions in a single query
+            permissions_query = """
+                SELECT
+                    SCHEMA_NAME(o.schema_id) AS schema_name,
+                    o.name AS object_name,
+                    p.permission_name
+                FROM sys.objects o
+                CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p
+                WHERE o.type = 'P'
+                ORDER BY o.name, p.permission_name;
+            """
 
-            return procedures
+            all_permissions = database_context.query_service.execute_table(
+                permissions_query
+            )
+
+            # Build a dictionary for fast lookup: key = "schema.procedure", value = list of permissions
+            permissions_dict = {}
+            for perm_row in all_permissions:
+                key = f"{perm_row['schema_name']}.{perm_row['object_name']}"
+                permission = perm_row["permission_name"]
+
+                if key not in permissions_dict:
+                    permissions_dict[key] = []
+                permissions_dict[key].append(permission)
+
+            # Add permissions to each procedure
+            for proc in procedures:
+                key = f"{proc['Schema']}.{proc['Name']}"
+                if key in permissions_dict:
+                    proc["Permissions"] = ", ".join(permissions_dict[key])
+                else:
+                    proc["Permissions"] = ""
+
+            # Sort procedures by execution context, permissions, schema, name, and modified date
+            def sort_key(proc):
+                exec_context = proc.get("ExecuteAsContext", "")
+                perms = proc.get("Permissions", "")
+
+                # Priority for execution context (CALLER/OWNER first)
+                exec_priority = 1 if exec_context in ("CALLER", "OWNER") else 0
+
+                # Priority for permissions (EXECUTE > CONTROL > ALTER > others)
+                if "EXECUTE" in perms:
+                    perm_priority = 0
+                elif "CONTROL" in perms:
+                    perm_priority = 1
+                elif "ALTER" in perms:
+                    perm_priority = 2
+                else:
+                    perm_priority = 3
+
+                return (
+                    exec_priority,
+                    perm_priority,
+                    proc.get("Schema", ""),
+                    proc.get("Name", ""),
+                    proc.get("Modified", ""),
+                )
+
+            sorted_procedures = sorted(procedures, key=sort_key, reverse=False)
+
+            print(OutputFormatter.convert_list_of_dicts(sorted_procedures))
+
+            logger.info(f"Total: {len(sorted_procedures)} stored procedure(s) found")
+            logger.warning(
+                "Execution context depends on the statements used inside the stored procedure."
+            )
+            logger.warning(
+                "  → Dynamic SQL executed with EXEC or sp_executesql runs under caller permissions by default."
+            )
+            logger.warning(
+                "  → Static SQL inside a procedure uses ownership chaining, which may allow operations (e.g., SELECT) that the caller is not directly permitted to perform."
+            )
+
+            return sorted_procedures
 
         except Exception as e:
             logger.error(f"Failed to retrieve stored procedures: {e}")
@@ -166,14 +276,19 @@ class Procedures(BaseAction):
         Returns:
             Result of the procedure execution.
         """
-        logger.info(f"Executing stored procedure: {self._procedure_name}")
+        exec_db = database_context.query_service.execution_database
+        logger.info(f"Executing [{exec_db}].[{self._procedure_name}]")
+        if self._procedure_args:
+            logger.debug(f"With arguments: {self._procedure_args}")
 
-        query = f"EXEC {self._procedure_name} {self._procedure_args};"
+        # Use schema-qualified name in EXEC, replace . with ].[
+        qualified_name = self._procedure_name.replace(".", "].[")
+        query = f"EXEC [{qualified_name}] {self._procedure_args};"
 
         try:
             result = database_context.query_service.execute_table(query)
 
-            logger.success(f"Stored procedure '{self._procedure_name}' executed")
+            logger.success("Stored procedure executed successfully")
 
             if result:
                 print(OutputFormatter.convert_list_of_dicts(result))
@@ -183,9 +298,7 @@ class Procedures(BaseAction):
             return result
 
         except Exception as e:
-            logger.error(
-                f"Error executing stored procedure '{self._procedure_name}': {e}"
-            )
+            logger.error(f"Error executing stored procedure: {e}")
             raise
 
     def _read_procedure_definition(
@@ -200,16 +313,23 @@ class Procedures(BaseAction):
         Returns:
             The procedure definition as a string.
         """
-        logger.info(
-            f"Retrieving definition of stored procedure: {self._procedure_name}"
-        )
+        exec_db = database_context.query_service.execution_database
+        logger.info(f"Retrieving definition of [{exec_db}].[{self._procedure_name}]")
+
+        # Parse schema.procedure format
+        parts = self._procedure_name.split(".")
+        schema = parts[0].replace("'", "''")
+        procedure = parts[1].replace("'", "''")
 
         query = f"""
             SELECT
                 m.definition
             FROM sys.sql_modules AS m
             INNER JOIN sys.objects AS o ON m.object_id = o.object_id
-            WHERE o.type = 'P' AND o.name = '{self._procedure_name}';
+            INNER JOIN sys.schemas AS s ON o.schema_id = s.schema_id
+            WHERE o.type = 'P'
+            AND o.name = '{procedure}'
+            AND s.name = '{schema}';
         """
 
         try:
@@ -224,9 +344,7 @@ class Procedures(BaseAction):
             if isinstance(definition, bytes):
                 definition = definition.decode("utf-8", errors="replace")
 
-            logger.success(
-                f"Stored procedure '{self._procedure_name}' definition retrieved"
-            )
+            logger.success("Stored procedure definition retrieved")
             print(f"\n```sql\n{definition}\n```\n")
 
             return definition
@@ -235,9 +353,66 @@ class Procedures(BaseAction):
             logger.error(f"Error retrieving stored procedure definition: {e}")
             raise
 
+    def _search_procedures(
+        self, database_context: DatabaseContext
+    ) -> Optional[list[dict]]:
+        """
+        Searches for stored procedures containing a specific keyword in their definition.
+
+        Args:
+            database_context: The DatabaseContext instance.
+
+        Returns:
+            List of procedures matching the search criteria.
+        """
+        exec_db = database_context.query_service.execution_database
+        logger.info(
+            f"Searching for keyword '{self._search_keyword}' in [{exec_db}] procedures"
+        )
+
+        # Escape single quotes in the keyword
+        safe_keyword = self._search_keyword.replace("'", "''")
+
+        query = f"""
+            SELECT
+                SCHEMA_NAME(o.schema_id) AS schema_name,
+                o.name AS procedure_name,
+                o.create_date,
+                o.modify_date
+            FROM sys.sql_modules AS m
+            INNER JOIN sys.objects AS o ON m.object_id = o.object_id
+            WHERE o.type = 'P'
+            AND m.definition LIKE '%{safe_keyword}%'
+            ORDER BY o.modify_date DESC;
+        """
+
+        try:
+            result = database_context.query_service.execute_table(query)
+
+            if not result:
+                logger.warning(
+                    f"No stored procedures found containing keyword '{self._search_keyword}'"
+                )
+                return []
+
+            logger.success(
+                f"Found {len(result)} stored procedure(s) containing '{self._search_keyword}'"
+            )
+            print(OutputFormatter.convert_list_of_dicts(result))
+
+            logger.info(
+                f"Total: {len(result)} stored procedure(s) matching search criteria"
+            )
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error searching stored procedures: {e}")
+            raise
+
     def _create_procedure(self, database_context: DatabaseContext) -> None:
         """
-        Creates a stored procedure in the database from a file.
+        Creates a stored procedure in the database from a SQL file.
 
         Args:
             database_context: The DatabaseContext instance.
@@ -280,5 +455,5 @@ class Procedures(BaseAction):
             List of argument descriptions.
         """
         return [
-            "[list|exec <procedure_name> [args]|read <procedure_name>|create <file_path> [database_name]]"
+            "[list|exec <schema.procedure> [args]|read <schema.procedure>|search <keyword>|create <file_path> [database_name]]"
         ]
