@@ -26,11 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
         prog="mssqlclient-ng",
-        add_help=False,  # We'll handle help manually
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
         usage="%(prog)s <host> [options] [action [action-options]]",
         allow_abbrev=True,
         exit_on_error=False,
+        add_help=True,
     )
 
     parser.add_argument(
@@ -40,29 +40,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show version and exit.",
     )
 
-    parser.add_argument(
-        "-h",
-        "--help",
-        nargs="?",
-        const="__general__",
-        metavar="ACTION",
-        help="Show help. Use '-h ACTION' to show help for a specific action (e.g., '-h createuser'). Use '-h search_term' to filter actions.",
-    )
-
     # Target arguments
     group_target = parser.add_argument_group("Target")
     group_target.add_argument(
         "host",
         type=str,
-        nargs="?",
         help="Target MS SQL Server. Format: server[,port][:user][@database]. Examples: 'SQL01', 'SQL01,1434', 'SQL01:sa@mydb'",
     )
 
+    group_target.add_argument("-d", "--domain", type=str, help="Domain name")
+
     credentials_group = parser.add_argument_group(
         "Credentials", "Options for credentials"
-    )
-    credentials_group.add_argument(
-        "-d", "--domain", type=str, help="Domain name for Windows authentication"
     )
     credentials_group.add_argument(
         "-u", "--username", type=str, help="Username (either local or Windows)."
@@ -98,6 +87,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--kdcHost",
         metavar="KDCHOST",
         help="FQDN of the domain controller. If omitted it will use the domain part (FQDN) specified in the target parameter",
+    )
+
+    group_target.add_argument(
+        "-db",
+        "--database",
+        action="store",
+        help="MSSQL database instance (default None)",
     )
 
     group_target.add_argument(
@@ -151,19 +147,25 @@ def build_parser() -> argparse.ArgumentParser:
         "This is useful when target is the NetBIOS name and you cannot resolve it",
     )
 
-    # Positional action argument
-    parser.add_argument(
-        "action",
-        type=str,
-        nargs="?",
-        help="Action to perform (e.g., 'info', 'createuser', 'links'). Use '-h' to see all actions or '-h ACTION' for specific action help.",
+    actions_groups = parser.add_argument_group(
+        "Actions", "Actions to perform upon successful connection."
     )
 
-    # Action arguments (everything after action)
-    parser.add_argument(
-        "action_args",
+    actions_groups.add_argument(
+        "-q",
+        "--query",
+        type=str,
+        default=None,
+        help="T-SQL command to execute upon successful connection.",
+    )
+
+    actions_groups.add_argument(
+        "-a",
+        "--action",
+        type=str,
         nargs=argparse.REMAINDER,
-        help="Arguments for the specified action.",
+        default=None,
+        help="Action to perform upon successful connection, followed by its arguments.",
     )
 
     advanced_group = parser.add_argument_group(
@@ -202,6 +204,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     advanced_group.add_argument(
+        "--trace",
+        action="store_true",
+        help="Enable TRACE logging (shortcut for --log-level TRACE).",
+    )
+
+    advanced_group.add_argument(
         "--log-level",
         type=str,
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
@@ -212,163 +220,24 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def display_general_help(parser: argparse.ArgumentParser) -> None:
-    """Display general help including all available actions."""
-    parser.print_help()
-    print("\n" + "=" * 80)
-    print("AVAILABLE ACTIONS:")
-    print("=" * 80)
-    
-    actions = ActionFactory.get_available_actions()
-    
-    # Group actions by category (based on package structure)
-    from collections import defaultdict
-    categorized = defaultdict(list)
-    
-    for name, description, arguments in sorted(actions):
-        # Try to determine category from action class module
-        action_class = ActionFactory.get_action_type(name)
-        if action_class:
-            module_path = action_class.__module__
-            if 'administration' in module_path:
-                category = 'Administration'
-            elif 'database' in module_path:
-                category = 'Database'
-            elif 'domain' in module_path:
-                category = 'Domain'
-            elif 'execution' in module_path:
-                category = 'Execution'
-            elif 'filesystem' in module_path:
-                category = 'Filesystem'
-            elif 'network' in module_path:
-                category = 'Network'
-            else:
-                category = 'Other'
-        else:
-            category = 'Other'
-        
-        categorized[category].append((name, description))
-    
-    # Display actions by category
-    for category in sorted(categorized.keys()):
-        print(f"\n{category}:")
-        print("-" * 80)
-        for name, description in categorized[category]:
-            print(f"  {name:20} - {description}")
-    
-    print("\n" + "=" * 80)
-    print("USAGE EXAMPLES:")
-    print("=" * 80)
-    print("  mssqlclient-ng SQL01 -u sa -p password info")
-    print("  mssqlclient-ng SQL01,1434@mydb -u admin -p pass createuser backup_user P@ssw0rd")
-    print("  mssqlclient-ng SQL01:webapp01 -c token links")
-    print("  mssqlclient-ng SQL01 -u sa -p password -l SQL02,SQL03 info")
-    print("\nFor detailed help on a specific action:")
-    print("  mssqlclient-ng SQL01 -u sa -p password createuser -h")
-    print("  mssqlclient-ng -h createuser")
-    print("\nTo filter actions by keyword:")
-    print("  mssqlclient-ng -h adsi")
-    print("=" * 80 + "\n")
-
-
-def display_action_help(action_name: str) -> bool:
-    """
-    Display help for a specific action.
-    
-    Returns:
-        True if action was found and help displayed, False otherwise.
-    """
-    action = ActionFactory.get_action(action_name)
-    if not action:
-        return False
-    
-    print("=" * 80)
-    print(f"ACTION: {action_name}")
-    print("=" * 80)
-    print(f"\n{action.get_help()}\n")
-    
-    arguments = action.get_arguments()
-    if arguments:
-        print("ARGUMENTS:")
-        print("-" * 80)
-        for i, arg in enumerate(arguments, 1):
-            print(f"  {i}. {arg}")
-    else:
-        print("This action takes no arguments.")
-    
-    print("\n" + "=" * 80)
-    print("USAGE:")
-    print("=" * 80)
-    print(f"  mssqlclient-ng <host> [options] {action_name} [arguments]")
-    print("\nEXAMPLE:")
-    print(f"  mssqlclient-ng SQL01 -u sa -p password {action_name}")
-    if arguments:
-        print(f"  mssqlclient-ng SQL01 -u sa -p password {action_name} arg1 arg2")
-    print("=" * 80 + "\n")
-    
-    return True
-
-
-def filter_actions_by_keyword(keyword: str) -> None:
-    """Display actions matching a keyword filter."""
-    actions = ActionFactory.get_available_actions()
-    matching = [
-        (name, description) 
-        for name, description, _ in actions 
-        if keyword.lower() in name.lower() or keyword.lower() in description.lower()
-    ]
-    
-    if not matching:
-        print(f"No actions found matching '{keyword}'")
-        return
-    
-    print("=" * 80)
-    print(f"ACTIONS MATCHING '{keyword}':")
-    print("=" * 80)
-    for name, description in sorted(matching):
-        print(f"  {name:20} - {description}")
-    print(f"\nFound {len(matching)} action(s).")
-    print("=" * 80)
-    print(f"\nFor detailed help: mssqlclient-ng -h <action_name>")
-    print("=" * 80 + "\n")
-
-
 def main() -> int:
     print(banner.display_banner())
 
     parser = build_parser()
-    
-    # Parse known args to handle --version and other flags separately from action args
-    try:
-        args, unknown = parser.parse_known_args()
-    except SystemExit:
-        return 1
-    
-    # Handle help specially
-    if args.help is not None:
-        if args.help == "__general__":
-            # General help requested
-            display_general_help(parser)
-        else:
-            # Check if it's an action name or a search keyword
-            if ActionFactory.get_action(args.help):
-                # Specific action help
-                display_action_help(args.help)
-            else:
-                # Filter actions by keyword
-                filter_actions_by_keyword(args.help)
-        return 0
-    
-    # If no host provided, show help
-    if not args.host:
-        display_general_help(parser)
+    args = parser.parse_args()
+
+    # Show help if no cli args provided
+    if len(sys.argv) <= 1:
+        parser.print_help()
         return 1
 
-    # Determine log level: --log-level takes precedence, then --debug, then default INFO
+    # Determine log level: --log-level takes precedence, then --debug, then --trace, then default INFO
     if args.log_level:
         log_level = args.log_level
     elif args.debug:
         log_level = "DEBUG"
+    elif args.trace:
+        log_level = "TRACE"
     else:
         log_level = "INFO"
 
@@ -478,15 +347,20 @@ def main() -> int:
         # Compute effective user and source principal (handles group-based access via AD groups)
         # Only works for Windows authentication (NTLM/Kerberos) on on-premises SQL Server
         # Does NOT work for: SQL auth, Azure AD auth, LocalDB, or linked servers
-        if (args.windows_auth or use_kerberos) and database_context.user_service.is_domain_user:
+        if (
+            args.windows_auth or use_kerberos
+        ) and database_context.user_service.is_domain_user:
             database_context.user_service.compute_effective_user_and_source()
-            
+
             effective_user = database_context.user_service.effective_user
             source_principal = database_context.user_service.source_principal
-            
+
             if effective_user and not effective_user.lower() == user_name.lower():
                 logger.info(f"Effective database user: {effective_user}")
-                if source_principal and not source_principal.lower() == system_user.lower():
+                if (
+                    source_principal
+                    and not source_principal.lower() == system_user.lower()
+                ):
                     logger.info(f"Access granted via: {source_principal}")
 
         # If linked servers are provided, set them up
@@ -520,7 +394,7 @@ def main() -> int:
             except Exception as exc:
                 logger.error(f"Failed to set up linked servers: {exc}")
                 return 1
-            
+
         # Detect Azure SQL on the final execution server
         database_context.query_service.is_azure_sql
 
@@ -528,11 +402,6 @@ def main() -> int:
 
         # Check if an action was specified
         if args.action:
-            # Check if user wants help for this specific action
-            if args.action_args and args.action_args[0] in ['-h', '--help']:
-                display_action_help(args.action)
-                return 0
-            
             # Execute specified action
             if args.action == "query":
                 # Special case: query action takes T-SQL as arguments
@@ -540,7 +409,7 @@ def main() -> int:
                 if not query_sql:
                     logger.error("No SQL query provided")
                     return 1
-                
+
                 query_action = query.Query()
                 try:
                     query_action.validate_arguments(additional_arguments=query_sql)
@@ -553,8 +422,8 @@ def main() -> int:
             else:
                 # Execute regular action with its arguments
                 terminal_instance.execute_action(
-                    action_name=args.action, 
-                    argument_list=args.action_args if args.action_args else []
+                    action_name=args.action,
+                    argument_list=args.action_args if args.action_args else [],
                 )
                 return 0
         else:
