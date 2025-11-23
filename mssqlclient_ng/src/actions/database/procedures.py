@@ -1,6 +1,5 @@
 # Built-in imports
 from enum import Enum
-from pathlib import Path
 from typing import Optional
 
 # Third party imports
@@ -24,7 +23,7 @@ class ProcedureMode(Enum):
 
 
 @ActionFactory.register(
-    "procedures", "List, execute, read, search, or create stored procedures"
+    "procedures", "List, execute, read, search stored procedures or test SQLi"
 )
 class Procedures(BaseAction):
     """
@@ -35,16 +34,16 @@ class Procedures(BaseAction):
     - exec <schema.procedure> [args]: Executes a stored procedure with optional arguments
     - read <schema.procedure>: Reads the definition of a stored procedure
     - search <keyword>: Searches for procedures containing a keyword in their definition
-    - create <file_path> [database_name]: Creates a stored procedure from a SQL file
+    - sqli: Tests for SQL injection vulnerabilities in stored procedures
     """
 
     def __init__(self):
         super().__init__()
         self._mode: ProcedureMode = ProcedureMode.LIST
         self._procedure_name: Optional[str] = None
-        self._procedure_args: str = ""
+        self._procedure_args: Optional[str] = None
         self._search_keyword: Optional[str] = None
-        self._procedure_file_path: Optional[Path] = None
+        self._procedure_file_path: Optional[str] = None
         self._target_database: Optional[str] = None
 
     def _validate_procedure_format(self, procedure_name: str) -> None:
@@ -76,52 +75,53 @@ class Procedures(BaseAction):
             # Default to listing stored procedures
             return
 
-        parts = additional_arguments.strip().split(None, 2)  # Split into max 3 parts
+        # Parse arguments using the base class method
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments.strip()
+        )
 
-        command = parts[0].lower()
+        # Extract mode from position 0
+        mode_str = positional_args[0] if positional_args else None
+        if mode_str:
+            try:
+                self._mode = ProcedureMode(mode_str.lower())
+            except ValueError:
+                raise ValueError(
+                    f"Invalid mode '{mode_str}'. Valid modes: list, exec, read, search, create"
+                )
 
-        if command == "list":
-            self._mode = ProcedureMode.LIST
-        elif command == "exec":
-            if len(parts) < 2:
+        # Extract procedure name from position 1
+        self._procedure_name = positional_args[1] if len(positional_args) > 1 else None
+
+        # Extract procedure arguments from position 2
+        self._procedure_args = positional_args[2] if len(positional_args) > 2 else None
+
+        # Additional validation based on mode
+        if self._mode == ProcedureMode.EXEC:
+            if not self._procedure_name:
                 raise ValueError(
-                    "Missing procedure name. Example: procedures exec dbo.sp_GetUsers 'param1, param2'"
+                    "Missing procedure name. Example: procedures exec schema.procedure 'param1, param2'"
                 )
-            self._mode = ProcedureMode.EXEC
-            self._procedure_name = parts[1]
             self._validate_procedure_format(self._procedure_name)
-            self._procedure_args = parts[2] if len(parts) > 2 else ""
-        elif command == "read":
-            if len(parts) < 2:
+        elif self._mode == ProcedureMode.READ:
+            if not self._procedure_name:
                 raise ValueError(
-                    "Missing procedure name. Example: procedures read dbo.sp_GetUsers"
+                    "Missing procedure name for reading definition. Example: procedures read schema.procedure"
                 )
-            self._mode = ProcedureMode.READ
-            self._procedure_name = parts[1]
             self._validate_procedure_format(self._procedure_name)
-        elif command == "search":
-            if len(parts) < 2:
+        elif self._mode == ProcedureMode.SEARCH:
+            if not self._procedure_name:
                 raise ValueError(
                     "Missing search keyword. Example: procedures search EXEC"
                 )
-            self._mode = ProcedureMode.SEARCH
-            self._search_keyword = parts[1]
-        elif command == "create":
-            if len(parts) < 2:
+            self._search_keyword = self._procedure_name
+        elif self._mode == ProcedureMode.CREATE:
+            if not self._procedure_name:
                 raise ValueError(
                     "Missing file path. Example: procedures create ./path/to/procedure.sql [database_name]"
                 )
-            self._mode = ProcedureMode.CREATE
-            self._procedure_file_path = Path(parts[1])
-            if not self._procedure_file_path.exists():
-                raise ValueError(f"File not found: {self._procedure_file_path}")
-            if not self._procedure_file_path.is_file():
-                raise ValueError(f"Path is not a file: {self._procedure_file_path}")
-            self._target_database = parts[2] if len(parts) > 2 else None
-        else:
-            raise ValueError(
-                "Invalid mode. Use 'list', 'exec <schema.procedure> [args]', 'read <schema.procedure>', 'search <keyword>', or 'create <file_path> [database_name]'"
-            )
+            self._procedure_file_path = self._procedure_name
+            self._target_database = self._procedure_args
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """
@@ -146,6 +146,44 @@ class Procedures(BaseAction):
         else:
             logger.error("Unknown execution mode")
             return None
+
+    def _create_procedure(self, database_context: DatabaseContext) -> None:
+        """
+        Creates a stored procedure in the database from a SQL file.
+
+        Args:
+            database_context: The DatabaseContext instance.
+
+        Returns:
+            None
+        """
+        target_db = self._target_database or "current database"
+        logger.info(
+            f"Creating stored procedure from file: {self._procedure_file_path} in {target_db}"
+        )
+
+        try:
+            with open(self._procedure_file_path, encoding="utf-8") as f:
+                sql_content = f.read()
+
+            if not sql_content.strip():
+                raise ValueError("SQL file is empty")
+
+            if self._target_database:
+                use_db_statement = f"USE [{self._target_database}];\n"
+                sql_content = use_db_statement + sql_content
+
+            database_context.query_service.execute(sql_content)
+
+            logger.success(
+                f"Stored procedure created successfully from {self._procedure_file_path} in {target_db}"
+            )
+
+            return None
+
+        except Exception as e:
+            logger.error(f"Error creating stored procedure: {e}")
+            raise
 
     def _list_procedures(self, database_context: DatabaseContext) -> list[dict]:
         """
@@ -222,7 +260,7 @@ class Procedures(BaseAction):
                 exec_context = proc.get("ExecuteAsContext", "")
                 perms = proc.get("Permissions", "")
 
-                # Priority for execution context (CALLER/OWNER first)
+                # Priority for execution context (CALLER/OWNER = 1, others = 0)
                 exec_priority = 1 if exec_context in ("CALLER", "OWNER") else 0
 
                 # Priority for permissions (EXECUTE > CONTROL > ALTER > others)
@@ -236,14 +274,14 @@ class Procedures(BaseAction):
                     perm_priority = 3
 
                 return (
-                    exec_priority,
-                    perm_priority,
+                    -exec_priority,  # Negate to sort descending (1 before 0)
+                    perm_priority,  # Lower priority value = better permission
                     proc.get("Schema", ""),
                     proc.get("Name", ""),
-                    proc.get("Modified", ""),
+                    proc.get("Modified", ""),  # Will sort oldest first
                 )
 
-            sorted_procedures = sorted(procedures, key=sort_key, reverse=False)
+            sorted_procedures = sorted(procedures, key=sort_key)
 
             print(OutputFormatter.convert_list_of_dicts(sorted_procedures))
 
@@ -279,16 +317,17 @@ class Procedures(BaseAction):
         exec_db = database_context.query_service.execution_database
         logger.info(f"Executing [{exec_db}].[{self._procedure_name}]")
         if self._procedure_args:
-            logger.debug(f"With arguments: {self._procedure_args}")
+            logger.info(f"With arguments: {self._procedure_args}")
 
         # Use schema-qualified name in EXEC, replace . with ].[
         qualified_name = self._procedure_name.replace(".", "].[")
-        query = f"EXEC [{qualified_name}] {self._procedure_args};"
+        query = f"EXEC [{qualified_name}] {self._procedure_args or ''};"
 
         try:
             result = database_context.query_service.execute_table(query)
 
             logger.success("Stored procedure executed successfully")
+            print()
 
             if result:
                 print(OutputFormatter.convert_list_of_dicts(result))
@@ -398,8 +437,10 @@ class Procedures(BaseAction):
             logger.success(
                 f"Found {len(result)} stored procedure(s) containing '{self._search_keyword}'"
             )
+            print()
             print(OutputFormatter.convert_list_of_dicts(result))
 
+            print()
             logger.info(
                 f"Total: {len(result)} stored procedure(s) matching search criteria"
             )
@@ -410,43 +451,6 @@ class Procedures(BaseAction):
             logger.error(f"Error searching stored procedures: {e}")
             raise
 
-    def _create_procedure(self, database_context: DatabaseContext) -> None:
-        """
-        Creates a stored procedure in the database from a SQL file.
-
-        Args:
-            database_context: The DatabaseContext instance.
-
-        Returns:
-            None
-        """
-        target_db = self._target_database or "current database"
-        logger.info(
-            f"Creating stored procedure from file: {self._procedure_file_path} in {target_db}"
-        )
-
-        try:
-            sql_content = self._procedure_file_path.read_text(encoding="utf-8")
-
-            if not sql_content.strip():
-                raise ValueError("SQL file is empty")
-
-            if self._target_database:
-                use_db_statement = f"USE [{self._target_database}];\n"
-                sql_content = use_db_statement + sql_content
-
-            database_context.query_service.execute(sql_content)
-
-            logger.success(
-                f"Stored procedure created successfully from {self._procedure_file_path.name} in {target_db}"
-            )
-
-            return None
-
-        except Exception as e:
-            logger.error(f"Error creating stored procedure: {e}")
-            raise
-
     def get_arguments(self) -> list[str]:
         """
         Returns the list of expected arguments for this action.
@@ -455,5 +459,5 @@ class Procedures(BaseAction):
             List of argument descriptions.
         """
         return [
-            "[list|exec <schema.procedure> [args]|read <schema.procedure>|search <keyword>|create <file_path> [database_name]]"
+            "[list | exec <schema.procedure> [args] | read <schema.procedure> | search <keyword> | create <file_path> [database_name]]"
         ]
