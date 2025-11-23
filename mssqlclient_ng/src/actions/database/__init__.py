@@ -3,6 +3,7 @@ Database actions for SQL Server database management.
 """
 
 # Import actions to trigger registration with ActionFactory
+from mssqlclient_ng.src.actions.database.authtoken import AuthToken
 from mssqlclient_ng.src.actions.database.dabases import Databases
 from mssqlclient_ng.src.actions.database.xprocs import ExtendedProcs
 from mssqlclient_ng.src.actions.database.impersonate import Impersonation
@@ -18,6 +19,7 @@ from mssqlclient_ng.src.actions.database.users import Users
 from mssqlclient_ng.src.actions.database.whoami import Whoami
 
 __all__ = [
+    "AuthToken",
     "Databases",
     "ExtendedProcs",
     "Impersonation",
