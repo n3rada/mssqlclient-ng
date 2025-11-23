@@ -16,14 +16,14 @@ N.B. It can handle NTLM relaying 🔄
 
 To install `mssqlclient-ng`, you can use `pip`, `pip3` or `pipx`. Either from `pypi` repository or from `GitHub` source. Prefer using [`pipx`](https://pypa.github.io/pipx/), since it install Python applications in isolated virtual environments.
 
-### From [PyPI](https://pypi.org/project/mssqlclientng/)
+### From [PyPI](https://pypi.org/project/mssqlclient-ng/)
 
 ```bash
-pipx install mssqlclientng
+pipx install mssqlclient-ng
 ```
 
 ```bash
-pip install mssqlclientng
+pip install mssqlclient-ng
 ```
 
 ### From GitHub
@@ -74,7 +74,6 @@ Here, no one will be erased from Git history. No fear to have here. No one will 
 
 - Built upon [Impacket](https://github.com/fortra/impacket), based on the core [tds.py](https://github.com/fortra/impacket/blob/master/impacket/tds.py).
 - OOP design is really tied to [MSSQLand](https://github.com/n3rada/MSSQLand).
-- Naming convention inspired by the rebuild of [smbclient-ng](https://github.com/p0dalirius/smbclient-ng).
 - Terminal interface powered by [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit).
 
 ## ⚠️ Disclaimer
