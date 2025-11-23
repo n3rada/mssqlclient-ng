@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
@@ -83,19 +83,19 @@ class Permissions(BaseAction):
             server_perms = database_context.query_service.execute_table(
                 "SELECT permission_name AS Permission FROM fn_my_permissions(NULL, 'SERVER');"
             )
-            print(formatter.rows_to_markdown_table(server_perms))
+            print(OutputFormatter.convert_list_of_dicts(server_perms))
 
             logger.info("Database permissions")
             db_perms = database_context.query_service.execute_table(
                 "SELECT permission_name AS Permission FROM fn_my_permissions(NULL, 'DATABASE');"
             )
-            print(formatter.rows_to_markdown_table(db_perms))
+            print(OutputFormatter.convert_list_of_dicts(db_perms))
 
             logger.info("Database access")
             accessible_dbs = database_context.query_service.execute_table(
                 "SELECT name AS [Accessible Database] FROM sys.databases WHERE HAS_DBACCESS(name) = 1;"
             )
-            print(formatter.rows_to_markdown_table(accessible_dbs))
+            print(OutputFormatter.convert_list_of_dicts(accessible_dbs))
 
             return None
 
@@ -122,7 +122,7 @@ class Permissions(BaseAction):
                 logger.warning("No permissions found or table does not exist")
                 return []
 
-            print(formatter.rows_to_markdown_table(result))
+            print(OutputFormatter.convert_list_of_dicts(result))
 
             return result
 

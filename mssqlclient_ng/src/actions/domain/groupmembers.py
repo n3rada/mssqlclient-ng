@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
@@ -121,7 +121,7 @@ class GroupMembers(BaseAction):
             logger.success(f"Found {len(members_table)} member(s) using xp_logininfo")
 
             # Display the results
-            print(formatter.rows_to_markdown_table(members_table))
+            print(OutputFormatter.convert_list_of_dicts(members_table))
 
             return members_table
 
@@ -172,7 +172,7 @@ class GroupMembers(BaseAction):
                 return None
 
             logger.success(f"Found {len(members_table)} member(s) using OPENQUERY/ADSI")
-            print(formatter.rows_to_markdown_table(members_table))
+            print(OutputFormatter.convert_list_of_dicts(members_table))
 
             return members_table
 

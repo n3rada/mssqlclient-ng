@@ -26,6 +26,7 @@ from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.actions.execution import query
 from mssqlclient_ng.src.utils.completions import ActionCompleter, SQLBuiltinCompleter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 SQL_STYLE = style_from_pygments_cls(MonokaiStyle)
 
@@ -116,7 +117,7 @@ class Terminal:
 
         if history:
             # Create temp directory for history files
-            self.__temp_dir = Path(tempfile.gettempdir()) / "mssqlclientng"
+            self.__temp_dir = Path(tempfile.gettempdir()) / "mssqlclient_ng"
             self.__temp_dir.mkdir(exist_ok=True)
 
             # Create unique history file using hostname
@@ -224,6 +225,30 @@ class Terminal:
                         self.__log_level = "DEBUG"
                         logbook.setup_logging(self.__log_level)
                         logger.info("🔊 Debug mode enabled")
+
+                    continue
+
+                if command_line.startswith("format"):
+                    # Handle format command: !format <format_name>
+                    parts = command_line.split(maxsplit=1)
+                    if len(parts) == 1:
+                        # No format specified, show current format and available formats
+                        available_formats = ", ".join(
+                            OutputFormatter.get_available_formats()
+                        )
+                        logger.info(
+                            f"Current format: {OutputFormatter.current_format()}"
+                        )
+                        logger.info(f"Available formats: {available_formats}")
+                    else:
+                        format_name = parts[1]
+                        try:
+                            OutputFormatter.set_format(format_name)
+                            logger.success(
+                                f"Output format changed to: {OutputFormatter.current_format()}"
+                            )
+                        except ValueError as e:
+                            logger.error(str(e))
 
                     continue
 

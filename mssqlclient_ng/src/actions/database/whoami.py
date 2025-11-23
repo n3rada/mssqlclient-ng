@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("whoami", "Display current user identity and permissions")
@@ -91,7 +91,7 @@ class Whoami(BaseAction):
                 ", ".join(database_names) if database_names else "None"
             ),
         }
-        print(formatter.dict_to_markdown_table(user_info, "Property", "Value"))
+        print(OutputFormatter.convert_dict(user_info, "Property", "Value"))
 
         # Create list to display fixed server roles with membership status
         fixed_server_roles_list = []
@@ -106,7 +106,7 @@ class Whoami(BaseAction):
 
         # Display the fixed server roles table
         logger.info("Fixed Server Roles")
-        print(formatter.rows_to_markdown_table(fixed_server_roles_list))
+        print(OutputFormatter.convert_list_of_dicts(fixed_server_roles_list))
 
         return {
             "user_name": user_name,

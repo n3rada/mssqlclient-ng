@@ -7,7 +7,7 @@ from loguru import logger
 
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.utils.formatter import rows_to_markdown_table
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 # We do not register this action automatically to avoid it appearing in help
@@ -93,7 +93,7 @@ class Query(BaseAction):
                 print()
             else:
                 # Format and print results as Markdown table
-                print(rows_to_markdown_table(result_rows))
+                print(OutputFormatter.convert_list_of_dicts(result_rows))
             return result_rows
 
         except Exception as e:

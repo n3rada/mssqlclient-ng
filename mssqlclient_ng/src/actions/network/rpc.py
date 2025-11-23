@@ -9,7 +9,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 class RpcActionMode(Enum):
@@ -97,7 +97,7 @@ class RemoteProcedureCall(BaseAction):
             result = database_context.query_service.execute_table(query)
 
             if result:
-                print(formatter.rows_to_markdown_table(result))
+                print(OutputFormatter.convert_list_of_dicts(result))
 
             logger.success(
                 f"RPC {self._action.value} action executed successfully on '{self._linked_server_name}'"

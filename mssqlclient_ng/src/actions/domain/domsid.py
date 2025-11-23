@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 from mssqlclient_ng.src.utils import common
 
 
@@ -101,7 +101,7 @@ class DomainSid(BaseAction):
             }
 
             # Display as markdown table
-            print(formatter.dict_to_markdown_table(result, "Property", "Value"))
+            print(OutputFormatter.convert_dict(result, "Property", "Value"))
 
             return result
 

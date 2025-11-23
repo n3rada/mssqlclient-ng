@@ -9,7 +9,7 @@ from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.domain.domsid import DomainSid
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 DEFAULT_MAX_RID = 10000
@@ -226,7 +226,7 @@ class RidCycle(BaseAction):
 
         else:
             # Standard markdown table output
-            print(formatter.rows_to_markdown_table(results))
+            print(OutputFormatter.convert_list_of_dicts(results))
 
     def get_arguments(self) -> list[str]:
         """

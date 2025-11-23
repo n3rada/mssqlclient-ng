@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
@@ -117,7 +117,7 @@ class Impersonation(BaseAction):
                     enriched_users.append(enriched_user)
 
             # Display results
-            print(formatter.rows_to_markdown_table(enriched_users))
+            print(OutputFormatter.convert_list_of_dicts(enriched_users))
 
             return enriched_users
 

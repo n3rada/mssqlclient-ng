@@ -9,10 +9,13 @@ from loguru import logger
 
 # Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
+from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatter import Formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from mssqlclient_ng.src.utils.common import convert_table_to_dicts
 
 
+@ActionFactory.register("authtoken", "Retrieve Windows authentication token groups")
 class AuthToken(BaseAction):
     """
     Retrieves all group memberships from the Windows authentication token.
@@ -45,7 +48,9 @@ class AuthToken(BaseAction):
         # No additional arguments needed
         pass
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict[str, str]]]:
+    def execute(
+        self, database_context: DatabaseContext
+    ) -> Optional[List[Dict[str, str]]]:
         """
         Execute the authtoken action to retrieve Windows authentication token groups.
 
@@ -65,7 +70,7 @@ class AuthToken(BaseAction):
 
             # Query sys.login_token for all groups
             token_query = """
-                SELECT DISTINCT 
+                SELECT DISTINCT
                     lt.name,
                     lt.type,
                     lt.usage,
@@ -98,13 +103,15 @@ class AuthToken(BaseAction):
                 sql_principal = row.get("sql_principal_name")
                 sql_principal_str = "-" if sql_principal is None else str(sql_principal)
 
-                groups.append({
-                    "Group Name": group_name,
-                    "Category": category,
-                    "Type": type_desc,
-                    "Usage": usage,
-                    "SQL Principal": sql_principal_str
-                })
+                groups.append(
+                    {
+                        "Group Name": group_name,
+                        "Category": category,
+                        "Type": type_desc,
+                        "Usage": usage,
+                        "SQL Principal": sql_principal_str,
+                    }
+                )
 
             # Display results
             headers = ["Group Name", "Category", "Type", "Usage", "SQL Principal"]
@@ -114,14 +121,20 @@ class AuthToken(BaseAction):
                     group["Category"],
                     group["Type"],
                     group["Usage"],
-                    group["SQL Principal"]
+                    group["SQL Principal"],
                 ]
                 for group in groups
             ]
 
-            print(Formatter.format_table(headers, table_data))
-            
-            logger.success(f"Retrieved {len(groups)} group membership(s) from authentication token")
+            print(
+                OutputFormatter.convert_list_of_dicts(
+                    convert_table_to_dicts(headers, table_data)
+                )
+            )
+
+            logger.success(
+                f"Retrieved {len(groups)} group membership(s) from authentication token"
+            )
 
             return groups
 
@@ -142,14 +155,14 @@ class AuthToken(BaseAction):
         """
         if group_name.upper().startswith("BUILTIN\\"):
             return "Built-in"
-        
+
         if group_name.upper().startswith("NT AUTHORITY\\"):
             return "Well-known SID"
-        
+
         if group_name.upper().startswith("NT SERVICE\\"):
             return "Service"
-        
+
         if "\\" in group_name:
             return "Active Directory"
-        
+
         return "Other"

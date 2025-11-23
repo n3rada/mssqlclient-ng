@@ -7,7 +7,7 @@ from loguru import logger
 # Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.utils.formatter import rows_to_markdown_table
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("sessions", "List active SQL Server sessions")
@@ -76,7 +76,7 @@ class Sessions(BaseAction):
         logger.success(f"Active sessions: {len(result_rows)}")
 
         # Display as markdown table
-        result = rows_to_markdown_table(result_rows)
+        result = OutputFormatter.convert_list_of_dicts(result_rows)
 
         print(result)
 

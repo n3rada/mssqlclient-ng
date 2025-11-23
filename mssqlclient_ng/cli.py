@@ -15,6 +15,7 @@ from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.terminal import Terminal
 from mssqlclient_ng.src.utils import logbook
 from mssqlclient_ng.src.utils import banner
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 # Import actions to register them with the factory
 from mssqlclient_ng.src import actions
@@ -168,6 +169,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Action to perform upon successful connection, followed by its arguments.",
     )
 
+    actions_groups.add_argument(
+        "-o",
+        "--output-format",
+        type=str,
+        default="markdown",
+        choices=["markdown", "md", "csv"],
+        help="Output format for data display (default: markdown). Options: markdown/md, csv.",
+    )
+
     advanced_group = parser.add_argument_group(
         "Advanced Options", "Additional advanced or debugging options."
     )
@@ -242,6 +252,13 @@ def main() -> int:
         log_level = "INFO"
 
     logbook.setup_logging(level=log_level)
+
+    # Set output format based on CLI argument
+    try:
+        OutputFormatter.set_format(args.output_format)
+    except ValueError as e:
+        logger.error(f"Invalid output format: {e}")
+        return 1
 
     try:
         server_instance = server.Server.parse_server(server_input=args.host)

@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("search", "Search for a keyword in database columns and rows")
@@ -198,7 +198,7 @@ class Search(BaseAction):
             logger.success(
                 f"Found {header_match_count} column header match(es) containing '{self._keyword}'"
             )
-            print(formatter.rows_to_markdown_table(header_matches))
+            print(OutputFormatter.convert_list_of_dicts(header_matches))
 
         # Search for the keyword in each table's rows
         for table_key, columns in table_columns.items():
@@ -246,7 +246,7 @@ class Search(BaseAction):
                     logger.success(
                         f"Found {len(result_table)} row(s) containing '{self._keyword}' in [{database}].[{schema}].[{table}]"
                     )
-                    print(formatter.rows_to_markdown_table(result_table))
+                    print(OutputFormatter.convert_list_of_dicts(result_table))
 
             except Exception as ex:
                 logger.debug(f"Failed to search table [{schema}].[{table}]: {ex}")

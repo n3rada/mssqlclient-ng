@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 INFO_QUERIES = {
@@ -86,7 +86,7 @@ class Info(BaseAction):
         logger.success("SQL Server information retrieved")
 
         # Display results
-        print(formatter.dict_to_markdown_table(results, "Information", "Value"))
+        print(OutputFormatter.convert_dict(results, "Information", "Value"))
 
         return results
 

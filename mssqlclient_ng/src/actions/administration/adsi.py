@@ -11,7 +11,7 @@ from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.services.adsi import AdsiService
 from mssqlclient_ng.src.utils.common import generate_random_string
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
@@ -124,7 +124,7 @@ class AdsiManager(BaseAction):
         plural = "s" if len(adsi_servers) > 1 else ""
         logger.success(f"Found {len(adsi_servers)} ADSI linked server{plural}")
 
-        print(formatter.list_to_markdown_table(adsi_servers, "ADSI Servers"))
+        print(OutputFormatter.convert_list(adsi_servers, "ADSI Servers"))
 
         return True
 

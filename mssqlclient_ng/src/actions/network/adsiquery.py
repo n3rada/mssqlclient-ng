@@ -11,7 +11,7 @@ from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.services.adsi import AdsiService
 from mssqlclient_ng.src.utils.common import generate_random_string
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("adsiquery", "Perform LDAP queries against ADSI linked servers")
@@ -159,7 +159,7 @@ class AdsiQuery(BaseAction):
             logger.success(f"Retrieved {len(result)} result{plural}")
 
             # Display the results
-            table = formatter.rows_to_markdown_table(result)
+            table = OutputFormatter.convert_list_of_dicts(result)
             print(table)
 
             return True

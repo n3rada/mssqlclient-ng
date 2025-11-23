@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("rolemembers", "List members of a specified server role")
@@ -78,7 +78,7 @@ class RoleMembers(BaseAction):
                 return []
 
             logger.success(f"Found {len(result)} member(s) in role '{self._role_name}'")
-            print(formatter.rows_to_markdown_table(result))
+            print(OutputFormatter.convert_list_of_dicts(result))
 
             return result
 

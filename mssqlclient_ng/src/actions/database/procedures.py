@@ -10,7 +10,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 class ProcedureMode(Enum):
@@ -146,7 +146,7 @@ class Procedures(BaseAction):
                 return []
 
             logger.success(f"Found {len(procedures)} stored procedure(s)")
-            print(formatter.rows_to_markdown_table(procedures))
+            print(OutputFormatter.convert_list_of_dicts(procedures))
 
             return procedures
 
@@ -176,7 +176,7 @@ class Procedures(BaseAction):
             logger.success(f"Stored procedure '{self._procedure_name}' executed")
 
             if result:
-                print(formatter.rows_to_markdown_table(result))
+                print(OutputFormatter.convert_list_of_dicts(result))
             else:
                 logger.info("Procedure executed successfully with no result set")
 

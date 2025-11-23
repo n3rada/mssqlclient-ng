@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("monitor", "Monitor currently running SQL commands")
@@ -65,7 +65,7 @@ class Monitor(BaseAction):
         results = database_context.query_service.execute_table(current_commands_query)
 
         if results:
-            print(formatter.rows_to_markdown_table(results))
+            print(OutputFormatter.convert_list_of_dicts(results))
         else:
             logger.info("No other active SQL commands running")
 

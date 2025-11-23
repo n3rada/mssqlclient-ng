@@ -3,7 +3,7 @@ from pathlib import Path
 import tomllib
 
 try:
-    __version__ = version("mssqlclientng")
+    __version__ = version("mssqlclient_ng")
 except PackageNotFoundError:
     # Fallback: read directly from pyproject.toml for development
     try:

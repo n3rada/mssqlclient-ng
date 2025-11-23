@@ -12,7 +12,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 # Descriptions for common extended procedures
@@ -167,7 +167,7 @@ class ExtendedProcs(BaseAction):
             )
 
             logger.success(f"Found {len(enriched_procs)} extended stored procedures")
-            print(formatter.rows_to_markdown_table(enriched_procs))
+            print(OutputFormatter.convert_list_of_dicts(enriched_procs))
 
             return enriched_procs
 

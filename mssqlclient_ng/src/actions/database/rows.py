@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("rows", "Retrieve all rows from a specified table")
@@ -97,7 +97,7 @@ class Rows(BaseAction):
                 return []
 
             logger.success(f"Retrieved {len(rows)} row(s)")
-            print(formatter.rows_to_markdown_table(rows))
+            print(OutputFormatter.convert_list_of_dicts(rows))
 
             return rows
 

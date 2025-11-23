@@ -8,7 +8,7 @@ from loguru import logger
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import formatter
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("users", "List server principals and database users")
@@ -55,7 +55,7 @@ class Users(BaseAction):
         )
 
         if server_principals:
-            print(formatter.rows_to_markdown_table(server_principals))
+            print(OutputFormatter.convert_list_of_dicts(server_principals))
         else:
             logger.warning("No server principals found")
 
@@ -74,7 +74,7 @@ class Users(BaseAction):
         )
 
         if database_users:
-            print(formatter.rows_to_markdown_table(database_users))
+            print(OutputFormatter.convert_list_of_dicts(database_users))
         else:
             logger.warning("No database users found")
 

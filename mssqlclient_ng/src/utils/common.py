@@ -213,3 +213,23 @@ def yes_no_prompt(question: str, default: bool = True) -> bool:
         # Ctrl+C or Ctrl+D during prompt
         print()  # New line
         return True
+
+
+def convert_table_to_dicts(headers, table_data):
+    """
+    Convert table format (headers, rows) to list of dicts.
+
+    Args:
+        headers: List of column header names
+        table_data: List of rows (each row is a list of values)
+
+    Returns:
+        List of dictionaries where each dict represents a row
+
+    Examples:
+        >>> headers = ["Name", "Age"]
+        >>> table_data = [["Alice", 30], ["Bob", 25]]
+        >>> convert_table_to_dicts(headers, table_data)
+        [{'Name': 'Alice', 'Age': 30}, {'Name': 'Bob', 'Age': 25}]
+    """
+    return [dict(zip(headers, row)) for row in table_data]
