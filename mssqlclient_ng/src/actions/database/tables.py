@@ -31,9 +31,21 @@ class Tables(BaseAction):
 
         Args:
             additional_arguments: Database name (optional, uses current database if not specified)
+                                 Supports: database_name, -d database_name, --database database_name
         """
-        if additional_arguments and additional_arguments.strip():
-            self._database = additional_arguments.strip()
+        if not additional_arguments or not additional_arguments.strip():
+            # No database specified - will use current database
+            return
+
+        # Parse arguments using the base class method
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
+
+        # Position = 0, ShortName = "db", LongName = "database"
+        self._database = (
+            named_args.get("database")  # --database
+            or named_args.get("db")  # -db (not standard but supported)
+            or (positional_args[0] if positional_args else None)  # Position 0
+        )
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """
@@ -130,4 +142,4 @@ class Tables(BaseAction):
         Returns:
             List of argument descriptions.
         """
-        return ["[database]"]
+        return ["[database | --database database | -db database]"]
