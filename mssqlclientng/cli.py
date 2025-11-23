@@ -374,7 +374,6 @@ def main() -> int:
 
     logbook.setup_logging(level=log_level)
 
-    # Parse server string (now supports server[,port][:user][@database])
     try:
         server_instance = server.Server.parse_server(server_input=args.host)
     except ValueError as e:
@@ -476,6 +475,20 @@ def main() -> int:
         logger.info(f"Logged in on {database_context.server.hostname} as {system_user}")
         logger.info(f"Mapped to the user: {user_name}")
 
+        # Compute effective user and source principal (handles group-based access via AD groups)
+        # Only works for Windows authentication (NTLM/Kerberos) on on-premises SQL Server
+        # Does NOT work for: SQL auth, Azure AD auth, LocalDB, or linked servers
+        if (args.windows_auth or use_kerberos) and database_context.user_service.is_domain_user:
+            database_context.user_service.compute_effective_user_and_source()
+            
+            effective_user = database_context.user_service.effective_user
+            source_principal = database_context.user_service.source_principal
+            
+            if effective_user and not effective_user.lower() == user_name.lower():
+                logger.info(f"Effective database user: {effective_user}")
+                if source_principal and not source_principal.lower() == system_user.lower():
+                    logger.info(f"Access granted via: {source_principal}")
+
         # If linked servers are provided, set them up
         if args.links:
             try:
@@ -486,6 +499,9 @@ def main() -> int:
                 logger.info(
                     f"Server chain: {database_context.server.hostname} -> {chain_display}"
                 )
+
+                # Compute execution database after linked server chain is set up
+                database_context.query_service.compute_execution_database()
 
                 # Get info from the final server in the chain
                 try:
@@ -504,6 +520,9 @@ def main() -> int:
             except Exception as exc:
                 logger.error(f"Failed to set up linked servers: {exc}")
                 return 1
+            
+        # Detect Azure SQL on the final execution server
+        database_context.query_service.is_azure_sql
 
         terminal_instance = Terminal(database_context)
 

@@ -32,96 +32,69 @@ pip install mssqlclientng
 pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
-## Usage
 
-```txt
-                          _      _ _            _
-                         | |    | (_)          | |
-  _ __ ___  ___ ___  __ _| | ___| |_  ___ _ __ | |_
- | '_ ` _ \/ __/ __|/ _` | |/ __| | |/ _ \ '_ \| __|
- | | | | | \__ \__ \ (_| | | (__| | |  __/ | | | |_
- |_| |_| |_|___/___/\__, |_|\___|_|_|\___|_| |_|\__|
-                       | |
-               @n3rada |_| New Gen - 0.9.1
+## 🚀 Quick Start
 
-usage: mssqlclientng [-h] [--version] [-P PORT] [-d DOMAIN] [-u USERNAME] [-p PASSWORD] [-no-pass] [-H [LMHASH:]NTHASH] [-windows-auth] [-k] [--aesKey AESKEY [AESKEY ...]] [--kdcHost KDCHOST]
-                     [-db DATABASE] [-l LINKS] [-r] [-smb2support] [-ntlmchallenge NTLMCHALLENGE] [-t TIMEOUT] [-dc-ip ip address] [-target-ip ip address] [-q QUERY] [-a ...] [--prefix PREFIX]
-                     [--history] [--multiline] [--debug] [--log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}]
-                     host
-
-Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.
-
-options:
-  -h, --help            show this help message and exit
-  --version             Show version and exit.
-
-Target:
-  host                  Target MS SQL Server IP or hostname.
-  -P, --port PORT       Target MS SQL Server port (default: 1433).
-  -d, --domain DOMAIN   Domain name
-  -db, --database DATABASE
-                        MSSQL database instance (default None)
-  -l, --links LINKS     Comma-separated list of linked servers to chain (e.g., 'SQL02:user,SQL03,SQL04:admin')
-
-Credentials:
-  Options for credentials
-
-  -u, --username USERNAME
-                        Username (either local or Windows).
-  -p, --password PASSWORD
-                        Password
-  -no-pass              Do not ask for password
-  -H, --hashes [LMHASH:]NTHASH
-                        NT/LM hashes.
-  -windows-auth         whether or not to use Windows Authentication (default False)
-
-Kerberos:
-  Options for Kerberos authentication
-
-  -k, --kerberos        Use Kerberos authentication
-  --aesKey AESKEY [AESKEY ...]
-                        AES key to use for Kerberos Authentication (128 or 256 bits)
-  --kdcHost KDCHOST     FQDN of the domain controller. If omitted it will use the domain part (FQDN) specified in the target parameter
-
-NTLM Relay:
-  -r, --ntlm-relay      Start a NTLM relay listener to capture and relay incoming authentication attempts.
-  -smb2support          SMB2 Support
-  -ntlmchallenge NTLMCHALLENGE
-                        Specifies the NTLM server challenge used by the SMB Server (16 hex bytes long. eg: 1122334455667788)
-  -t, --timeout TIMEOUT
-                        Timeout in seconds to wait for relayed connection (default: 60)
-
-Connection:
-  -dc-ip ip address     IP Address of the domain controller. If ommited it use the domain part (FQDN) specified in the target parameter
-  -target-ip ip address
-                        IP Address of the target machine. If omitted it will use whatever was specified as target. This is useful when target is the NetBIOS name and you cannot resolve it
-
-Actions:
-  Actions to perform upon successful connection.
-
-  -q, --query QUERY     T-SQL command to execute upon successful connection.
-  -a, --action ...      Action to perform upon successful connection, followed by its arguments.
-
-Advanced Options:
-  Additional advanced or debugging options.
-
-  --prefix PREFIX       Command prefix for actions.
-  --history             Enable persistent command history (stored in temporary folder).
-  --multiline           Enable multiline input mode.
-  --debug               Enable debug logging (shortcut for --log-level DEBUG).
-  --log-level {TRACE,DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                        Set the logging level explicitly (overrides --debug).
+```shell
+mssqlclient-ng <host> [options] <action> [action-options]
 ```
 
+> [!TIP]
+> Avoid typing out all the **[RPC Out](https://learn.microsoft.com/fr-fr/sql/t-sql/functions/openquery-transact-sql)** or **[OPENQUERY](https://learn.microsoft.com/fr-fr/sql/t-sql/functions/openquery-transact-sql)** calls manually. Let the tool handle the heavy lifting with the `--link` argument, so you can focus on the big picture.
 
-### Chain Through Linked Servers
+Format: `server,port:user@database` or any combination `server:user@database,port`.
+- `server` (required) - The SQL Server hostname or IP
+- `,port` (optional) - Port number (default: 1433, also common: 1434, 14333, 2433)
+- `:user` (optional) - User to impersonate on this server
+- `@database` (optional) - Database context (defaults to 'master' if not specified)
 
-Avoid typing out all those **[RPC Out](https://learn.microsoft.com/fr-fr/sql/t-sql/functions/openquery-transact-sql)** or **[OPENQUERY](https://learn.microsoft.com/fr-fr/sql/t-sql/functions/openquery-transact-sql)** calls manually:
-
-```bash
-mssqlclientng SQLDEV.box -u 'jacquard' -p 'FQqU^XQ-*|xcv' -windows-auth -l "SQL02,SQL03:admin,SQL04"
+```shell
+mssqlclient-ng localhost -c token info
+mssqlclient-ng localhost,1434@db03 -c token info
 ```
 
+> [!IMPORTANT]
+> The **host** (first argument) and **action** (after flags) are positional arguments. All flags use `-` prefix. For example: `localhost -c token createuser -p p@ssword!` - here `-p` belongs to the action, not the global arguments.
+
+**Common options:**
+- `--timeout 30` - Connection timeout in seconds (default: 15)
+- `-l SERVER1:user1,SERVER2:user2@dbclients` - Chain through linked servers (uses configured linked server names)
+
+> [!NOTE]
+> Port specification (`,port`) only applies to the initial host connection. Linked server chains (`-l`) use the linked server names as configured in `sys.servers`, not `hostname:port` combinations.
+
+**Format examples:**
+```shell
+# Simple: connect to SQL01 using master database
+mssqlclient-ng SQL01 -c token info
+
+# Custom port: connect to SQL01 on port 1434
+mssqlclient-ng SQL01,1434 -c token info
+
+# Impersonate user: connect to SQL01, impersonate webapp01, use master database
+mssqlclient-ng SQL01:webapp01 -c token info
+
+# Port with impersonation: connect to SQL01:1434, impersonate webapp01
+mssqlclient-ng SQL01,1434:webapp01 -c token info
+
+# Specify database: connect to SQL01, use myapp database (no impersonation)
+mssqlclient-ng SQL01@myapp -c token info
+
+# Full format: connect to SQL01:1434, impersonate webapp01, use myapp database
+mssqlclient-ng SQL01,1434:webapp01@myapp -c token info
+
+# Linked servers (using configured linked server names, not hostname:port)
+mssqlclient-ng SQL01 -c token -l SQL02:webapp02@appdb,SQL03:webapp03@analytics,SQL04@proddb links
+
+# Mixed linked servers (some with database, some without)
+mssqlclient-ng SQL01 -c token -l SQL02:webapp02,SQL03:webapp03@mydb,SQL04@reporting links
+```
+
+## 🫤 Help
+
+- `-h` or `--help` - Show all available actions
+- `-h search_term` - Filter actions (e.g., `-h adsi` shows all ADSI-related actions)
+- `localhost -c token createuser -h` - Show detailed help for a specific action
 
 ## 🤝 Contributing 
 

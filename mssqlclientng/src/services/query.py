@@ -18,6 +18,8 @@ class QueryService:
     Service for executing SQL queries against MSSQL using impacket's TDS protocol.
     """
 
+    MAX_RETRIES = 3
+
     def __init__(self, mssql: MSSQL):
         """
         Initialize the query service with an MSSQL connection.
@@ -27,11 +29,16 @@ class QueryService:
         """
         self.mssql_instance = mssql
         self.execution_server: Optional[str] = None
+        self.execution_database: Optional[str] = None
         self._linked_servers = LinkedServers()
-        self.command_timeout = 20  # Default timeout in seconds
+        self.command_timeout = 120  # Default timeout in seconds
 
-        # Initialize execution server
+        # Dictionary to cache Azure SQL detection for each execution server
+        self._is_azure_sql_cache: Dict[str, bool] = {}
+
+        # Initialize execution server and database
         self.execution_server = self._get_server_name()
+        self.execution_database = self.get_current_database()
 
     @property
     def linked_servers(self) -> LinkedServers:
@@ -51,6 +58,31 @@ class QueryService:
             logger.debug(f"Execution server set to: {self.execution_server}")
         else:
             self.execution_server = self._get_server_name()
+            self.execution_database = self.get_current_database()
+
+    @property
+    def is_azure_sql(self) -> bool:
+        """
+        Checks if the current execution server is Azure SQL Database.
+        Results are cached per server for performance.
+
+        Returns:
+            True if the server is Azure SQL Database (PaaS), otherwise False.
+        """
+        # Check if Azure SQL detection is already cached for the current ExecutionServer
+        if self.execution_server in self._is_azure_sql_cache:
+            return self._is_azure_sql_cache[self.execution_server]
+
+        # If not cached, detect and store the result
+        azure_status = self._detect_azure_sql()
+
+        # Cache the result for the current ExecutionServer
+        self._is_azure_sql_cache[self.execution_server] = azure_status
+
+        if azure_status:
+            logger.debug(f"Detected Azure SQL Database on {self.execution_server}")
+
+        return azure_status
 
     def _get_server_name(self) -> str:
         """
@@ -147,15 +179,22 @@ class QueryService:
         return None
 
     def _execute_with_handling(
-        self, query: str, tuple_mode: bool = False, return_rows: bool = True
+        self,
+        query: str,
+        tuple_mode: bool = False,
+        return_rows: bool = True,
+        timeout: int = 120,
+        retry_count: int = 0,
     ) -> Any:
         """
-        Shared execution logic with error handling.
+        Shared execution logic with error handling and retry mechanism.
 
         Args:
             query: The SQL query to execute
             tuple_mode: If True, return rows as tuples
             return_rows: If True, return row data; otherwise return affected count
+            timeout: Timeout in seconds for query execution
+            retry_count: Current retry attempt (for exponential backoff)
 
         Returns:
             Query results or affected row count
@@ -167,9 +206,16 @@ class QueryService:
         if not query or not query.strip():
             raise ValueError("Query cannot be null or empty.")
 
+        # Check if we've exceeded max retries
+        if retry_count > self.MAX_RETRIES:
+            logger.error(
+                f"Maximum retry attempts ({self.MAX_RETRIES}) exceeded. Aborting query execution."
+            )
+            return None if return_rows else -1
+
         if not self.mssql_instance or not self.mssql_instance.socket:
             logger.error("Database connection is not initialized or not open.")
-            raise ValueError("Database connection is not open.")
+            return None if return_rows else -1
 
         # Prepare the final query with linked server logic
         final_query = self._prepare_query(query)
@@ -204,23 +250,50 @@ class QueryService:
                 )
                 logger.warning("Trying again with OPENQUERY")
                 self._linked_servers.use_remote_procedure_call = False
-                return self._execute_with_handling(query, tuple_mode, return_rows)
+                return self._execute_with_handling(
+                    query, tuple_mode, return_rows, timeout, self.MAX_RETRIES - 1
+                )
 
             # Handle metadata errors
-            if "metadata could not be determined" in error_message:
-                logger.error(
-                    "When you wrap a remote procedure in OPENQUERY, SQL Server wants a single, consistent set of columns."
+            if "metadata could not be determined" in error_message.lower():
+                logger.warning(
+                    "DDL statement detected - wrapping query to make it OPENQUERY-compatible"
                 )
-                logger.error(
-                    "Since sp_configure does not provide that, the metadata parser chokes."
+
+                # Wrap the query to return a result set - use EXEC to avoid metadata issues
+                wrapped_query = f"DECLARE @result NVARCHAR(MAX); BEGIN TRY {query.rstrip(';')}; SET @result = 'Success'; END TRY BEGIN CATCH SET @result = ERROR_MESSAGE(); END CATCH; SELECT @result AS Result;"
+
+                logger.warning("Retrying with wrapped query")
+                return self._execute_with_handling(
+                    wrapped_query, tuple_mode, return_rows, timeout, self.MAX_RETRIES - 1
                 )
-                logger.info("Enable RPC OUT option to allow the use of sp_configure.")
-                logger.info(f"Command: /a:rpc add {self.execution_server}")
+
+            # Handle database prefix not supported on remote server
+            if "is not supported" in error_message and "master." in error_message and "master." in query:
+                logger.warning("Database prefix 'master.' not supported on remote server")
+                logger.warning("Retrying without database prefix")
+
+                # Remove all master. prefixes from the query
+                query_without_prefix = query.replace("master.", "")
+
+                return self._execute_with_handling(
+                    query_without_prefix, tuple_mode, return_rows, timeout, self.MAX_RETRIES - 1
+                )
 
             raise
 
         except Exception as e:
             error_message = str(e).strip()
+
+            # Handle timeout errors with exponential backoff
+            if "timeout" in error_message.lower():
+                new_timeout = timeout * 2  # Exponential backoff
+                logger.warning(
+                    f"Query timed out after {timeout} seconds. Retrying with {new_timeout} seconds (attempt {retry_count + 1}/{self.MAX_RETRIES})"
+                )
+                return self._execute_with_handling(
+                    query, tuple_mode, return_rows, new_timeout, retry_count + 1
+                )
 
             # Some stored procedures (like OLE Automation) may raise exceptions
             # with just "0" as the message, which actually indicates success
@@ -306,3 +379,66 @@ class QueryService:
             The current database name
         """
         return self.mssql_instance.currentDB
+
+    def _detect_azure_sql(self) -> bool:
+        """
+        Detects if the current execution server is Azure SQL by checking @@VERSION.
+
+        Returns:
+            True if Azure SQL Database (PaaS) is detected, otherwise False.
+        """
+        try:
+            version = self.execute_scalar("SELECT @@VERSION")
+
+            if not version or not isinstance(version, str):
+                return False
+
+            # Check if it contains "Microsoft SQL Azure" (case-insensitive)
+            is_azure = "microsoft sql azure" in version.lower()
+
+            if is_azure:
+                # Distinguish between Azure SQL Database and Managed Instance
+                # Azure SQL Database (PaaS) contains "SQL Azure" but NOT "Managed Instance"
+                # Azure SQL Managed Instance contains both "SQL Azure" and specific MI indicators
+                is_managed_instance = (
+                    "azure sql managed instance" in version.lower()
+                    or "sql azure managed instance" in version.lower()
+                )
+
+                if is_managed_instance:
+                    logger.info(
+                        f"Detected Azure SQL Managed Instance on {self.execution_server}"
+                    )
+                    return False  # Managed Instance has full features
+                else:
+                    logger.info(
+                        f"Detected Azure SQL Database (PaaS) on {self.execution_server}"
+                    )
+                    return True  # PaaS has limitations
+
+            return False
+        except Exception:
+            # If detection fails, assume it's not Azure SQL
+            return False
+
+    def compute_execution_database(self) -> None:
+        """
+        Computes the execution database based on the linked server chain.
+        Should be called after the entire linked server setup is complete.
+        """
+        if not self._linked_servers.is_empty:
+            last_server = self._linked_servers.server_chain[-1]
+            if last_server.database:
+                # Use explicitly specified database from chain
+                self.execution_database = last_server.database
+                logger.debug(f"Using explicitly specified database: {self.execution_database}")
+            else:
+                # No explicit database: query to detect actual database where the link landed us
+                try:
+                    self.execution_database = self.execute_scalar("SELECT DB_NAME();")
+                    logger.debug(f"Detected execution database: {self.execution_database}")
+                except Exception as ex:
+                    # If detection fails, database remains unknown
+                    self.execution_database = None
+                    logger.debug(f"Database detection failed: {ex}")
+        # If no linked servers, execution_database is already set from get_current_database()
