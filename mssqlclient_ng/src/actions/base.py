@@ -56,6 +56,73 @@ class BaseAction(ABC):
             logger.debug(f"Parsed positional argument: {trimmed}")
         return named, positional
 
+    def _parse_action_arguments(
+        self, additional_arguments: str
+    ) -> Tuple[Dict[str, str], List[str]]:
+        """
+        Parse arguments with Unix-style flags (-l, --limit) and positional arguments.
+
+        Args:
+            additional_arguments: The argument string to parse
+
+        Returns:
+            Tuple of (named_args, positional_args)
+        """
+        named: Dict[str, str] = {}
+        positional: List[str] = []
+
+        if not additional_arguments or additional_arguments.strip() == "":
+            return named, positional
+
+        parts = self.split_arguments(additional_arguments)
+        i = 0
+        while i < len(parts):
+            part = parts[i].strip()
+
+            # Check for --long-flag=value format
+            if part.startswith("--") and "=" in part:
+                flag_part = part[2:]  # Remove --
+                flag_name, flag_value = flag_part.split("=", 1)
+                named[flag_name] = flag_value
+                logger.debug(f"Parsed named argument: {flag_name} = {flag_value}")
+                i += 1
+                continue
+
+            # Check for --long-flag format (value in next part)
+            if part.startswith("--"):
+                flag_name = part[2:]
+                if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
+                    flag_value = parts[i + 1]
+                    named[flag_name] = flag_value
+                    logger.debug(f"Parsed named argument: {flag_name} = {flag_value}")
+                    i += 2
+                else:
+                    named[flag_name] = ""
+                    logger.debug(f"Parsed named argument (no value): {flag_name}")
+                    i += 1
+                continue
+
+            # Check for -f format (short flag, value in next part)
+            if part.startswith("-") and len(part) == 2:
+                flag_name = part[1]
+                if i + 1 < len(parts) and not parts[i + 1].startswith("-"):
+                    flag_value = parts[i + 1]
+                    named[flag_name] = flag_value
+                    logger.debug(f"Parsed named argument: {flag_name} = {flag_value}")
+                    i += 2
+                else:
+                    named[flag_name] = ""
+                    logger.debug(f"Parsed named argument (no value): {flag_name}")
+                    i += 1
+                continue
+
+            # Otherwise it's a positional argument
+            positional.append(part)
+            logger.debug(f"Parsed positional argument: {part}")
+            i += 1
+
+        return named, positional
+
     def get_named_argument(
         self, named_args: Dict[str, str], name: str, default: Optional[str] = None
     ) -> Optional[str]:
@@ -83,10 +150,9 @@ class BaseAction(ABC):
     def get_help(self) -> str:
         """
         Get detailed help text for this action.
-        
+
         Returns:
             Detailed help text explaining what the action does and how to use it.
         """
         # Default implementation using docstring
         return self.__doc__.strip() if self.__doc__ else "No help available."
-
