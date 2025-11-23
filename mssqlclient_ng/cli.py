@@ -400,34 +400,40 @@ def main() -> int:
 
         terminal_instance = Terminal(database_context)
 
-        # Check if an action was specified
-        if args.action:
-            # Execute specified action
-            if args.action == "query":
-                # Special case: query action takes T-SQL as arguments
-                query_sql = " ".join(args.action_args) if args.action_args else ""
-                if not query_sql:
-                    logger.error("No SQL query provided")
+        if args.query or args.action:
+            if args.action:
+                # args.action is a list: [action_name, arg1, arg2, ...]
+                if isinstance(args.action, list) and len(args.action) > 0:
+                    action_name = args.action[0]
+                    argument_list = args.action[1:]
+                else:
+                    logger.error("No action specified")
                     return 1
 
+                # Execute specified action
+                if action_name == "query":
+                    args.query = " ".join(argument_list)
+                else:
+                    terminal_instance.execute_action(
+                        action_name=action_name, argument_list=argument_list
+                    )
+                    return 0
+
+            # Execute query if provided
+            if args.query:
+                # Execute query without prefix
                 query_action = query.Query()
                 try:
-                    query_action.validate_arguments(additional_arguments=query_sql)
+                    query_action.validate_arguments(additional_arguments=args.query)
                 except ValueError as ve:
                     logger.error(f"Argument validation error: {ve}")
                     return 1
 
                 query_action.execute(database_context)
                 return 0
-            else:
-                # Execute regular action with its arguments
-                terminal_instance.execute_action(
-                    action_name=args.action,
-                    argument_list=args.action_args if args.action_args else [],
-                )
-                return 0
+
         else:
-            # No action specified - start interactive terminal
+            # Starting interactive fake-shell
             terminal_instance.start(
                 prefix=args.prefix, multiline=args.multiline, history=args.history
             )
