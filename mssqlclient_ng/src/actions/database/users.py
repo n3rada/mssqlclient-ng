@@ -14,9 +14,13 @@ from mssqlclient_ng.src.utils.formatters import OutputFormatter
 @ActionFactory.register("users", "List server principals and database users")
 class Users(BaseAction):
     """
-    Displays server-level principals (logins) and database-level users.
+    Enumerates server-level principals (logins) and database users.
 
-    Shows login details, role memberships, and database user information.
+    Displays:
+    - Server logins with their instance-wide server roles (sysadmin, securityadmin, etc.)
+    - Database users in the current database context
+
+    For database-level role memberships, use the 'roles' action instead.
     """
 
     def validate_arguments(self, additional_arguments: str) -> None:
@@ -38,28 +42,43 @@ class Users(BaseAction):
         Returns:
             Dictionary with server principals and database users.
         """
-        logger.info("Server principals with role memberships")
+        server_principals = None
 
-        server_principals_query = """
-            SELECT r.name AS Name, r.type_desc AS Type, r.is_disabled, r.create_date, r.modify_date,
-                   sl.sysadmin, sl.securityadmin, sl.serveradmin, sl.setupadmin,
-                   sl.processadmin, sl.diskadmin, sl.dbcreator, sl.bulkadmin
-            FROM master.sys.server_principals r
-            LEFT JOIN master.sys.syslogins sl ON sl.sid = r.sid
-            WHERE r.type IN ('G','U','E','S','X') AND r.name NOT LIKE '##%'
-            ORDER BY r.modify_date DESC;
-        """
+        # Only show server logins on on-premises SQL Server (not Azure SQL Database)
+        if not database_context.query_service.is_azure_sql:
+            logger.info(
+                "Enumerating server-level principals (logins) and their instance-wide server roles"
+            )
+            logger.info(
+                "Note: Use 'roles' action to see database-level role memberships"
+            )
 
-        server_principals = database_context.query_service.execute_table(
-            server_principals_query
-        )
+            server_principals_query = """
+                SELECT
+                    sp.name AS Name,
+                    sp.type_desc AS Type,
+                    sp.is_disabled,
+                    sp.create_date,
+                    sp.modify_date,
+                    STRING_AGG(sr.name, ', ') AS groups
+                FROM master.sys.server_principals sp
+                LEFT JOIN master.sys.server_role_members srm ON sp.principal_id = srm.member_principal_id
+                LEFT JOIN master.sys.server_principals sr ON srm.role_principal_id = sr.principal_id AND sr.type = 'R'
+                WHERE sp.type IN ('G','U','E','S','X') AND sp.name NOT LIKE '##%'
+                GROUP BY sp.name, sp.type_desc, sp.is_disabled, sp.create_date, sp.modify_date
+                ORDER BY sp.modify_date DESC;
+            """
 
-        if server_principals:
-            print(OutputFormatter.convert_list_of_dicts(server_principals))
-        else:
-            logger.warning("No server principals found")
+            server_principals = database_context.query_service.execute_table(
+                server_principals_query
+            )
 
-        logger.info("Database users")
+            if server_principals:
+                print(OutputFormatter.convert_list_of_dicts(server_principals))
+            else:
+                logger.warning("No server principals found")
+
+        logger.info("Database users in current database context")
 
         database_users_query = """
             SELECT name AS username, create_date, modify_date, type_desc AS type,
