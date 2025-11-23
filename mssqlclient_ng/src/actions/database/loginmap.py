@@ -1,0 +1,221 @@
+# Built-in imports
+from typing import Optional
+
+# Third party imports
+from loguru import logger
+
+# Local imports
+from mssqlclient_ng.src.actions.base import BaseAction
+from mssqlclient_ng.src.actions.factory import ActionFactory
+from mssqlclient_ng.src.services.database import DatabaseContext
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
+
+
+@ActionFactory.register(
+    "loginmap", "Map server logins to database users across all accessible databases"
+)
+class LoginMap(BaseAction):
+    """
+    Maps server logins to database users across all accessible databases.
+
+    Shows which server-level principals (logins) can access which databases
+    and what database user they are mapped to. This is critical for understanding:
+    - Cross-database access patterns
+    - Orphaned users (database users without corresponding logins)
+    - Login-to-user name mismatches
+    - Actual database access vs. HAS_DBACCESS permissions
+
+    Usage:
+    - No argument: Show all login-to-user mappings
+    - With login name: Show mappings only for specified server login
+
+    Note: Only shows mappings for databases where you have access.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._login_filter: Optional[str] = None
+
+    def validate_arguments(self, additional_arguments: str) -> None:
+        """
+        Validates the login filter argument.
+
+        Args:
+            additional_arguments: Optional server login name to filter mappings
+        """
+        if additional_arguments and additional_arguments.strip():
+            self._login_filter = additional_arguments.strip()
+
+    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+        """
+        Executes the login-to-user mapping.
+
+        Args:
+            database_context: The DatabaseContext instance
+
+        Returns:
+            List of login-to-user mappings
+        """
+        is_azure_sql = database_context.query_service.is_azure_sql
+
+        if is_azure_sql:
+            logger.warning(
+                "Login-to-user mapping not available on Azure SQL Database (PaaS)"
+            )
+            logger.warning("Azure SQL Database uses contained database users")
+            return None
+
+        logger.info(
+            "Mapping server logins to database users across all accessible databases"
+        )
+
+        query = """
+            DECLARE @mapping TABLE (
+                [Database] NVARCHAR(128),
+                [Server Login] NVARCHAR(128),
+                [Login Type] NVARCHAR(60),
+                [Database User] NVARCHAR(128),
+                [User Type] NVARCHAR(60),
+                [Effective Access Via] NVARCHAR(128),
+                [Orphaned] BIT
+            );
+
+            DECLARE @dbname NVARCHAR(128);
+            DECLARE @sql NVARCHAR(MAX);
+
+            DECLARE db_cursor CURSOR FOR
+            SELECT name FROM master.sys.databases
+            WHERE HAS_DBACCESS(name) = 1
+            AND state_desc = 'ONLINE'
+            AND name NOT IN ('tempdb', 'model');
+
+            OPEN db_cursor;
+            FETCH NEXT FROM db_cursor INTO @dbname;
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                SET @sql = N'
+                SELECT
+                    ''' + @dbname + ''' AS [Database],
+                    ISNULL(sp.name, ''<Orphaned>'') AS [Server Login],
+                    ISNULL(sp.type_desc, ''N/A'') AS [Login Type],
+                    dp.name AS [Database User],
+                    dp.type_desc AS [User Type],
+                    CASE
+                        WHEN sp.sid IS NOT NULL AND sp.name != dp.name
+                            AND EXISTS (
+                                SELECT 1 FROM master.sys.login_token lt
+                                WHERE lt.sid = dp.sid AND lt.type = ''WINDOWS GROUP''
+                            )
+                        THEN (
+                            SELECT TOP 1 lt.name
+                            FROM master.sys.login_token lt
+                            WHERE lt.sid = dp.sid AND lt.type = ''WINDOWS GROUP''
+                        )
+                        WHEN sp.sid IS NOT NULL THEN ''Direct''
+                        ELSE NULL
+                    END AS [Effective Access Via],
+                    CASE
+                        WHEN dp.name = ''guest'' THEN 0
+                        WHEN sp.sid IS NULL THEN 1
+                        ELSE 0
+                    END AS [Orphaned]
+                FROM [' + @dbname + '].sys.database_principals dp
+                LEFT JOIN master.sys.server_principals sp ON dp.sid = sp.sid
+                WHERE dp.type IN (''S'', ''U'', ''G'', ''E'', ''X'')
+                AND dp.name NOT LIKE ''##%''
+                AND dp.name NOT IN (''INFORMATION_SCHEMA'', ''sys'', ''guest'')';
+
+                BEGIN TRY
+                    INSERT INTO @mapping
+                    EXEC sp_executesql @sql;
+                END TRY
+                BEGIN CATCH
+                    -- Skip databases where we don't have permission
+                END CATCH
+
+                FETCH NEXT FROM db_cursor INTO @dbname;
+            END;
+
+            CLOSE db_cursor;
+            DEALLOCATE db_cursor;
+
+            SELECT * FROM @mapping
+            ORDER BY [Orphaned] DESC, [Database], [Server Login];
+        """
+
+        try:
+            results = database_context.query_service.execute_table(query)
+
+            if not results:
+                logger.warning("No login-to-user mappings found")
+                return None
+
+            # Apply Python filtering if login filter specified
+            if self._login_filter:
+                filter_lower = self._login_filter.lower()
+                filtered_results = [
+                    row
+                    for row in results
+                    if row["Server Login"].lower() == filter_lower
+                    or row["Database User"].lower() == filter_lower
+                ]
+
+                if not filtered_results:
+                    logger.warning(
+                        f"No mappings found for login '{self._login_filter}'"
+                    )
+                    return None
+
+                results = filtered_results
+                logger.info(f"Filtered for login: '{self._login_filter}'")
+                print()
+
+            # Sort by security importance: orphaned users first, then by database
+            results_sorted = sorted(
+                results,
+                key=lambda x: (
+                    not x["Orphaned"],  # Orphaned first (True > False, so negate)
+                    x["Database"],
+                    x["Server Login"],
+                ),
+            )
+
+            # Count statistics
+            total_mappings = len(results_sorted)
+            orphaned_users = sum(1 for r in results_sorted if r["Orphaned"])
+            mismatched_names = sum(
+                1
+                for r in results_sorted
+                if not r["Orphaned"]
+                and r["Server Login"] != r["Database User"]
+                and r["Server Login"] != "<Orphaned>"
+            )
+
+            print(OutputFormatter.convert_list_of_dicts(results_sorted))
+
+            print()
+            logger.info(f"Total mappings: {total_mappings}")
+
+            if orphaned_users > 0:
+                logger.warning(f"Orphaned users (no login): {orphaned_users}")
+
+            if mismatched_names > 0:
+                logger.info(f"Name mismatches (login ≠ user): {mismatched_names}")
+
+            logger.success("Login-to-user mapping completed")
+
+            return results_sorted
+
+        except Exception as ex:
+            logger.error(f"Error mapping logins to users: {ex}")
+            return None
+
+    def get_arguments(self) -> list[str]:
+        """
+        Returns the list of expected arguments for this action.
+
+        Returns:
+            List containing the optional login filter argument
+        """
+        return ["[login_name]"]
