@@ -181,27 +181,7 @@ class LoginMap(BaseAction):
                 ),
             )
 
-            # Count statistics
-            total_mappings = len(results_sorted)
-            orphaned_users = sum(1 for r in results_sorted if r["Orphaned"])
-            mismatched_names = sum(
-                1
-                for r in results_sorted
-                if not r["Orphaned"]
-                and r["Server Login"] != r["Database User"]
-                and r["Server Login"] != "<Orphaned>"
-            )
-
             print(OutputFormatter.convert_list_of_dicts(results_sorted))
-
-            print()
-            logger.info(f"Total mappings: {total_mappings}")
-
-            if orphaned_users > 0:
-                logger.warning(f"Orphaned users (no login): {orphaned_users}")
-
-            if mismatched_names > 0:
-                logger.info(f"Name mismatches (login ≠ user): {mismatched_names}")
 
             logger.success("Login-to-user mapping completed")
 
