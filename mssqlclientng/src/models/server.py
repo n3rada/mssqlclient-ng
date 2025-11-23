@@ -118,12 +118,19 @@ class Server:
         cls, server_input: str, port: int = 1433, database: str = "master"
     ) -> "Server":
         """
-        Parses a server string in the format "hostname[:impersonation_user]".
+        Parses a server string in the format "server[,port][:user][@database]".
+        
+        Format supports any combination:
+        - server (required) - hostname or IP
+        - ,port (optional) - port number
+        - :user (optional) - user to impersonate
+        - @database (optional) - database context
 
         Args:
-            server_input: Server string (e.g., "192.168.1.100" or "192.168.1.100:sa")
-            port: The SQL Server port (default: 1433)
-            database: The database to connect to (default: "master")
+            server_input: Server string (e.g., "SQL01", "SQL01,1434", "SQL01:sa", 
+                         "SQL01@mydb", "SQL01,1434:sa@mydb")
+            port: Default port if not specified in server_input (default: 1433)
+            database: Default database if not specified in server_input (default: "master")
 
         Returns:
             A Server instance
@@ -132,25 +139,51 @@ class Server:
             ValueError: If the server input format is invalid
 
         Examples:
-            >>> server = Server.parse_server("192.168.1.100")
-            >>> server.hostname
-            '192.168.1.100'
-            >>> server = Server.parse_server("192.168.1.100:sa")
+            >>> server = Server.parse_server("SQL01")
+            >>> server.hostname, server.port, server.database
+            ('SQL01', 1433, 'master')
+            >>> server = Server.parse_server("SQL01,1434")
+            >>> server.port
+            1434
+            >>> server = Server.parse_server("SQL01:webapp01")
             >>> server.impersonation_user
-            'sa'
+            'webapp01'
+            >>> server = Server.parse_server("SQL01@myapp")
+            >>> server.database
+            'myapp'
+            >>> server = Server.parse_server("SQL01,1434:webapp01@myapp")
+            >>> (server.hostname, server.port, server.impersonation_user, server.database)
+            ('SQL01', 1434, 'webapp01', 'myapp')
         """
-        parts = server_input.split(":")
-
-        if len(parts) < 1 or len(parts) > 2:
+        import re
+        
+        # Pattern: server[,port][:user][@database]
+        # server is required, everything else is optional
+        pattern = r'^([^,:\s@]+)(?:,(\d+))?(?::([^@\s]+))?(?:@([^\s]+))?$'
+        match = re.match(pattern, server_input.strip())
+        
+        if not match:
             raise ValueError(
-                f"Invalid target format: {server_input}. Expected 'hostname[:impersonation_user]'"
+                f"Invalid target format: '{server_input}'. "
+                f"Expected format: server[,port][:user][@database]"
             )
-
+        
+        hostname = match.group(1)
+        port_str = match.group(2)
+        impersonation_user = match.group(3)
+        database_name = match.group(4)
+        
+        # Use parsed port if provided, otherwise use the default
+        parsed_port = int(port_str) if port_str else port
+        
+        # Use parsed database if provided, otherwise use the default
+        parsed_database = database_name if database_name else database
+        
         return cls(
-            hostname=parts[0],
-            port=port,
-            database=database,
-            impersonation_user=parts[1] if len(parts) > 1 else None,
+            hostname=hostname,
+            port=parsed_port,
+            database=parsed_database,
+            impersonation_user=impersonation_user,
         )
 
     def __str__(self) -> str:

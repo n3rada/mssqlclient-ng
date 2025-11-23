@@ -18,17 +18,19 @@ from mssqlclientng.src.utils import banner
 
 # Import actions to register them with the factory
 from mssqlclientng.src import actions
+from mssqlclientng.src.actions.factory import ActionFactory
 from mssqlclientng.src.actions.execution import query
 
 
 def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
-        prog="mssqlclientng",
-        add_help=True,
+        prog="mssqlclient-ng",
+        add_help=False,  # We'll handle help manually
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
+        usage="%(prog)s <host> [options] [action [action-options]]",
         allow_abbrev=True,
-        exit_on_error=True,
+        exit_on_error=False,
     )
 
     parser.add_argument(
@@ -38,27 +40,29 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show version and exit.",
     )
 
+    parser.add_argument(
+        "-h",
+        "--help",
+        nargs="?",
+        const="__general__",
+        metavar="ACTION",
+        help="Show help. Use '-h ACTION' to show help for a specific action (e.g., '-h createuser'). Use '-h search_term' to filter actions.",
+    )
+
     # Target arguments
     group_target = parser.add_argument_group("Target")
     group_target.add_argument(
         "host",
         type=str,
-        help="Target MS SQL Server IP or hostname.",
+        nargs="?",
+        help="Target MS SQL Server. Format: server[,port][:user][@database]. Examples: 'SQL01', 'SQL01,1434', 'SQL01:sa@mydb'",
     )
-
-    group_target.add_argument(
-        "-P",
-        "--port",
-        type=int,
-        required=False,
-        default=1433,
-        help="Target MS SQL Server port (default: 1433).",
-    )
-
-    group_target.add_argument("-d", "--domain", type=str, help="Domain name")
 
     credentials_group = parser.add_argument_group(
         "Credentials", "Options for credentials"
+    )
+    credentials_group.add_argument(
+        "-d", "--domain", type=str, help="Domain name for Windows authentication"
     )
     credentials_group.add_argument(
         "-u", "--username", type=str, help="Username (either local or Windows)."
@@ -94,13 +98,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--kdcHost",
         metavar="KDCHOST",
         help="FQDN of the domain controller. If omitted it will use the domain part (FQDN) specified in the target parameter",
-    )
-
-    group_target.add_argument(
-        "-db",
-        "--database",
-        action="store",
-        help="MSSQL database instance (default None)",
     )
 
     group_target.add_argument(
@@ -154,25 +151,19 @@ def build_parser() -> argparse.ArgumentParser:
         "This is useful when target is the NetBIOS name and you cannot resolve it",
     )
 
-    actions_groups = parser.add_argument_group(
-        "Actions", "Actions to perform upon successful connection."
+    # Positional action argument
+    parser.add_argument(
+        "action",
+        type=str,
+        nargs="?",
+        help="Action to perform (e.g., 'info', 'createuser', 'links'). Use '-h' to see all actions or '-h ACTION' for specific action help.",
     )
 
-    actions_groups.add_argument(
-        "-q",
-        "--query",
-        type=str,
-        default=None,
-        help="T-SQL command to execute upon successful connection.",
-    )
-
-    actions_groups.add_argument(
-        "-a",
-        "--action",
-        type=str,
+    # Action arguments (everything after action)
+    parser.add_argument(
+        "action_args",
         nargs=argparse.REMAINDER,
-        default=None,
-        help="Action to perform upon successful connection, followed by its arguments.",
+        help="Arguments for the specified action.",
     )
 
     advanced_group = parser.add_argument_group(
@@ -221,15 +212,156 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def display_general_help(parser: argparse.ArgumentParser) -> None:
+    """Display general help including all available actions."""
+    parser.print_help()
+    print("\n" + "=" * 80)
+    print("AVAILABLE ACTIONS:")
+    print("=" * 80)
+    
+    actions = ActionFactory.get_available_actions()
+    
+    # Group actions by category (based on package structure)
+    from collections import defaultdict
+    categorized = defaultdict(list)
+    
+    for name, description, arguments in sorted(actions):
+        # Try to determine category from action class module
+        action_class = ActionFactory.get_action_type(name)
+        if action_class:
+            module_path = action_class.__module__
+            if 'administration' in module_path:
+                category = 'Administration'
+            elif 'database' in module_path:
+                category = 'Database'
+            elif 'domain' in module_path:
+                category = 'Domain'
+            elif 'execution' in module_path:
+                category = 'Execution'
+            elif 'filesystem' in module_path:
+                category = 'Filesystem'
+            elif 'network' in module_path:
+                category = 'Network'
+            else:
+                category = 'Other'
+        else:
+            category = 'Other'
+        
+        categorized[category].append((name, description))
+    
+    # Display actions by category
+    for category in sorted(categorized.keys()):
+        print(f"\n{category}:")
+        print("-" * 80)
+        for name, description in categorized[category]:
+            print(f"  {name:20} - {description}")
+    
+    print("\n" + "=" * 80)
+    print("USAGE EXAMPLES:")
+    print("=" * 80)
+    print("  mssqlclient-ng SQL01 -u sa -p password info")
+    print("  mssqlclient-ng SQL01,1434@mydb -u admin -p pass createuser backup_user P@ssw0rd")
+    print("  mssqlclient-ng SQL01:webapp01 -c token links")
+    print("  mssqlclient-ng SQL01 -u sa -p password -l SQL02,SQL03 info")
+    print("\nFor detailed help on a specific action:")
+    print("  mssqlclient-ng SQL01 -u sa -p password createuser -h")
+    print("  mssqlclient-ng -h createuser")
+    print("\nTo filter actions by keyword:")
+    print("  mssqlclient-ng -h adsi")
+    print("=" * 80 + "\n")
+
+
+def display_action_help(action_name: str) -> bool:
+    """
+    Display help for a specific action.
+    
+    Returns:
+        True if action was found and help displayed, False otherwise.
+    """
+    action = ActionFactory.get_action(action_name)
+    if not action:
+        return False
+    
+    print("=" * 80)
+    print(f"ACTION: {action_name}")
+    print("=" * 80)
+    print(f"\n{action.get_help()}\n")
+    
+    arguments = action.get_arguments()
+    if arguments:
+        print("ARGUMENTS:")
+        print("-" * 80)
+        for i, arg in enumerate(arguments, 1):
+            print(f"  {i}. {arg}")
+    else:
+        print("This action takes no arguments.")
+    
+    print("\n" + "=" * 80)
+    print("USAGE:")
+    print("=" * 80)
+    print(f"  mssqlclient-ng <host> [options] {action_name} [arguments]")
+    print("\nEXAMPLE:")
+    print(f"  mssqlclient-ng SQL01 -u sa -p password {action_name}")
+    if arguments:
+        print(f"  mssqlclient-ng SQL01 -u sa -p password {action_name} arg1 arg2")
+    print("=" * 80 + "\n")
+    
+    return True
+
+
+def filter_actions_by_keyword(keyword: str) -> None:
+    """Display actions matching a keyword filter."""
+    actions = ActionFactory.get_available_actions()
+    matching = [
+        (name, description) 
+        for name, description, _ in actions 
+        if keyword.lower() in name.lower() or keyword.lower() in description.lower()
+    ]
+    
+    if not matching:
+        print(f"No actions found matching '{keyword}'")
+        return
+    
+    print("=" * 80)
+    print(f"ACTIONS MATCHING '{keyword}':")
+    print("=" * 80)
+    for name, description in sorted(matching):
+        print(f"  {name:20} - {description}")
+    print(f"\nFound {len(matching)} action(s).")
+    print("=" * 80)
+    print(f"\nFor detailed help: mssqlclient-ng -h <action_name>")
+    print("=" * 80 + "\n")
+
+
 def main() -> int:
     print(banner.display_banner())
 
     parser = build_parser()
-    args = parser.parse_args()
-
-    # Show help if no cli args provided
-    if len(sys.argv) <= 1:
-        parser.print_help()
+    
+    # Parse known args to handle --version and other flags separately from action args
+    try:
+        args, unknown = parser.parse_known_args()
+    except SystemExit:
+        return 1
+    
+    # Handle help specially
+    if args.help is not None:
+        if args.help == "__general__":
+            # General help requested
+            display_general_help(parser)
+        else:
+            # Check if it's an action name or a search keyword
+            if ActionFactory.get_action(args.help):
+                # Specific action help
+                display_action_help(args.help)
+            else:
+                # Filter actions by keyword
+                filter_actions_by_keyword(args.help)
+        return 0
+    
+    # If no host provided, show help
+    if not args.host:
+        display_general_help(parser)
         return 1
 
     # Determine log level: --log-level takes precedence, then --debug, then default INFO
@@ -242,12 +374,12 @@ def main() -> int:
 
     logbook.setup_logging(level=log_level)
 
-    # Parse server string (hostname[:impersonation_user])
-    server_instance = server.Server.parse_server(
-        server_input=args.host,
-        port=args.port,
-        database=args.database if args.database else "master",
-    )
+    # Parse server string (now supports server[,port][:user][@database])
+    try:
+        server_instance = server.Server.parse_server(server_input=args.host)
+    except ValueError as e:
+        logger.error(f"Invalid host format: {e}")
+        return 1
 
     # Establish connection - either via relay or direct authentication
     auth_service = None
@@ -375,47 +507,43 @@ def main() -> int:
 
         terminal_instance = Terminal(database_context)
 
-        if args.query or args.action:
-            if args.action:
-                # args.action is now a list: [action_name, arg1, arg2, ...]
-                if isinstance(args.action, list) and len(args.action) > 0:
-                    action_name = args.action[0]
-                    argument_list = args.action[1:]
-                else:
-                    logger.error("No action specified")
+        # Check if an action was specified
+        if args.action:
+            # Check if user wants help for this specific action
+            if args.action_args and args.action_args[0] in ['-h', '--help']:
+                display_action_help(args.action)
+                return 0
+            
+            # Execute specified action
+            if args.action == "query":
+                # Special case: query action takes T-SQL as arguments
+                query_sql = " ".join(args.action_args) if args.action_args else ""
+                if not query_sql:
+                    logger.error("No SQL query provided")
                     return 1
-
-                # Execute specified action
-                if action_name == "query":
-                    args.query = " ".join(argument_list)
-                else:
-                    terminal_instance.execute_action(
-                        action_name=action_name, argument_list=argument_list
-                    )
-                    return 0
-
-            # Execute query if provided
-            if args.query:
-                # Execute query without prefix
+                
                 query_action = query.Query()
                 try:
-                    query_action.validate_arguments(additional_arguments=args.query)
+                    query_action.validate_arguments(additional_arguments=query_sql)
                 except ValueError as ve:
                     logger.error(f"Argument validation error: {ve}")
                     return 1
 
                 query_action.execute(database_context)
                 return 0
-
+            else:
+                # Execute regular action with its arguments
+                terminal_instance.execute_action(
+                    action_name=args.action, 
+                    argument_list=args.action_args if args.action_args else []
+                )
+                return 0
         else:
-            # Starting interactive fake-shell
+            # No action specified - start interactive terminal
             terminal_instance.start(
                 prefix=args.prefix, multiline=args.multiline, history=args.history
             )
             return 0
-
-        logger.error("No action or query specified to execute.")
-        return 1
 
     except Exception as exc:
         logger.error(f"Error in execution: {exc}")

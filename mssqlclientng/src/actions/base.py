@@ -79,3 +79,14 @@ class BaseAction(ABC):
             List of argument descriptions
         """
         return []
+
+    def get_help(self) -> str:
+        """
+        Get detailed help text for this action.
+        
+        Returns:
+            Detailed help text explaining what the action does and how to use it.
+        """
+        # Default implementation using docstring
+        return self.__doc__.strip() if self.__doc__ else "No help available."
+
