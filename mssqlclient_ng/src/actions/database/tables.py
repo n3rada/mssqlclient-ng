@@ -45,9 +45,9 @@ class Tables(BaseAction):
         Returns:
             List of tables with their properties.
         """
-        # Use the current database if no database is specified
+        # Use the execution database if no database is specified
         if not self._database:
-            self._database = database_context.server.database
+            self._database = database_context.query_service.execution_database
 
         logger.info(f"Retrieving tables from [{self._database}]")
 
@@ -64,8 +64,8 @@ class Tables(BaseAction):
             LEFT JOIN
                 [{self._database}].sys.partitions p ON t.object_id = p.object_id
             WHERE
-                t.type IN ('U', 'V') -- 'U' for user tables, 'V' for views
-                AND p.index_id IN (0, 1) -- 0 for heaps, 1 for clustered index
+                t.type IN ('U', 'V')
+                AND p.index_id IN (0, 1)
             GROUP BY
                 s.name, t.name, t.type_desc
             ORDER BY
@@ -75,46 +75,51 @@ class Tables(BaseAction):
         tables = database_context.query_service.execute_table(query)
 
         if not tables:
-            logger.warning(f"No tables found in database [{self._database}]")
-            return None
+            logger.warning("No tables found.")
+            return []
 
-        # Add permissions for each table
+        # Get all permissions in a single query for better performance
+        all_permissions_query = f"""
+            USE [{self._database}];
+            SELECT
+                SCHEMA_NAME(o.schema_id) AS schema_name,
+                o.name AS object_name,
+                p.permission_name
+            FROM sys.objects o
+            CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p
+            WHERE o.type IN ('U', 'V')
+            ORDER BY o.name, p.permission_name;
+        """
+
+        all_permissions = database_context.query_service.execute_table(
+            all_permissions_query
+        )
+
+        # Build a dictionary for fast lookup: key = "schema.table", value = set of unique permissions
+        permissions_dict = {}
+
+        for perm_row in all_permissions:
+            key = f"{perm_row['schema_name']}.{perm_row['object_name']}"
+            permission = perm_row["permission_name"]
+
+            if key not in permissions_dict:
+                permissions_dict[key] = set()
+            permissions_dict[key].add(permission)
+
+        # Map permissions to tables
         for table in tables:
             schema_name = table["SchemaName"]
             table_name = table["TableName"]
+            key = f"{schema_name}.{table_name}"
 
-            # Query to get user permissions on the table
-            permission_query = f"""
-                USE [{self._database}];
-                SELECT DISTINCT
-                    permission_name
-                FROM
-                    fn_my_permissions('[{schema_name}].[{table_name}]', 'OBJECT');
-            """
-
-            try:
-                permission_result = database_context.query_service.execute_table(
-                    permission_query
-                )
-
-                if permission_result:
-                    # Concatenate permissions as a comma-separated string
-                    permissions = ", ".join(
-                        [p["permission_name"] for p in permission_result]
-                    )
-                else:
-                    permissions = ""
-
-                # Add permissions to the result
-                table["Permissions"] = permissions
-
-            except Exception as ex:
-                logger.debug(
-                    f"Failed to get permissions for [{schema_name}].[{table_name}]: {ex}"
-                )
-                table["Permissions"] = "Error"
+            if key in permissions_dict:
+                table["Permissions"] = ", ".join(sorted(permissions_dict[key]))
+            else:
+                table["Permissions"] = ""
 
         print(OutputFormatter.convert_list_of_dicts(tables))
+
+        logger.success(f"Retrieved {len(tables)} table(s) from [{self._database}]")
 
         return tables
 
