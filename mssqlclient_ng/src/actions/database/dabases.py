@@ -88,7 +88,7 @@ class Databases(BaseAction):
                 for row in database_info:
                     info_dict[row["name"]] = {
                         "trustworthy": row["is_trustworthy_on"],
-                        "owner": row["owner_name"] if row["owner_name"] else "N/A",
+                        "owner": row["owner_name"],
                     }
 
             # Add accessibility, trustworthy, and owner columns to each database
@@ -102,7 +102,7 @@ class Databases(BaseAction):
                     "name": db_name,
                     "Accessible": db_name in accessible_set,
                     "Trustworthy": info_dict.get(db_name, {}).get("trustworthy", False),
-                    "Owner": info_dict.get(db_name, {}).get("owner", "N/A"),
+                    "Owner": info_dict.get(db_name, {}).get("owner", ""),
                     "crdate": db["crdate"],
                     "filename": db["filename"],
                 }
