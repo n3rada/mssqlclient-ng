@@ -314,13 +314,23 @@ DROP TABLE #TreeResults;
         for i, node in enumerate(nodes):
             is_last_node = i == len(nodes) - 1
 
-            # Determine the connector
-            if is_last_node:
-                connector = "└── "
-                new_prefix = prefix + "    "
+            # Determine the connector based on Unicode mode
+            if self._use_unicode:
+                # Unicode box-drawing characters (default)
+                if is_last_node:
+                    connector = "└── "
+                    new_prefix = prefix + "    "
+                else:
+                    connector = "├── "
+                    new_prefix = prefix + "│   "
             else:
-                connector = "├── "
-                new_prefix = prefix + "│   "
+                # ASCII-compatible characters (fallback for legacy terminals)
+                if is_last_node:
+                    connector = "\\-- "
+                    new_prefix = prefix + "    "
+                else:
+                    connector = "|-- "
+                    new_prefix = prefix + "|   "
 
             # Add file/directory indicator
             if node["is_file"]:
