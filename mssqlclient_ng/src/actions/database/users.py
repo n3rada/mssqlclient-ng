@@ -40,17 +40,12 @@ class Users(BaseAction):
             database_context: The DatabaseContext instance to execute the query.
 
         Returns:
-            Dictionary with server principals and database users.
+            None
         """
-        server_principals = None
-
         # Only show server logins on on-premises SQL Server (not Azure SQL Database)
         if not database_context.query_service.is_azure_sql:
             logger.info(
                 "Enumerating server-level principals (logins) and their instance-wide server roles"
-            )
-            logger.info(
-                "Note: Use 'roles' action to see database-level role memberships"
             )
 
             server_principals_query = """
@@ -69,14 +64,11 @@ class Users(BaseAction):
                 ORDER BY sp.modify_date DESC;
             """
 
-            server_principals = database_context.query_service.execute_table(
+            raw_table = database_context.query_service.execute_table(
                 server_principals_query
             )
 
-            if server_principals:
-                print(OutputFormatter.convert_list_of_dicts(server_principals))
-            else:
-                logger.warning("No server principals found")
+            print(OutputFormatter.convert_list_of_dicts(raw_table))
 
         logger.info("Database users in current database context")
 
@@ -88,19 +80,13 @@ class Users(BaseAction):
             ORDER BY modify_date DESC;
         """
 
-        database_users = database_context.query_service.execute_table(
-            database_users_query
+        print(
+            OutputFormatter.convert_list_of_dicts(
+                database_context.query_service.execute_table(database_users_query)
+            )
         )
 
-        if database_users:
-            print(OutputFormatter.convert_list_of_dicts(database_users))
-        else:
-            logger.warning("No database users found")
-
-        return {
-            "server_principals": server_principals,
-            "database_users": database_users,
-        }
+        return None
 
     def get_arguments(self) -> list[str]:
         """
