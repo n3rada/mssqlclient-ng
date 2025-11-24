@@ -23,7 +23,7 @@ class ProcedureMode(Enum):
 
 
 @ActionFactory.register(
-    "procedures", "List, execute, read, search stored procedures or test SQLi"
+    "procedures", "List, execute, read, search stored procedures or create from file"
 )
 class Procedures(BaseAction):
     """
@@ -34,7 +34,7 @@ class Procedures(BaseAction):
     - exec <schema.procedure> [args]: Executes a stored procedure with optional arguments
     - read <schema.procedure>: Reads the definition of a stored procedure
     - search <keyword>: Searches for procedures containing a keyword in their definition
-    - sqli: Tests for SQL injection vulnerabilities in stored procedures
+    - create <file_path> [database_name]: Creates a stored procedure from a SQL file
     """
 
     def __init__(self):
@@ -289,11 +289,11 @@ class Procedures(BaseAction):
             logger.warning(
                 "Execution context depends on the statements used inside the stored procedure."
             )
-            logger.warning(
-                "Dynamic SQL executed with EXEC or sp_executesql runs under caller permissions by default."
+            logger.info(
+                "  Dynamic SQL executed with EXEC or sp_executesql runs under caller permissions by default."
             )
-            logger.warning(
-                "Static SQL inside a procedure uses ownership chaining, which may allow operations (e.g., SELECT) that the caller is not directly permitted to perform."
+            logger.info(
+                "  Static SQL inside a procedure uses ownership chaining, which may allow operations (e.g., SELECT) that the caller is not directly permitted to perform."
             )
 
             return sorted_procedures
@@ -331,14 +331,12 @@ class Procedures(BaseAction):
 
             if result:
                 print(OutputFormatter.convert_list_of_dicts(result))
-            else:
-                logger.info("Procedure executed successfully with no result set")
 
             return result
 
         except Exception as e:
             logger.error(f"Error executing stored procedure: {e}")
-            raise
+            return []
 
     def _read_procedure_definition(
         self, database_context: DatabaseContext
@@ -390,7 +388,7 @@ class Procedures(BaseAction):
 
         except Exception as e:
             logger.error(f"Error retrieving stored procedure definition: {e}")
-            raise
+            return None
 
     def _search_procedures(
         self, database_context: DatabaseContext
@@ -449,7 +447,7 @@ class Procedures(BaseAction):
 
         except Exception as e:
             logger.error(f"Error searching stored procedures: {e}")
-            raise
+            return []
 
     def get_arguments(self) -> list[str]:
         """
