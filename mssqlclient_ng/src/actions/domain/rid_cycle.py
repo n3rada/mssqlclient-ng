@@ -6,7 +6,7 @@ from loguru import logger
 
 # Local imports
 from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.domain.domsid import DomainSid
+from mssqlclient_ng.src.actions.domain.addomain import DomainSid
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.utils.formatters import OutputFormatter
