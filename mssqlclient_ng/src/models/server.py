@@ -25,7 +25,7 @@ class Server:
         self,
         hostname: str,
         port: int = 1433,
-        database: str = "master",
+        database: Optional[str] = None,
         impersonation_user: Optional[str] = None,
     ):
         """
@@ -34,7 +34,7 @@ class Server:
         Args:
             hostname: The hostname or IP address of the server
             port: The SQL Server port (default: 1433)
-            database: The database to connect to (default: "master")
+            database: The database to connect to (default: None, will use server default)
             impersonation_user: The user to impersonate on this server (optional)
 
         Raises:
@@ -49,7 +49,7 @@ class Server:
         self.hostname = hostname.strip()
         self._version: Optional[str] = None
         self.port = port or 1433
-        self.database = database.strip() if database else "master"
+        self.database = database.strip() if database else None
 
         self.impersonation_user = impersonation_user if impersonation_user else ""
         self.mapped_user = ""
@@ -117,7 +117,7 @@ class Server:
 
     @classmethod
     def parse_server(
-        cls, server_input: str, port: int = 1433, database: str = "master"
+        cls, server_input: str, port: int = 1433, database: Optional[str] = None
     ) -> "Server":
         """
         Parses a server string in the format "server[,port][:user][@database]".

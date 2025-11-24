@@ -262,6 +262,9 @@ def main() -> int:
 
     try:
         server_instance = server.Server.parse_server(server_input=args.host)
+        # For initial connection, default to master if no database specified
+        if server_instance.database is None:
+            server_instance.database = "master"
     except ValueError as e:
         logger.error(f"Invalid host format: {e}")
         return 1
