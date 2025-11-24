@@ -11,53 +11,76 @@ from mssqlclient_ng.src.services.database import DatabaseContext
 from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("search", "Search for a keyword in database columns and rows")
+@ActionFactory.register("search", "Search for keywords in column names and data across databases")
 class Search(BaseAction):
     """
-    Searches for a keyword in column names and table data.
+    Search for keywords in column names and data across databases.
 
-    Can search a specific database or all accessible databases.
+    Usage:
+    - search <keyword>: Search current database for keyword in column names and row data
+    - search <keyword> -a: Search all accessible databases
+    - search <keyword> -t schema.table: Search specific table only
+    - search <keyword> -t database.schema.table: Search specific table in specific database
+    - search <keyword> -c: Search column names only (no row data)
+
+    Examples:
+    - search password: Search for 'password' in current database
+    - search password -a: Search for 'password' in all databases
+    - search admin -t dbo.users: Search only in dbo.users table
+    - search email -c: Find columns containing 'email' (fast)
     """
 
     def __init__(self):
         super().__init__()
-        self._database: Optional[str] = None
         self._keyword: str = ""
+        self._columns_only: bool = False
         self._all_databases: bool = False
+        self._target_table: Optional[str] = None
+        self._target_database: Optional[str] = None
+        self._target_schema: Optional[str] = None
 
     def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validates the search arguments.
 
         Args:
-            additional_arguments: [database|*] keyword
+            additional_arguments: keyword [-c] [-a] [-t table]
 
         Raises:
             ValueError: If arguments are invalid.
         """
         if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("Invalid arguments. Search usage: [database|*] keyword")
+            raise ValueError(
+                "Keyword is required. Usage: search <keyword> [-c] [-a] [-t table]"
+            )
 
-        parts = additional_arguments.strip().split(maxsplit=1)
+        # Parse both positional and named arguments
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments.strip()
+        )
 
-        if len(parts) == 1:
-            # Only the keyword is provided
-            self._keyword = parts[0].strip()
-            self._database = None  # Use the default database
-        elif len(parts) == 2:
-            # Check if first argument is "*" for all databases
-            if parts[0].strip() == "*":
-                self._all_databases = True
-                self._keyword = parts[1].strip()
-            else:
-                # Both database and keyword are provided
-                self._database = parts[0].strip()
-                self._keyword = parts[1].strip()
-        else:
-            raise ValueError("Invalid arguments. Search usage: [database|*] keyword")
+        # Get keyword from position 0 or -k/--keyword
+        self._keyword = (
+            named_args.get("k")
+            or named_args.get("keyword")
+            or (positional_args[0] if positional_args else None)
+        )
 
         if not self._keyword:
-            raise ValueError("The keyword cannot be empty")
+            raise ValueError(
+                "Keyword is required. Usage: search <keyword> [-c] [-a] [-t table]"
+            )
+
+        # Check for columns-only flag
+        if "c" in named_args or "columns" in named_args:
+            self._columns_only = True
+
+        # Check for all databases flag
+        if "a" in named_args or "all" in named_args:
+            self._all_databases = True
+
+        # Get target table if specified
+        self._target_table = named_args.get("t") or named_args.get("table")
 
     def execute(self, database_context: DatabaseContext) -> Optional[dict]:
         """
@@ -67,39 +90,84 @@ class Search(BaseAction):
             database_context: The DatabaseContext instance to execute the query.
 
         Returns:
-            Dictionary with search statistics.
+            Dictionary with search statistics or None.
         """
+        # Parse table argument if provided
+        if self._target_table:
+            table_parts = self._target_table.split(".")
+
+            if len(table_parts) == 3:  # database.schema.table
+                self._target_database = table_parts[0]
+                self._target_schema = table_parts[1]
+                self._target_table = table_parts[2]
+            elif len(table_parts) == 2:  # schema.table (current database)
+                self._target_schema = table_parts[0]
+                self._target_table = table_parts[1]
+            elif len(table_parts) == 1:  # just table name (use dbo schema)
+                self._target_schema = "dbo"
+                self._target_table = table_parts[0]
+            else:
+                raise ValueError(
+                    "Invalid table format. Use: schema.table or database.schema.table"
+                )
+
+        # Handle column-only search
+        if self._columns_only:
+            return self._search_columns_only(database_context)
+
+        # Handle specific table search
+        if self._target_table:
+            db_name = (
+                self._target_database
+                or database_context.query_service.execution_database
+            )
+            logger.info(
+                f"Searching for '{self._keyword}' in [{db_name}].[{self._target_schema}].[{self._target_table}]"
+            )
+            header_matches, row_matches, _ = self._search_database(
+                database_context, db_name, self._target_schema, self._target_table
+            )
+
+            print()
+            logger.success("Search completed:")
+            logger.info(f"  Column header matches: {header_matches}")
+            logger.info(f"  Row matches: {row_matches}")
+            return None
+
+        # Handle database-wide or all databases search
         databases_to_search = []
 
-        logger.info(
-            f"Lurking for '{self._keyword}' accross accessible user tables only (excluding Microsoft system tables)"
-        )
-
         if self._all_databases:
-            logger.info("Searching across ALL accessible databases")
+            logger.info("Searching for keyword across ALL accessible databases")
+            logger.info(
+                "  Searching in accessible user tables only (excluding Microsoft system tables)"
+            )
+
             # Get all accessible databases
             accessible_databases = database_context.query_service.execute_table(
-                "SELECT name FROM sys.databases WHERE HAS_DBACCESS(name) = 1 AND state = 0 ORDER BY name;"
+                "SELECT name FROM master.sys.databases WHERE HAS_DBACCESS(name) = 1 AND state = 0 ORDER BY name;"
             )
 
             for db in accessible_databases:
                 databases_to_search.append(db["name"])
 
             logger.info(
-                f"Found {len(databases_to_search)} accessible databases to search"
+                f"  Found {len(databases_to_search)} accessible databases to search"
             )
         else:
-            # Use specified database or default
-            if not self._database:
-                self._database = database_context.server.database
-            databases_to_search.append(self._database)
+            logger.info(
+                f"Lurking for '{self._keyword}' in user tables only (excluding Microsoft system tables)"
+            )
+            # Use the execution database from QueryService
+            database = database_context.query_service.execution_database
+            databases_to_search.append(database)
 
         total_header_matches = 0
         total_row_matches = 0
         total_tables_searched = 0
 
         for db_name in databases_to_search:
-            logger.info(f"Searching database: {db_name}")
+            logger.info(f"  Searching database: {db_name}")
             header_matches, row_matches, tables_searched = self._search_database(
                 database_context, db_name
             )
@@ -107,21 +175,106 @@ class Search(BaseAction):
             total_row_matches += row_matches
             total_tables_searched += tables_searched
 
+        print()
         logger.success(
-            f"Search completed across {len(databases_to_search)} database(s) and {total_tables_searched} table(s)"
+            f"Search completed across {len(databases_to_search)} database(s) and {total_tables_searched} table(s):"
         )
-        logger.info(f"Column header matches: {total_header_matches}")
-        logger.info(f"Row matches: {total_row_matches}")
+        logger.info(f"  Column header matches: {total_header_matches}")
+        logger.info(f"  Row matches: {total_row_matches}")
 
-        return {
-            "databases_searched": len(databases_to_search),
-            "tables_searched": total_tables_searched,
-            "header_matches": total_header_matches,
-            "row_matches": total_row_matches,
-        }
+        return None
+
+    def _search_columns_only(
+        self, database_context: DatabaseContext
+    ) -> Optional[dict]:
+        """
+        Search only column names across all accessible databases (fast, no row data scanning).
+
+        Args:
+            database_context: The DatabaseContext instance.
+
+        Returns:
+            None
+        """
+        logger.info(
+            f"Searching for '{self._keyword}' in column names only (fast mode)"
+        )
+        print()
+
+        # Get all accessible databases
+        databases_to_search = []
+
+        if self._all_databases:
+            accessible_databases = database_context.query_service.execute_table(
+                "SELECT name FROM master.sys.databases WHERE HAS_DBACCESS(name) = 1 AND state = 0 ORDER BY name;"
+            )
+
+            for db in accessible_databases:
+                databases_to_search.append(db["name"])
+        else:
+            databases_to_search.append(
+                database_context.query_service.execution_database
+            )
+
+        all_matches = []
+        total_matches = 0
+
+        for db_name in databases_to_search:
+            # Escape single quotes in keyword
+            escaped_keyword = self._keyword.replace("'", "''")
+
+            metadata_query = f"""
+                SELECT
+                    '{db_name}' AS [Database],
+                    s.name AS [Schema],
+                    t.name AS [Table],
+                    c.name AS [Column],
+                    ty.name AS [Data Type],
+                    c.column_id AS [Position]
+                FROM [{db_name}].sys.tables t
+                INNER JOIN [{db_name}].sys.schemas s ON t.schema_id = s.schema_id
+                INNER JOIN [{db_name}].sys.columns c ON t.object_id = c.object_id
+                INNER JOIN [{db_name}].sys.types ty ON c.user_type_id = ty.user_type_id
+                WHERE t.is_ms_shipped = 0
+                AND c.name LIKE '%{escaped_keyword}%'
+                ORDER BY s.name, t.name, c.column_id;
+            """
+
+            try:
+                matches = database_context.query_service.execute_table(metadata_query)
+
+                for row in matches:
+                    all_matches.append(
+                        {
+                            "Database": row["Database"],
+                            "Schema": row["Schema"],
+                            "Table": row["Table"],
+                            "Column": row["Column"],
+                            "Data Type": row["Data Type"],
+                            "Position": row["Position"],
+                        }
+                    )
+
+                total_matches += len(matches)
+            except Exception as ex:
+                logger.error(f"Failed to search database '{db_name}': {ex}")
+
+        if total_matches > 0:
+            logger.success(
+                f"Found {total_matches} column(s) containing '{self._keyword}':"
+            )
+            print(OutputFormatter.convert_list_of_dicts(all_matches))
+        else:
+            logger.warning(f"No columns found containing '{self._keyword}'")
+
+        return None
 
     def _search_database(
-        self, database_context: DatabaseContext, database: str
+        self,
+        database_context: DatabaseContext,
+        database: str,
+        target_schema: Optional[str] = None,
+        target_table: Optional[str] = None,
     ) -> tuple[int, int, int]:
         """
         Searches a specific database for the keyword.
@@ -136,6 +289,13 @@ class Search(BaseAction):
         # Escape single quotes in keyword for SQL
         escaped_keyword = self._keyword.replace("'", "''")
 
+        # Build WHERE clause for specific table if specified
+        table_filter = ""
+        if target_table:
+            escaped_schema = target_schema.replace("'", "''")
+            escaped_table = target_table.replace("'", "''")
+            table_filter = f" AND s.name = '{escaped_schema}' AND t.name = '{escaped_table}' "
+
         # Query to get all columns in all tables of the specified database
         metadata_query = f"""
             SELECT
@@ -148,7 +308,7 @@ class Search(BaseAction):
             INNER JOIN [{database}].sys.schemas s ON t.schema_id = s.schema_id
             INNER JOIN [{database}].sys.columns c ON t.object_id = c.object_id
             INNER JOIN [{database}].sys.types ty ON c.user_type_id = ty.user_type_id
-            WHERE t.is_ms_shipped = 0
+            WHERE t.is_ms_shipped = 0 {table_filter}
             ORDER BY s.name, t.name, c.column_id;
         """
 
@@ -243,8 +403,9 @@ class Search(BaseAction):
 
                 if result_table:
                     row_match_count += len(result_table)
+                    print()
                     logger.success(
-                        f"Found {len(result_table)} row(s) containing '{self._keyword}' in [{database}].[{schema}].[{table}]"
+                        f"Found {len(result_table)} row(s) containing '{self._keyword}' in [{database}].[{schema}].[{table}]:"
                     )
                     print(OutputFormatter.convert_list_of_dicts(result_table))
 
@@ -306,4 +467,4 @@ class Search(BaseAction):
         Returns:
             List of argument descriptions.
         """
-        return ["[database|*] keyword"]
+        return ["<keyword> [-c] [-a] [-t table]"]
