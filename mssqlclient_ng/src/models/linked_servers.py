@@ -246,8 +246,7 @@ class LinkedServers:
             if login:
                 base_query.append(f"EXECUTE AS LOGIN = '{login}'; ")
 
-            if database:
-                base_query.append(f"USE [{database}]; ")
+            # No USE statement needed - we're already in the target database context
 
             base_query.append(current_query.rstrip(";"))
             base_query.append(";")
@@ -343,8 +342,8 @@ class LinkedServers:
                 if login:
                     query_builder.append(f"EXECUTE AS LOGIN = '{login}'; ")
 
-            # Add database context if applicable
-            if linked_databases and len(linked_databases) > 0:
+            # Only add USE statement for servers beyond the first linked server
+            if i < len(linked_servers) - 1 and linked_databases and len(linked_databases) > 0:
                 database = linked_databases[i - 1]
                 if database:
                     query_builder.append(f"USE [{database}]; ")
