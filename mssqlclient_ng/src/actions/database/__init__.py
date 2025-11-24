@@ -13,6 +13,7 @@ from mssqlclient_ng.src.actions.database.oledb_providers import OleDbProviders
 from mssqlclient_ng.src.actions.database.permissions import Permissions
 from mssqlclient_ng.src.actions.database.procedures import Procedures
 from mssqlclient_ng.src.actions.database.rolemembers import RoleMembers
+from mssqlclient_ng.src.actions.database.roles import Roles
 from mssqlclient_ng.src.actions.database.rows import Rows
 from mssqlclient_ng.src.actions.database.search import Search
 from mssqlclient_ng.src.actions.database.tables import Tables
@@ -30,6 +31,7 @@ __all__ = [
     "Permissions",
     "Procedures",
     "RoleMembers",
+    "Roles",
     "Rows",
     "Search",
     "Tables",
