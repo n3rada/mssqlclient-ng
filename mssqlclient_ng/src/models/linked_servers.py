@@ -244,7 +244,7 @@ class LinkedServers:
             base_query = []
 
             if login:
-                base_query.append(f"EXECUTE AS LOGIN = '{login}'; ")
+                base_query.append(f"EXECUTE AS LOGIN = '{login}';")
 
             # No USE statement needed - we're already in the target database context
 
@@ -265,13 +265,13 @@ class LinkedServers:
         # Add impersonation if applicable
         if login:
             impersonation_ticks = "'" * (2 ** (ticks_counter + 1))
-            impersonation_query = f"EXECUTE AS LOGIN = '{login}'; "
+            impersonation_query = f"EXECUTE AS LOGIN = '{login}';"
             result.append(impersonation_query.replace("'", impersonation_ticks))
 
         # Add database context if applicable
         if database:
             database_ticks = "'" * (2 ** (ticks_counter + 1))
-            use_query = f"USE [{database}]; "
+            use_query = f"USE [{database}];"
             result.append(use_query.replace("'", database_ticks))
 
         # Recursive call for the remaining servers
@@ -340,20 +340,20 @@ class LinkedServers:
             if linked_impersonation and len(linked_impersonation) > 0:
                 login = linked_impersonation[i - 1]
                 if login:
-                    query_builder.append(f"EXECUTE AS LOGIN = '{login}'; ")
+                    query_builder.append(f"EXECUTE AS LOGIN = '{login}';")
 
             # Only add USE statement for servers beyond the first linked server
             if i < len(linked_servers) - 1 and linked_databases and len(linked_databases) > 0:
                 database = linked_databases[i - 1]
                 if database:
-                    query_builder.append(f"USE [{database}]; ")
+                    query_builder.append(f"USE [{database}];")
 
             query_builder.append(current_query.rstrip(";"))
             query_builder.append(";")
 
             # Double single quotes to escape them in the SQL string
             escaped_query = "".join(query_builder).replace("'", "''")
-            current_query = f"EXEC ('{escaped_query} ') AT [{server}]"
+            current_query = f"EXEC ('{escaped_query}') AT [{server}]"
 
         return current_query
 
