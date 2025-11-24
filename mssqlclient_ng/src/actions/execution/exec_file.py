@@ -118,7 +118,12 @@ class ExecFile(BaseAction):
             if not result:
                 return False
 
-            return result[0].get("File Exists", False)
+            # xp_fileexist returns unnamed columns:
+            # Column 0: File Exists (1/0)
+            # Column 1: File is a Directory (1/0)
+            # Column 2: Parent Directory Exists (1/0)
+            first_column_value = next(iter(result[0].values()), 0)
+            return bool(first_column_value)
 
         except Exception as e:
             logger.error(f"Could not check if file exists: {e}")
@@ -185,18 +190,11 @@ class ExecFile(BaseAction):
                     EXEC sp_OADestroy @ObjectToken;
                 """
 
-                result = database_context.query_service.execute_non_processing(query)
-
-                if result != -1:
-                    logger.success(
-                        "File launched successfully via OLE (running in background)"
-                    )
-                    print()
-                    print("Process started asynchronously (not waiting for completion)")
-                    return ["Process launched in background"]
-                else:
-                    logger.error("OLE execution failed")
-                    return None
+                database_context.query_service.execute_table(query)
+                logger.success(
+                    "File launched successfully via OLE (running in background)"
+                )
+                return ["Process launched in background"]
             else:
                 # Sync mode - wait and return exit code
                 query = f"""
@@ -242,8 +240,6 @@ class ExecFile(BaseAction):
                     logger.success(
                         f"File executed successfully via OLE (Exit Code: {exit_code})"
                     )
-                    print()
-                    print(f"Process completed with exit code: {exit_code}")
                     return [f"Exit code: {exit_code}"]
                 else:
                     logger.error("OLE execution failed")
@@ -288,18 +284,11 @@ class ExecFile(BaseAction):
                 query = f"EXEC master..xp_cmdshell '{escaped_command}'"
 
                 logger.info("Executing via xp_cmdshell (async)")
-                result = database_context.query_service.execute_non_processing(query)
-
-                if result != -1:
-                    logger.success(
-                        "File launched successfully via xp_cmdshell (running in background)"
-                    )
-                    print()
-                    print("Process started asynchronously (not waiting for completion)")
-                    return ["Process launched in background"]
-                else:
-                    logger.error("xp_cmdshell execution failed")
-                    return None
+                database_context.query_service.execute_table(query)
+                logger.success(
+                    "File launched successfully via xp_cmdshell (running in background)"
+                )
+                return ["Process launched in background"]
             else:
                 # Sync execution - run directly and capture output
                 if self._arguments:
