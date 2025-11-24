@@ -254,7 +254,6 @@ ORDER BY
             True if successful, False otherwise
         """
         logger.info(f"Exploiting TRUSTWORTHY vulnerability on database '{database}'")
-        logger.info("  This will escalate your current user to sysadmin")
 
         try:
             if database_context.user_service.is_admin():
