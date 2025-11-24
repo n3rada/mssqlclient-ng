@@ -12,7 +12,34 @@ from mssqlclient_ng.src.utils.common import normalize_windows_path
 
 
 @ActionFactory.register(
-    "tree", "Display directory tree structure in Linux tree-style format"
+    "tree",
+    "Display directory tree structure in Linux tree-style format",
+    [
+        {
+            "name": "path",
+            "type": "string",
+            "required": True,
+            "description": "Directory path to display",
+        },
+        {
+            "name": "--depth",
+            "type": "int",
+            "required": False,
+            "description": "Directory depth to traverse (1-255)",
+        },
+        {
+            "name": "--files",
+            "type": "bool",
+            "required": False,
+            "description": "Show files (1|0 or true|false)",
+        },
+        {
+            "name": "--unicode",
+            "type": "bool",
+            "required": False,
+            "description": "Use Unicode box-drawing characters (default: true, set to false for ASCII)",
+        },
+    ],
 )
 class Tree(BaseAction):
     """
@@ -22,11 +49,13 @@ class Tree(BaseAction):
     to enumerate directories and files on the SQL Server filesystem. The output is
     formatted to match the Linux 'tree' command style.
 
-    The tree representation uses:
+    The tree representation uses Unicode box-drawing characters by default:
     - ├── for intermediate items
     - └── for the last item in a directory
     - │   for vertical lines continuing to subdirectories
     - Indentation to show hierarchy levels
+
+    Use --unicode:false or -u:false flag to fall back to ASCII characters (|, \\, |) for legacy terminals
     """
 
     def __init__(self):
@@ -34,42 +63,63 @@ class Tree(BaseAction):
         self._path: str = ""
         self._depth: int = 3
         self._show_files: bool = True
+        self._use_unicode: bool = True
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
         Validate arguments for the tree action.
 
         Args:
-            additional_arguments: Path and optional parameters
-                Format: <path> [depth] [show_files:1|0]
+            args: List of command line arguments
+
+        Returns:
+            bool: True if validation succeeds
 
         Raises:
-            ValueError: If the path is empty
+            ValueError: If the path is empty or depth is invalid
         """
-        parts = self.split_arguments(additional_arguments)
+        named_args, positional_args = self._parse_action_arguments(args)
 
-        if not parts:
-            raise ValueError("Tree action requires a directory path as an argument")
+        # Get path from positional argument or throw error
+        if len(positional_args) >= 1:
+            self._path = positional_args[0]
+        else:
+            self._path = ""
 
-        # Normalize Windows path to handle single backslashes
-        self._path = normalize_windows_path(parts[0].strip())
+        if not self._path or not self._path.strip():
+            raise ValueError("Tree action requires a directory path as an argument.")
 
-        # Optional depth parameter
-        if len(parts) >= 2:
-            try:
-                self._depth = int(parts[1])
-                if self._depth < 1 or self._depth > 255:
-                    raise ValueError("Depth must be between 1 and 255")
-            except ValueError:
-                logger.warning(
-                    f"Invalid depth value '{parts[1]}', using default depth of 3"
-                )
-                self._depth = 3
+        # Get depth from named argument or positional argument
+        depth_str = named_args.get(
+            "depth", named_args.get("d", positional_args[1] if len(positional_args) > 1 else "3")
+        )
 
-        # Optional show_files parameter
-        if len(parts) >= 3:
-            show_files_str = parts[2].strip().lower()
-            self._show_files = show_files_str in ["1", "true", "yes"]
+        try:
+            self._depth = int(depth_str)
+        except ValueError:
+            logger.warning(f"Invalid depth value '{depth_str}', using default depth of 3")
+            self._depth = 3
+
+        if self._depth < 1 or self._depth > 255:
+            raise ValueError("Depth must be between 1 and 255")
+
+        # Get show files flag from named argument or positional argument
+        files_str = named_args.get(
+            "files", named_args.get("f", positional_args[2] if len(positional_args) > 2 else "true")
+        )
+
+        files_lower = files_str.strip().lower()
+        self._show_files = files_lower in ["1", "true", "yes"]
+
+        # Get Unicode mode flag from named argument or positional argument
+        unicode_str = named_args.get(
+            "unicode", named_args.get("u", positional_args[3] if len(positional_args) > 3 else "true")
+        )
+
+        unicode_lower = unicode_str.strip().lower()
+        self._use_unicode = unicode_lower in ["1", "true", "yes"]
+
+        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
@@ -82,7 +132,10 @@ class Tree(BaseAction):
             The tree representation as a string
         """
         logger.info(f"Displaying tree for: {self._path}")
-        logger.info(f"Depth: {self._depth}, Show files: {self._show_files}")
+        logger.info(
+            f"Depth: {self._depth}, Show files: {self._show_files}, "
+            f"Mode: {'Unicode' if self._use_unicode else 'ASCII'}"
+        )
 
         # Ensure path ends with backslash for xp_dirtree
         path = self._path.rstrip("\\") + "\\"
@@ -98,19 +151,19 @@ class Tree(BaseAction):
 
         # Create temporary table to store results
         query = f"""
-            CREATE TABLE #TreeResults (
-                subdirectory NVARCHAR(512),
-                depth INT,
-                isfile BIT
-            );
+CREATE TABLE #TreeResults (
+    subdirectory NVARCHAR(512),
+    depth INT,
+    isfile BIT
+);
 
-            INSERT INTO #TreeResults (subdirectory, depth, isfile)
-            EXEC xp_dirtree '{escaped_path}', {self._depth}, {file_flag};
+INSERT INTO #TreeResults (subdirectory, depth, isfile)
+EXEC xp_dirtree '{escaped_path}', {self._depth}, {file_flag};
 
-            SELECT subdirectory, depth, isfile FROM #TreeResults;
+SELECT subdirectory, depth, isfile FROM #TreeResults;
 
-            DROP TABLE #TreeResults;
-        """
+DROP TABLE #TreeResults;
+"""
 
         try:
             results = database_context.query_service.execute_table(query)
@@ -118,46 +171,43 @@ class Tree(BaseAction):
             if not results:
                 logger.warning("No files or directories found")
                 print()
-                print(f"{self._path}")
+                print(self._path)
                 print()
                 print("0 directories, 0 files")
                 return None
 
-            # Debug: Log first few results to understand the structure
             logger.debug(f"Total results: {len(results)}")
-            for i, r in enumerate(results[:5]):
-                logger.debug(
-                    f"Result {i}: subdirectory='{r.get('subdirectory')}', "
-                    f"depth={r.get('depth')}, isfile={r.get('isfile')}"
-                )
 
             # Build the tree structure
-            tree_output = self._build_tree(results, path)
+            tree_output = self._build_tree(results, self._path)
 
             # Count statistics - only count items within depth limit
-            dir_count = sum(
-                1
-                for r in results
-                if not r.get("isfile", False) and r.get("depth", 1) <= self._depth
-            )
-            file_count = sum(
-                1
-                for r in results
-                if r.get("isfile", False) and r.get("depth", 1) <= self._depth
-            )
+            dir_count = 0
+            file_count = 0
+
+            for r in results:
+                is_file = r.get("isfile", False)
+                depth = r.get("depth", 1)
+
+                if depth <= self._depth:
+                    if is_file:
+                        file_count += 1
+                    else:
+                        dir_count += 1
 
             print()
             print(tree_output)
             print()
-            print(
-                f"{dir_count} directories"
-                + (f", {file_count} files" if self._show_files else "")
-            )
+
+            stats = f"{dir_count} directories"
+            if self._show_files:
+                stats += f", {file_count} files"
+            print(stats)
 
             return tree_output
 
-        except Exception as e:
-            logger.error(f"Failed to generate tree for '{self._path}': {e}")
+        except Exception as ex:
+            logger.error(f"Failed to generate tree for '{self._path}': {ex}")
             raise
 
     def _build_tree(self, results: List[Dict[str, Any]], root_path: str) -> str:
