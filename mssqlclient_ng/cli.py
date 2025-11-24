@@ -415,6 +415,11 @@ def main() -> int:
                 logger.error(f"Failed to set up linked servers: {exc}")
                 return 1
 
+        # Compute and display the final execution context
+        database_context.query_service.compute_execution_database()
+        if database_context.query_service.execution_database:
+            logger.info(f"Execution database: {database_context.query_service.execution_database}")
+
         # Detect Azure SQL on the final execution server
         database_context.query_service.is_azure_sql
 
