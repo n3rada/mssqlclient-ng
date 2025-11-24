@@ -1,10 +1,12 @@
-# Built-in imports
-from typing import Optional
+"""
+Read file contents from the SQL Server filesystem using OPENROWSET BULK.
 
-# Third party imports
+Requires ADMINISTER BULK OPERATIONS or ADMINISTER DATABASE BULK OPERATIONS permission.
+"""
+
+from typing import Optional, List
 from loguru import logger
 
-# Local imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
@@ -12,80 +14,88 @@ from mssqlclient_ng.src.utils.common import normalize_windows_path
 
 
 @ActionFactory.register(
-    "read", "Read file content from the target server using OPENROWSET"
+    "read",
+    "Read file content from the target server using OPENROWSET",
+    [
+        {
+            "name": "file_path",
+            "type": "string",
+            "required": True,
+            "description": "Full path to the file to read",
+        }
+    ],
 )
 class FileRead(BaseAction):
     """
     Reads file content from the target SQL Server using OPENROWSET BULK.
-    Requires BULK INSERT permissions or similar privileges.
+    Requires ADMINISTER BULK OPERATIONS or ADMINISTER DATABASE BULK OPERATIONS permission.
     """
 
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
-        Validates that a file path has been provided.
+        Validate and bind the arguments passed to the FileRead action.
 
         Args:
-            additional_arguments: The file path to read.
+            args: List of command line arguments
+
+        Returns:
+            bool: True if validation succeeds
 
         Raises:
-            ValueError: If the file path is empty.
+            ValueError: If the file path is empty
         """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("Read action requires a file path as an argument.")
+        named_args, positional_args = self._parse_action_arguments(args)
+
+        if len(positional_args) >= 1:
+            self._file_path = positional_args[0]
+        else:
+            self._file_path = ""
+
+        if not self._file_path:
+            raise ValueError(
+                "File path is required. Example: fileread C:\\\\temp\\\\data.txt"
+            )
 
         # Normalize Windows path to handle single backslashes
-        self._file_path = normalize_windows_path(additional_arguments.strip())
+        self._file_path = normalize_windows_path(self._file_path)
+
+        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
-        Executes the Read action to fetch the content of a file using OPENROWSET.
+        Execute the Read action to fetch the content of a file using OPENROWSET BULK.
 
         Args:
-            database_context: The DatabaseContext instance to execute the query.
+            database_context: The DatabaseContext instance to execute the query
 
         Returns:
-            The file content as a string.
+            The file content as a string, or None on error
         """
         logger.info(f"Reading file: {self._file_path}")
 
-        # Escape single quotes in file path for SQL
-        escaped_path = self._file_path.replace("'", "''")
-
-        # Use OPENROWSET BULK to read file content
-        query = f"""
-            SELECT A FROM OPENROWSET(BULK '{escaped_path}', SINGLE_CLOB) AS R(A);
-        """
-
         try:
+            # Escape single quotes in file path for SQL
+            escaped_path = self._file_path.replace("'", "''")
+
+            # Use OPENROWSET BULK to read file content
+            query = f"SELECT A FROM OPENROWSET(BULK '{escaped_path}', SINGLE_CLOB) AS R(A);"
+
             file_content = database_context.query_service.execute_scalar(query)
 
             if file_content is None:
-                logger.warning("File is empty or query returned NULL")
                 return None
 
-            file_content_str = file_content.decode("utf-8", errors="replace")
+            # Convert to string if needed
+            file_content_str = str(file_content) if file_content else ""
 
-            logger.success(f"Successfully read {len(file_content_str)} bytes")
-
-            # Print file content directly to stdout
-            print()
             print(file_content_str)
 
             return file_content_str
 
-        except Exception as e:
-            logger.error(f"Failed to read file '{self._file_path}': {e}")
-            raise
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List containing the expected argument name.
-        """
-        return ["file_path"]
+        except Exception as ex:
+            logger.error(f"Failed to read file: {ex}")
+            return None
