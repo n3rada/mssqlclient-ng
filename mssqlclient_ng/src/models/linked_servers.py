@@ -353,7 +353,7 @@ class LinkedServers:
 
             # Double single quotes to escape them in the SQL string
             escaped_query = "".join(query_builder).replace("'", "''")
-            current_query = f"EXEC ('{escaped_query} ') AT [{server}]"
+            current_query = f"EXEC ('{escaped_query}') AT [{server}]"
 
         return current_query
 
