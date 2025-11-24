@@ -39,7 +39,18 @@ class RoleMembers(BaseAction):
                 "Role name is required. Example: sysadmin, serveradmin, securityadmin, etc."
             )
 
-        self._role_name = additional_arguments.strip()
+        # Parse both positional and named arguments
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments.strip()
+        )
+
+        # Get role name from position 0
+        self._role_name = positional_args[0] if positional_args else ""
+
+        if not self._role_name:
+            raise ValueError(
+                "Role name is required. Example: sysadmin, serveradmin, securityadmin, etc."
+            )
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """
@@ -49,9 +60,12 @@ class RoleMembers(BaseAction):
             database_context: The DatabaseContext instance to execute the query.
 
         Returns:
-            List of role members or empty list if none found.
+            None
         """
         logger.info(f"Retrieving members of server role: {self._role_name}")
+
+        # Escape single quotes in role name for SQL injection prevention
+        escaped_role_name = self._role_name.replace("'", "''")
 
         query = f"""
             SELECT
@@ -59,32 +73,26 @@ class RoleMembers(BaseAction):
                 l.type_desc AS LoginType,
                 l.is_disabled AS IsDisabled,
                 l.create_date AS CreateDate,
-                l.modify_date AS ModifyDate,
-                l.tenant_id AS TenantId
-            FROM sys.server_role_members rm
-            JOIN sys.server_principals r ON rm.role_principal_id = r.principal_id
-            JOIN sys.server_principals l ON rm.member_principal_id = l.principal_id
-            WHERE r.name = '{self._role_name}'
+                l.modify_date AS ModifyDate
+            FROM master.sys.server_role_members rm
+            JOIN master.sys.server_principals r ON rm.role_principal_id = r.principal_id
+            JOIN master.sys.server_principals l ON rm.member_principal_id = l.principal_id
+            WHERE r.name = '{escaped_role_name}'
             ORDER BY l.create_date DESC;
         """
 
-        try:
-            result = database_context.query_service.execute_table(query)
+        result = database_context.query_service.execute_table(query)
 
-            if not result:
-                logger.warning(
-                    f"No members found for role '{self._role_name}'. Verify the role name is correct."
-                )
-                return []
-
+        if not result:
+            logger.warning(
+                f"No members found for role '{self._role_name}'. Verify the role name is correct."
+            )
+        else:
             logger.success(f"Found {len(result)} member(s) in role '{self._role_name}'")
-            print(OutputFormatter.convert_list_of_dicts(result))
 
-            return result
+        print(OutputFormatter.convert_list_of_dicts(result))
 
-        except Exception as e:
-            logger.error(f"Failed to retrieve role members: {e}")
-            raise
+        return None
 
     def get_arguments(self) -> list[str]:
         """
