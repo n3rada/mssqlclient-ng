@@ -342,8 +342,9 @@ class LinkedServers:
                 if login:
                     query_builder.append(f"EXECUTE AS LOGIN = '{login}';")
 
-            # Only add USE statement for servers beyond the first linked server
-            if i < len(linked_servers) - 1 and linked_databases and len(linked_databases) > 0:
+            # Add USE statement for all linked servers (skip index 0 which is the direct connection)
+            # Index mapping: linked_databases[0] corresponds to linked_servers[1] (first linked server)
+            if i > 1 and linked_databases and len(linked_databases) > 0:
                 database = linked_databases[i - 1]
                 if database:
                     query_builder.append(f"USE [{database}];")
