@@ -40,35 +40,41 @@ class ClrExecution(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._dll_uri: Optional[str] = None
+        self._dll_uri: str = ""
         self._function: str = "Main"
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
         Validate arguments for CLR execution.
 
         Args:
-            additional_arguments: DLL URI and optional function name
+            args: List of command line arguments
                 Format: <dll_uri> [function]
+
+        Returns:
+            bool: True if validation succeeds
 
         Raises:
             ValueError: If arguments are invalid
         """
-        parts = self.split_arguments(additional_arguments)
+        named_args, positional_args = self._parse_action_arguments(args)
 
-        if len(parts) == 1:
-            self._dll_uri = parts[0].strip()
-            self._function = "Main"
-        elif len(parts) == 2:
-            self._dll_uri = parts[0].strip()
-            self._function = parts[1].strip()
+        # Parse DLL URI (required)
+        if len(positional_args) >= 1:
+            self._dll_uri = positional_args[0]
         else:
-            raise ValueError(
-                "Invalid arguments. CLR execution usage: <dll_uri> [function]"
-            )
+            raise ValueError("DLL URI is required. Usage: <dllURI> [function]")
+
+        # Parse function name (optional, default: Main)
+        if len(positional_args) >= 2:
+            self._function = positional_args[1] if positional_args[1] else "Main"
+        else:
+            self._function = "Main"
 
         if not self._dll_uri:
-            raise ValueError("The dll_uri cannot be empty")
+            raise ValueError("DLL URI is required. Usage: <dllURI> [function]")
+
+        return True
 
     def execute(self, database_context: DatabaseContext) -> bool:
         """
@@ -108,7 +114,7 @@ class ClrExecution(BaseAction):
             if database_context.server.legacy:
                 logger.info("Legacy server detected. Enabling TRUSTWORTHY property")
                 database_context.query_service.execute_non_processing(
-                    f"ALTER DATABASE {database_context.server.database} SET TRUSTWORTHY ON;"
+                    f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY ON;"
                 )
 
             if not database_context.config_service.register_trusted_assembly(
@@ -167,7 +173,7 @@ class ClrExecution(BaseAction):
             if database_context.server.legacy:
                 logger.info("Resetting TRUSTWORTHY property")
                 database_context.query_service.execute_non_processing(
-                    f"ALTER DATABASE {database_context.server.database} SET TRUSTWORTHY OFF;"
+                    f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY OFF;"
                 )
 
     def _convert_dll_to_sql_bytes(self, dll: str) -> tuple[str, str]:
