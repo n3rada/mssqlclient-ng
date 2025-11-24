@@ -31,15 +31,9 @@ class Sessions(BaseAction):
 
         Args:
             additional_arguments: Ignored, no arguments needed
-
-        Raises:
-            ValueError: If unexpected arguments are provided
         """
-        if additional_arguments and additional_arguments.strip():
-            logger.warning(
-                "Sessions action does not accept arguments, ignoring: %s",
-                additional_arguments,
-            )
+        # No additional arguments needed
+        pass
 
     def execute(self, database_context=None) -> Optional[List[Dict[str, Any]]]:
         """
@@ -49,11 +43,9 @@ class Sessions(BaseAction):
             database_context: The database context containing query_service
 
         Returns:
-            List of session rows from the query
+            None
         """
-        query_service = database_context.query_service
-
-        logger.info("Active SQL Server sessions")
+        logger.info("Retrieving active SQL Server sessions")
 
         sessions_query = """
             SELECT
@@ -63,24 +55,14 @@ class Sessions(BaseAction):
                 program_name,
                 client_interface_name,
                 login_name
-            FROM sys.dm_exec_sessions
+            FROM master.sys.dm_exec_sessions
             ORDER BY login_time DESC;
         """
 
-        result_rows = query_service.execute_table(sessions_query)
+        result = database_context.query_service.execute(sessions_query)
+        print(OutputFormatter.convert_sql_data_reader(result))
 
-        if not result_rows:
-            logger.warning("No active sessions found")
-            return result_rows
-
-        logger.success(f"Active sessions: {len(result_rows)}")
-
-        # Display as markdown table
-        result = OutputFormatter.convert_list_of_dicts(result_rows)
-
-        print(result)
-
-        return result_rows
+        return None
 
     def get_arguments(self) -> List[str]:
         """
