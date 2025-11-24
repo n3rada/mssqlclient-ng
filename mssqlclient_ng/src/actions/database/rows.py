@@ -24,7 +24,6 @@ class Rows(BaseAction):
 
     Optional arguments:
     - -l/--limit: Maximum number of rows to retrieve (default: no limit)
-    - -o/--offset: Number of rows to skip (default: 0)
     """
 
     def __init__(self):
@@ -34,14 +33,13 @@ class Rows(BaseAction):
         self._schema: Optional[str] = None  # None = use user's default schema
         self._table: str = ""
         self._limit: int = 0  # 0 = no limit
-        self._offset: int = 0
 
     def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validates the table name argument and optional flags.
 
         Args:
-            additional_arguments: Table name or FQTN with optional --limit/-l and --offset/-o flags
+            additional_arguments: Table name or FQTN with optional --limit/-l flags
 
         Raises:
             ValueError: If the table name format is invalid.
@@ -104,22 +102,6 @@ class Rows(BaseAction):
                     )
                 raise
 
-        # Parse offset argument
-        if "offset" in named_args or "o" in named_args:
-            offset_str = named_args.get("offset", named_args.get("o"))
-            try:
-                self._offset = int(offset_str)
-                if self._offset < 0:
-                    raise ValueError(
-                        f"Invalid offset value: {self._offset}. Offset must be a non-negative integer."
-                    )
-            except ValueError as e:
-                if "invalid literal" in str(e):
-                    raise ValueError(
-                        f"Invalid offset value: '{offset_str}'. Must be an integer."
-                    )
-                raise
-
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """
         Executes the rows retrieval query.
@@ -143,30 +125,16 @@ class Rows(BaseAction):
 
         logger.info(f"Retrieving rows from {target_table}")
 
-        if self._offset > 0 or self._limit > 0:
-            if self._offset > 0:
-                logger.info(f"Skipping {self._offset} row(s)")
-            if self._limit > 0:
-                logger.info(f"Limiting to {self._limit} row(s)")
+        if self._limit > 0:
+            logger.info(f"Limiting to {self._limit} row(s)")
 
-        # Build query with optional TOP and OFFSET/FETCH
+        # Build query with optional TOP
         query = "SELECT"
 
-        if self._limit > 0 and self._offset == 0:
-            # Use TOP when no offset
+        if self._limit > 0:
             query += f" TOP ({self._limit})"
 
-        query += f" * FROM {target_table}"
-
-        if self._offset > 0:
-            # Use OFFSET/FETCH when offset is specified
-            query += " ORDER BY (SELECT NULL)"  # Dummy ORDER BY to enable OFFSET/FETCH
-            query += f" OFFSET {self._offset} ROWS"
-
-            if self._limit > 0:
-                query += f" FETCH NEXT {self._limit} ROWS ONLY"
-
-        query += ";"
+        query += f" * FROM {target_table};"
 
         try:
             rows = database_context.query_service.execute_table(query)
@@ -190,6 +158,4 @@ class Rows(BaseAction):
         Returns:
             List containing the table name argument description.
         """
-        return [
-            "table|schema.table|database.schema.table [-l/--limit N] [-o/--offset N]"
-        ]
+        return ["table|schema.table|database.schema.table [-l/--limit N]"]
