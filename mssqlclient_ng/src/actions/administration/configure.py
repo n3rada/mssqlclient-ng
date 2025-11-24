@@ -7,84 +7,165 @@ from loguru import logger
 # Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
+from mssqlclient_ng.src.services.database import DatabaseContext
+from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("configure", "Configure SQL Server options (xp_cmdshell, etc.)")
-class Configure(BaseAction):
+@ActionFactory.register("config", "Configure SQL Server options or list configurations")
+class Config(BaseAction):
     """
-    Configure SQL Server options using sp_configure.
+    Configure SQL Server options using sp_configure or list configurations.
 
-    Allows enabling or disabling advanced options like xp_cmdshell, OLE Automation, etc.
+    Modes:
+    1. List all configurations: config
+    2. Check specific option: config xp_cmdshell
+    3. Set option: config xp_cmdshell 1
 
     Usage:
-        configure xp_cmdshell 1      # Enable xp_cmdshell
-        configure xp_cmdshell 0      # Disable xp_cmdshell
+        config                      # List all configuration options
+        config xp_cmdshell          # Check status of xp_cmdshell
+        config xp_cmdshell 1        # Enable xp_cmdshell
+        config xp_cmdshell 0        # Disable xp_cmdshell
     """
 
     def __init__(self):
         super().__init__()
         self._option_name: Optional[str] = None
-        self._state: Optional[int] = None
+        self._value: int = -1
 
     def validate_arguments(self, additional_arguments: str) -> None:
         """
-        Validate that option name and state are provided.
+        Validate arguments for configuration action.
 
         Args:
-            additional_arguments: Must be in format: "option_name state"
-                                 where state is 0 (disable) or 1 (enable)
+            additional_arguments: Optional "[option_name] [value]"
+                                 where value is 0 (disable) or 1 (enable)
 
         Raises:
             ValueError: If arguments are invalid
         """
         if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("Configure action requires option name and state.")
+            # No arguments = list all configurations
+            return
 
-        parts = self.split_arguments(additional_arguments)
+        # Parse both positional and named arguments
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments.strip()
+        )
 
-        if len(parts) != 2:
-            raise ValueError(
-                "Invalid arguments. Usage: configure <option_name> <state>\n"
-                "Example: configure xp_cmdshell 1\n"
-                "State: 1 = enable, 0 = disable"
-            )
+        # Parse option name (optional)
+        self._option_name = positional_args[0] if positional_args else None
+        if not self._option_name:
+            self._option_name = named_args.get("option") or named_args.get("o")
 
-        self._option_name = parts[0]
+        # Parse value (optional)
+        value_str = positional_args[1] if len(positional_args) > 1 else "-1"
+        if value_str == "-1":
+            value_str = named_args.get("value", named_args.get("v", "-1"))
 
-        # Validate and parse the state
         try:
-            self._state = int(parts[1])
-            if self._state not in [0, 1]:
-                raise ValueError(
-                    f"Invalid state value: {self._state}. Use 1 to enable or 0 to disable."
-                )
-        except ValueError as e:
-            raise ValueError(
-                f"Invalid state value: {parts[1]}. Must be 0 (disable) or 1 (enable).\n{e}"
-            )
+            self._value = int(value_str)
+        except ValueError:
+            raise ValueError(f"Invalid value: {value_str}. Must be a number.")
 
-    def execute(self, database_context=None) -> Optional[object]:
+        # Validation
+        if self._value < -1:
+            raise ValueError("Invalid value for configuration option")
+
+        if self._option_name and self._value >= 0 and self._value not in [0, 1]:
+            raise ValueError("Invalid value. Use 1 to enable or 0 to disable.")
+
+    def execute(self, database_context: DatabaseContext) -> Optional[object]:
         """
-        Execute the configuration change.
+        Execute the configuration action.
 
         Args:
             database_context: The database context containing config_service
 
         Returns:
-            None
+            Status or list of configurations
         """
+        # Mode 1: Set configuration option
+        if self._value >= 0 and self._option_name:
+            logger.info(f"Setting {self._option_name} to {self._value}")
+            database_context.config_service.set_configuration_option(
+                self._option_name, self._value
+            )
+            return None
 
-        config_service = database_context.config_service
-        state_str = "enable" if self._state == 1 else "disable"
+        # Mode 2: Show specific option status
+        if self._option_name and self._value < 0:
+            logger.info(f"Checking status of '{self._option_name}'")
+            status = database_context.config_service.get_configuration_status(
+                self._option_name
+            )
 
-        logger.info(f"Setting {self._option_name} to {state_str}")
+            if status < 0:
+                logger.warning(
+                    f"Configuration '{self._option_name}' not found or inaccessible"
+                )
+                return None
 
-        if config_service.set_configuration_option(self._option_name, self._state):
-            logger.success(f"Successfully {state_str}d {self._option_name}")
-            return True
+            logger.info(
+                f"{self._option_name}: {'Enabled' if status == 1 else 'Disabled'}"
+            )
+            return status
 
-        logger.error(f"Failed to configure {self._option_name}")
-        return False
+        # Mode 3: List all security-sensitive configurations
+        logger.info("Listing all configuration options")
+        results = self._check_configuration_options(database_context)
+
+        if results:
+            print()
+            self._display_results(results)
+            return results
+
+        logger.warning("No configuration information could be retrieved")
+        return None
+
+    def _check_configuration_options(
+        self, database_context: DatabaseContext
+    ) -> List[dict]:
+        """
+        Checks all configuration options.
+
+        Args:
+            database_context: The database context
+
+        Returns:
+            List of configuration dictionaries
+        """
+        results = []
+
+        try:
+            # Fetch all configurations at once
+            query = "SELECT name, value_in_use FROM sys.configurations ORDER BY name;"
+            configs_table = database_context.query_service.execute_table(query)
+
+            for row in configs_table:
+                name = row["name"]
+                status = int(row["value_in_use"])
+
+                results.append(
+                    {
+                        "Option": name,
+                        "Value": str(status),
+                        "Enabled": "True" if status == 1 else "False",
+                    }
+                )
+        except Exception as ex:
+            logger.warning(f"Could not retrieve configuration options: {ex}")
+
+        return results
+
+    def _display_results(self, results: List[dict]) -> None:
+        """
+        Displays the results in a formatted table.
+
+        Args:
+            results: List of configuration dictionaries
+        """
+        print(OutputFormatter.convert_list_of_dicts(results))
 
     def get_arguments(self) -> List[str]:
         """
@@ -93,7 +174,5 @@ class Configure(BaseAction):
         Returns:
             List of argument descriptions
         """
-        return [
-            "option_name: Name of the configuration option (e.g., xp_cmdshell, OLE Automation) (required)",
-            "state: 1 to enable, 0 to disable (required)",
-        ]
+        return ["[option_name] [value]"]
+
