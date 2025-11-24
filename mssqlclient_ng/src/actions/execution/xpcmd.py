@@ -21,22 +21,26 @@ class XpCmd(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._command: Optional[str] = None
+        self._command: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
         Validate that a command is provided.
 
         Args:
-            additional_arguments: The operating system command to execute
+            args: List of command arguments to execute
+
+        Returns:
+            bool: True if validation succeeds
 
         Raises:
             ValueError: If no command is provided
         """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("XpCmd action requires a CMD command.")
+        if not args or len(args) == 0:
+            raise ValueError("Shell action requires a CMD command.")
 
-        self._command = additional_arguments.strip()
+        self._command = " ".join(args)
+        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
         """
@@ -64,7 +68,6 @@ class XpCmd(BaseAction):
         output_lines: List[str] = []
 
         try:
-            logger.info("Executing xp_cmdshell")
             result = database_context.query_service.execute(query, tuple_mode=True)
 
             if result:
@@ -72,10 +75,6 @@ class XpCmd(BaseAction):
                 for row in result:
                     # Handle NULL values and extract first column
                     output = row[0] if row and row[0] is not None else ""
-                    # xp_cmdshell returns "NULL" string for empty lines
-                    if output == "NULL":
-                        output = ""
-
                     print(output)
                     output_lines.append(output)
 
@@ -83,8 +82,17 @@ class XpCmd(BaseAction):
 
             logger.warning("The command executed but returned no results.")
             return output_lines
+
         except Exception as ex:
-            logger.error(f"Error executing xp_cmdshell: {ex}")
+            # Handle specific xp_cmdshell proxy account error
+            error_message = str(ex)
+            if "xp_cmdshell_proxy_account" in error_message or "proxy account" in error_message:
+                logger.error("xp_cmdshell proxy account is not configured or invalid.")
+                logger.error("  1. SQL Server service account lacks permissions to execute the command")
+                logger.error("  2. No xp_cmdshell proxy credential is configured")
+            else:
+                logger.error(f"Error executing xp_cmdshell: {ex}")
+            
             return None
 
     def get_arguments(self) -> List[str]:
