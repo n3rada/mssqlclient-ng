@@ -1,19 +1,27 @@
-# Built-in imports
-from typing import Optional
+"""
+Enumerate user and role permissions at server, database, and object levels.
+"""
 
-# Third party imports
+from typing import Optional, List, Dict
 from loguru import logger
 
-# Local imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from mssqlclient_ng.src.utils.formatter import OutputFormatter
 
 
 @ActionFactory.register(
     "permissions",
     "List permissions for the current user on server, databases, or specific table",
+    [
+        {
+            "name": "fqtn",
+            "type": "string",
+            "required": False,
+            "description": "Fully Qualified Table Name (database.schema.table) or empty for your permissions",
+        }
+    ],
 )
 class Permissions(BaseAction):
     """
@@ -31,105 +39,77 @@ class Permissions(BaseAction):
     def __init__(self):
         super().__init__()
         self._fqtn: str = ""
-        self._database: str = ""
+        self._database: Optional[str] = None
         self._schema: Optional[str] = None  # Let SQL Server use user's default schema
         self._table: str = ""
 
-    def _sort_permissions_by_importance(self, permissions: list[dict]) -> list[dict]:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
-        Sorts permissions by exploitation value - most interesting permissions first.
+        Validate the arguments for the permissions action.
 
         Args:
-            permissions: List of permission dictionaries
+            args: List of command line arguments
 
         Returns:
-            Sorted list of permissions
-        """
-        # Define permission priority order (lower number = higher priority)
-        permission_priority = {
-            # Most powerful permissions
-            "CONTROL": 0,
-            "CONTROL SERVER": 0,
-            "ALTER": 1,
-            "ALTER ANY DATABASE": 1,
-            "IMPERSONATE": 2,
-            "IMPERSONATE ANY LOGIN": 2,
-            "TAKE OWNERSHIP": 3,
-            # Execute permissions
-            "EXECUTE": 10,
-            "EXECUTE ANY EXTERNAL SCRIPT": 10,
-            # Data modification
-            "INSERT": 20,
-            "UPDATE": 21,
-            "DELETE": 22,
-            # Read permissions
-            "SELECT": 30,
-            "VIEW DEFINITION": 31,
-            "VIEW SERVER STATE": 32,
-            "VIEW DATABASE STATE": 32,
-            # Other permissions
-            "REFERENCES": 40,
-            "CONNECT": 50,
-            "CONNECT SQL": 50,
-        }
-
-        def get_priority(perm_dict):
-            perm_name = perm_dict.get("Permission", "")
-            # Get priority from dict, default to 100 for unknown permissions
-            priority = permission_priority.get(perm_name, 100)
-            return (priority, perm_name)
-
-        return sorted(permissions, key=get_priority)
-
-    def validate_arguments(self, additional_arguments: str) -> None:
-        """
-        Validates the arguments for the permissions action.
-
-        Args:
-            additional_arguments: Empty for server/database permissions,
-                                 schema.table for current database, or
-                                 database.schema.table for specific database
+            bool: True if validation succeeds
 
         Raises:
-            ValueError: If the format is invalid.
+            ValueError: If the format is invalid
         """
-        if not additional_arguments or not additional_arguments.strip():
+        if not args or len(args) == 0:
             # No arguments - will show server and database permissions
-            return
+            return True
 
-        self._fqtn = additional_arguments.strip()
-        parts = self._fqtn.split(".")
+        # Parse both positional and named arguments
+        named_args, positional_args = self._parse_action_arguments(args)
+
+        # Get table name from position 0
+        table_name = positional_args[0] if len(positional_args) >= 1 else ""
+
+        if not table_name:
+            raise ValueError(
+                "Invalid format for the argument. Expected 'database.schema.table', "
+                "'schema.table', or nothing to return current server permissions."
+            )
+
+        self._fqtn = table_name
+
+        # Parse the table name to extract database, schema, and table
+        parts = table_name.split(".")
 
         if len(parts) == 3:  # Format: database.schema.table
             self._database = parts[0]
             self._schema = parts[1]  # Use explicitly specified schema
             self._table = parts[2]
         elif len(parts) == 2:  # Format: schema.table (current database)
-            self._database = ""  # Use current database
+            self._database = None  # Use current database
             self._schema = parts[0]  # Use explicitly specified schema
             self._table = parts[1]
         else:
             raise ValueError(
-                "Invalid format. Expected 'database.schema.table', 'schema.table', or nothing for server permissions."
+                "Invalid format for the argument. Expected 'database.schema.table', "
+                "'schema.table', or nothing to return current server permissions."
             )
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+        return True
+
+    def execute(self, database_context: DatabaseContext) -> None:
         """
-        Executes the permissions enumeration.
+        Execute the permissions enumeration.
 
         Args:
-            database_context: The DatabaseContext instance to execute the query.
+            database_context: The DatabaseContext instance to execute the query
 
         Returns:
-            None (prints results directly).
+            None
         """
         if not self._table:
-            # Show server and database permissions
             logger.info(
                 "Listing permissions of the current user on server and accessible databases"
             )
-
+            print()
             logger.info("Server permissions")
+
             server_perms = database_context.query_service.execute_table(
                 "SELECT permission_name AS Permission FROM fn_my_permissions(NULL, 'SERVER');"
             )
@@ -137,6 +117,7 @@ class Permissions(BaseAction):
             print(OutputFormatter.convert_list_of_dicts(sorted_server_perms))
 
             logger.info("Database permissions")
+
             db_perms = database_context.query_service.execute_table(
                 "SELECT permission_name AS Permission FROM fn_my_permissions(NULL, 'DATABASE');"
             )
@@ -144,6 +125,7 @@ class Permissions(BaseAction):
             print(OutputFormatter.convert_list_of_dicts(sorted_db_perms))
 
             logger.info("Database access")
+
             accessible_dbs = database_context.query_service.execute_table(
                 "SELECT name AS [Accessible Database] FROM master.sys.databases WHERE HAS_DBACCESS(name) = 1;"
             )
@@ -168,35 +150,133 @@ class Permissions(BaseAction):
             f"Listing permissions for {mapped_user} on [{self._database}]{target_table}"
         )
 
+        # Build USE statement if specific database is different from current
+        use_statement = (
+            ""
+            if not self._database
+            or self._database == database_context.query_service.execution_database
+            else f"USE [{self._database}];"
+        )
+
+        # Query to get permissions
         query = f"""
-            USE [{self._database}];
+            {use_statement}
             SELECT DISTINCT
                 permission_name AS [Permission]
-            FROM
+            FROM 
                 fn_my_permissions('{target_table}', 'OBJECT');
+            """
+
+        data_table = database_context.query_service.execute_table(query)
+        sorted_table = self._sort_permissions_by_importance(data_table)
+
+        print(OutputFormatter.convert_list_of_dicts(sorted_table))
+        return None
+
+    def _sort_permissions_by_importance(self, permissions: List[Dict]) -> List[Dict]:
         """
+        Sort permissions by exploitation value - most interesting permissions first.
 
-        try:
-            result = database_context.query_service.execute_table(query)
-
-            if not result:
-                logger.warning("No permissions found or table does not exist")
-                return []
-
-            sorted_result = self._sort_permissions_by_importance(result)
-            print(OutputFormatter.convert_list_of_dicts(sorted_result))
-
-            return sorted_result
-
-        except Exception as e:
-            logger.error(f"Failed to retrieve permissions: {e}")
-            raise
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
+        Args:
+            permissions: List of permission dictionaries
 
         Returns:
-            List containing the optional table name argument.
+            Sorted list of permissions
+        """
+        if not permissions:
+            return permissions
+
+        def get_priority_tuple(perm_dict):
+            perm_name = perm_dict.get("Permission", "")
+            priority = self._get_permission_priority(perm_name)
+            return (priority, perm_name)
+
+        return sorted(permissions, key=get_priority_tuple)
+
+    def _get_permission_priority(self, permission: str) -> int:
+        """
+        Return a priority value for a permission. Lower values = higher importance/exploitation value.
+
+        Args:
+            permission: Permission name
+
+        Returns:
+            Priority value (lower is more important)
+        """
+        # Critical server-level permissions (most dangerous)
+        if permission == "CONTROL SERVER":
+            return 1
+        if permission == "ALTER ANY LOGIN":
+            return 2
+        if permission == "ALTER ANY DATABASE":
+            return 3
+        if permission == "CREATE ANY DATABASE":
+            return 4
+
+        # Administrative permissions
+        if permission == "CONTROL":
+            return 10
+        if permission == "TAKE OWNERSHIP":
+            return 11
+        if permission == "IMPERSONATE":
+            return 12
+        if permission == "ALTER ANY USER":
+            return 13
+        if permission == "ALTER ANY ROLE":
+            return 14
+        if permission == "ALTER ANY SCHEMA":
+            return 15
+
+        # Code execution permissions
+        if permission == "EXECUTE":
+            return 20
+        if permission == "ALTER":
+            return 21
+        if permission == "CREATE PROCEDURE":
+            return 22
+        if permission == "CREATE FUNCTION":
+            return 23
+        if permission == "CREATE ASSEMBLY":
+            return 24
+
+        # Data modification permissions
+        if permission == "INSERT":
+            return 30
+        if permission == "UPDATE":
+            return 31
+        if permission == "DELETE":
+            return 32
+
+        # Data access permissions
+        if permission == "SELECT":
+            return 40
+        if permission == "REFERENCES":
+            return 41
+
+        # View/metadata permissions
+        if permission == "VIEW DEFINITION":
+            return 50
+        if permission == "VIEW ANY DATABASE":
+            return 51
+        if permission == "VIEW SERVER STATE":
+            return 52
+        if permission == "VIEW DATABASE STATE":
+            return 53
+
+        # Connection permissions (least critical)
+        if permission == "CONNECT":
+            return 60
+        if permission == "CONNECT SQL":
+            return 61
+
+        # Default for unknown permissions
+        return 100
+
+    def get_arguments(self) -> List[str]:
+        """
+        Get the list of arguments for this action.
+
+        Returns:
+            List of argument descriptions
         """
         return ["[database.schema.table or schema.table]"]
