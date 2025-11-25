@@ -107,3 +107,12 @@ class ObjectLinkingEmbedding(BaseAction):
             List of argument descriptions
         """
         return ["Operating system command to execute via OLE Automation"]
+
+    def get_arguments(self) -> List[str]:
+        """
+        Get the list of arguments for this action.
+
+        Returns:
+            List of argument descriptions
+        """
+        return ["Operating system command to execute via OLE Automation"]

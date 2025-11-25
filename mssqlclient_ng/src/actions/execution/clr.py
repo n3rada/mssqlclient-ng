@@ -176,6 +176,18 @@ class ClrExecution(BaseAction):
                     f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY OFF;"
                 )
 
+    def get_arguments(self) -> List[str]:
+        """
+        Get the list of arguments for this action.
+
+        Returns:
+            List of argument descriptions
+        """
+        return [
+            "DLL URI (local path or HTTP/S URL)",
+            "Function name to execute (default: Main)",
+        ]
+
     def _convert_dll_to_sql_bytes(self, dll: str) -> tuple[str, str]:
         """
         Convert DLL to SQL-compatible bytes (from file or URL).

@@ -99,3 +99,12 @@ class FileRead(BaseAction):
         except Exception as ex:
             logger.error(f"Failed to read file: {ex}")
             return None
+
+    def get_arguments(self) -> List[str]:
+        """
+        Get the list of arguments for this action.
+
+        Returns:
+            List of argument descriptions
+        """
+        return ["file_path"]

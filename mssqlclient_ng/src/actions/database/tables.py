@@ -1,18 +1,27 @@
-# Built-in imports
-from typing import Optional
+"""
+List tables in a database with schemas and permissions.
+"""
 
-# Third party imports
+from typing import Optional, List, Dict
 from loguru import logger
 
-# Local imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from mssqlclient_ng.src.utils.formatter import OutputFormatter
 
 
 @ActionFactory.register(
-    "tables", "List tables in a database with schemas and permissions"
+    "tables",
+    "List tables in a database with schemas and permissions",
+    [
+        {
+            "name": "database",
+            "type": "string",
+            "required": False,
+            "description": "Database name (uses current database if not specified)",
+        }
+    ],
 )
 class Tables(BaseAction):
     """
@@ -25,83 +34,90 @@ class Tables(BaseAction):
         super().__init__()
         self._database: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
-        Validates the database argument.
+        Validate the database argument.
 
         Args:
-            additional_arguments: Database name (optional, uses current database if not specified)
-                                 Supports: database_name, -d database_name, --database database_name
-        """
-        if not additional_arguments or not additional_arguments.strip():
-            # No database specified - will use current database
-            return
-
-        # Parse arguments using the base class method
-        named_args, positional_args = self._parse_action_arguments(additional_arguments)
-
-        # Position = 0, ShortName = "db", LongName = "database"
-        self._database = (
-            named_args.get("database")  # --database
-            or named_args.get("db")  # -db (not standard but supported)
-            or (positional_args[0] if positional_args else None)  # Position 0
-        )
-
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
-        """
-        Executes the tables enumeration.
-
-        Args:
-            database_context: The DatabaseContext instance to execute the query.
+            args: List of command line arguments
 
         Returns:
-            List of tables with their properties.
+            bool: True if validation succeeds
+        """
+        named_args, positional_args = self._parse_action_arguments(args)
+
+        # Get database from positional or named arguments
+        if len(positional_args) >= 1:
+            self._database = positional_args[0]
+        else:
+            self._database = None
+
+        if not self._database:
+            self._database = named_args.get("database", named_args.get("db"))
+
+        # If still None, will use current database in Execute()
+        return True
+
+    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
+        """
+        Execute the tables enumeration.
+
+        Args:
+            database_context: The DatabaseContext instance to execute the query
+
+        Returns:
+            List of tables with their properties
         """
         # Use the execution database if no database is specified
-        if not self._database:
-            self._database = database_context.query_service.execution_database
+        target_database = (
+            self._database
+            if self._database
+            else database_context.query_service.execution_database
+        )
 
-        logger.info(f"Retrieving tables from [{self._database}]")
+        logger.info(f"Retrieving tables from [{target_database}]")
+
+        # Build USE statement if specific database is provided
+        use_statement = f"USE [{self._database}];" if self._database else ""
 
         query = f"""
-            SELECT
-                s.name AS SchemaName,
-                t.name AS TableName,
-                t.type_desc AS TableType,
-                SUM(p.rows) AS Rows
-            FROM
-                [{self._database}].sys.objects t
-            JOIN
-                [{self._database}].sys.schemas s ON t.schema_id = s.schema_id
-            LEFT JOIN
-                [{self._database}].sys.partitions p ON t.object_id = p.object_id
-            WHERE
-                t.type IN ('U', 'V')
-                AND p.index_id IN (0, 1)
-            GROUP BY
-                s.name, t.name, t.type_desc
-            ORDER BY
-                SchemaName, TableName;
-        """
+                {use_statement}
+                SELECT 
+                    s.name AS SchemaName,
+                    t.name AS TableName,
+                    t.type_desc AS TableType,
+                    SUM(p.rows) AS Rows
+                FROM 
+                    sys.objects t
+                JOIN 
+                    sys.schemas s ON t.schema_id = s.schema_id
+                LEFT JOIN 
+                    sys.partitions p ON t.object_id = p.object_id
+                WHERE 
+                    t.type IN ('U', 'V')
+                    AND p.index_id IN (0, 1)
+                GROUP BY 
+                    s.name, t.name, t.type_desc
+                ORDER BY 
+                    SchemaName, TableName;"""
 
         tables = database_context.query_service.execute_table(query)
 
         if not tables:
             logger.warning("No tables found.")
-            return []
+            return tables
 
-        # Get all permissions in a single query for better performance
+        # Get all permissions in a single query
         all_permissions_query = f"""
-            USE [{self._database}];
-            SELECT
-                SCHEMA_NAME(o.schema_id) AS schema_name,
-                o.name AS object_name,
-                p.permission_name
-            FROM sys.objects o
-            CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p
-            WHERE o.type IN ('U', 'V')
-            ORDER BY o.name, p.permission_name;
-        """
+                {use_statement}
+                SELECT 
+                    SCHEMA_NAME(o.schema_id) AS schema_name,
+                    o.name AS object_name,
+                    p.permission_name
+                FROM sys.objects o
+                CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p
+                WHERE o.type IN ('U', 'V')
+                ORDER BY o.name, p.permission_name;"""
 
         all_permissions = database_context.query_service.execute_table(
             all_permissions_query
@@ -131,15 +147,15 @@ class Tables(BaseAction):
 
         print(OutputFormatter.convert_list_of_dicts(tables))
 
-        logger.success(f"Retrieved {len(tables)} table(s) from [{self._database}]")
+        logger.success(f"Retrieved {len(tables)} table(s) from [{target_database}]")
 
         return tables
 
-    def get_arguments(self) -> list[str]:
+    def get_arguments(self) -> List[str]:
         """
-        Returns the list of expected arguments for this action.
+        Get the list of arguments for this action.
 
         Returns:
-            List of argument descriptions.
+            List of argument descriptions
         """
         return ["[database | --database database | -db database]"]

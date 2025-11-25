@@ -103,3 +103,12 @@ class XpCmd(BaseAction):
             List of argument descriptions
         """
         return ["Operating system command to execute via xp_cmdshell"]
+
+    def get_arguments(self) -> List[str]:
+        """
+        Get the list of arguments for this action.
+
+        Returns:
+            List of argument descriptions
+        """
+        return ["Operating system command to execute via xp_cmdshell"]
