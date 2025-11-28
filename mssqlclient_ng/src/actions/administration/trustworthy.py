@@ -1,14 +1,12 @@
-# Standard library imports
-from typing import Optional, List
+# /mssqlclient_ng/src/actions/administration/trustworthy.py
 
-# Third-party imports
+from typing import Optional, List, Dict
 from loguru import logger
 
-# Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from mssqlclient_ng.src.utils.formatter import OutputFormatter
 
 
 @ActionFactory.register(
@@ -37,29 +35,29 @@ class Trustworthy(BaseAction):
         self._database: Optional[str] = None
         self._exploit_mode: bool = False
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, args: List[str]) -> bool:
         """
         Validate arguments for trustworthy action.
 
         Args:
-            additional_arguments: Optional "[database] [-e]"
+            args: List of command line arguments
+
+        Returns:
+            bool: True if validation succeeds
 
         Raises:
             ValueError: If exploit mode is specified without database
         """
-        if not additional_arguments or not additional_arguments.strip():
-            # No arguments = scan all databases
-            return
-
-        # Parse both positional and named arguments
-        named_args, positional_args = self._parse_action_arguments(
-            additional_arguments.strip()
-        )
+        named_args, positional_args = self._parse_action_arguments(args)
 
         # Get database from positional or named arguments
-        self._database = positional_args[0] if positional_args else None
+        if len(positional_args) >= 1:
+            self._database = positional_args[0]
+        else:
+            self._database = None
+
         if not self._database:
-            self._database = named_args.get("database") or named_args.get("d")
+            self._database = named_args.get("database", named_args.get("d"))
 
         # Check for exploit flag
         if "exploit" in named_args or "e" in named_args:
@@ -70,6 +68,8 @@ class Trustworthy(BaseAction):
             raise ValueError(
                 "Exploit mode requires a database name. Usage: trustworthy -d <database> -e"
             )
+
+        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[object]:
         """
@@ -90,9 +90,9 @@ class Trustworthy(BaseAction):
 
     def _scan_vulnerable_databases(
         self, database_context: DatabaseContext, specific_database: Optional[str]
-    ) -> Optional[List[dict]]:
+    ) -> Optional[List[Dict]]:
         """
-        Scans databases for TRUSTWORTHY privilege escalation vulnerabilities.
+        Scan databases for TRUSTWORTHY privilege escalation vulnerabilities.
 
         Args:
             database_context: The database context
@@ -113,7 +113,7 @@ class Trustworthy(BaseAction):
         database_filter = (
             ""
             if not specific_database
-            else f"AND d.name = '{specific_database.replace(\"'\", \"''\")}'"
+            else "AND d.name = '" + specific_database.replace("'", "''") + "'"
         )
 
         # Query to find vulnerable databases
@@ -152,9 +152,7 @@ SELECT
     create_date,
     state_desc
 FROM sys.databases
-WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
 {database_filter}
-AND state = 0;
 
 OPEN db_cursor;
 FETCH NEXT FROM db_cursor INTO @dbname, @dbid, @owner, @trustworthy, @ownerIsSysadmin, @created, @state;
@@ -163,7 +161,8 @@ WHILE @@FETCH_STATUS = 0
 BEGIN
     SET @isDbOwner = 'NO';
     
-    IF HAS_DBACCESS(@dbname) = 1
+    -- Check if current user has access and is db_owner in this database (only for ONLINE databases)
+    IF HAS_DBACCESS(@dbname) = 1 AND @state = 'ONLINE'
     BEGIN
         BEGIN TRY
             SET @sql = N'USE [' + REPLACE(@dbname, ']', ']]') + N']; 
@@ -187,13 +186,7 @@ CLOSE db_cursor;
 DEALLOCATE db_cursor;
 
 SELECT * FROM @Results
-ORDER BY 
-    CASE 
-        WHEN Trustworthy = 1 AND OwnerIsSysadmin = 'YES' THEN 1
-        WHEN Trustworthy = 1 THEN 2
-        ELSE 3
-    END,
-    [Database];
+ORDER BY [Database];
 """
 
         try:
@@ -205,7 +198,7 @@ ORDER BY
                 )
                 return results
 
-            # Count vulnerabilities
+            # Add computed columns for Vulnerable and Exploitable flags
             vulnerable = 0
             exploitable = 0
 
@@ -214,25 +207,50 @@ ORDER BY
                 owner_is_sysadmin = row["OwnerIsSysadmin"]
                 current_user_is_db_owner = row.get("CurrentUserIsDbOwner", "NO")
 
-                if trustworthy and owner_is_sysadmin == "YES":
+                # Determine if vulnerable
+                is_vulnerable = trustworthy and owner_is_sysadmin == "YES"
+                row["Vulnerable"] = "YES" if is_vulnerable else "NO"
+
+                # Determine if exploitable
+                is_exploitable = is_vulnerable and current_user_is_db_owner == "YES"
+                row["Exploitable"] = "YES" if is_exploitable else "NO"
+
+                if is_vulnerable:
                     vulnerable += 1
-                    if current_user_is_db_owner == "YES":
+                    if is_exploitable:
                         exploitable += 1
+
+            # Sort by priority: Exploitable > Vulnerable > Trustworthy > Database name
+            def sort_key(row):
+                return (
+                    row["Exploitable"] == "NO",  # False (exploitable) sorts first
+                    row["Vulnerable"] == "NO",  # False (vulnerable) sorts first
+                    not row["Trustworthy"],  # True (trustworthy) sorts first
+                    row["Database"],  # Alphabetically by database name
+                )
+
+            results.sort(key=sort_key)
 
             print(OutputFormatter.convert_list_of_dicts(results))
 
-            # Display summary
+            # Display enhanced summary
             if vulnerable > 0:
                 logger.success(
                     f"Found {vulnerable} vulnerable database(s) with TRUSTWORTHY=ON and sysadmin owner"
                 )
 
                 if exploitable > 0:
-                    logger.info("Use -e flag to exploit.")
+                    logger.warning(
+                        f"{exploitable} of {vulnerable} vulnerable database(s) are immediately exploitable (you are db_owner)"
+                    )
+                    logger.warning("  Use 'trustworthy <database> -e' to escalate to sysadmin")
+                else:
+                    logger.info("  None are currently exploitable by your user (not db_owner)")
+            elif any(row["Trustworthy"] for row in results):
+                logger.warning("Found databases with TRUSTWORTHY=ON but owners are not sysadmin")
+                logger.warning("  These are misconfigured but not exploitable for privilege escalation")
             else:
-                logger.error(
-                    "No TRUSTWORTHY vulnerabilities detected in accessible databases."
-                )
+                logger.success("No TRUSTWORTHY vulnerabilities detected")
 
             return results
 
