@@ -35,20 +35,17 @@ class Trustworthy(BaseAction):
         self._database: Optional[str] = None
         self._exploit_mode: bool = False
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate arguments for trustworthy action.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: Command line arguments as string
 
         Raises:
             ValueError: If exploit mode is specified without database
         """
-        named_args, positional_args = self._parse_action_arguments(args)
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
         # Get database from positional or named arguments
         if len(positional_args) >= 1:
@@ -68,8 +65,6 @@ class Trustworthy(BaseAction):
             raise ValueError(
                 "Exploit mode requires a database name. Usage: trustworthy -d <database> -e"
             )
-
-        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[object]:
         """
