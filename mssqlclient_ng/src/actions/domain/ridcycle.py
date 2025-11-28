@@ -19,20 +19,6 @@ BATCH_SIZE = 1000
 @ActionFactory.register(
     "ridcycle",
     "Enumerate domain accounts by cycling through RIDs",
-    [
-        {
-            "name": "max_rid",
-            "type": "int",
-            "required": False,
-            "description": "Maximum RID to enumerate (default: 10000)",
-        },
-        {
-            "name": "--format",
-            "type": "string",
-            "required": False,
-            "description": "Output format: bash, python, or table (default: simple list)",
-        },
-    ],
 )
 class RidCycle(BaseAction):
     """

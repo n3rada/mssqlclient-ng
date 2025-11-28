@@ -16,20 +16,6 @@ from mssqlclient_ng.src.utils.formatter import OutputFormatter
 @ActionFactory.register(
     "admembers",
     "Retrieves members of a specific Active Directory group",
-    [
-        {
-            "name": "group_name",
-            "type": "string",
-            "required": True,
-            "description": "AD group name (e.g., DOMAIN\\Domain Admins)",
-        },
-        {
-            "name": "openquery",
-            "type": "flag",
-            "required": False,
-            "description": "Use OPENQUERY method with ADSI if xp_logininfo fails",
-        },
-    ],
 )
 class AdMembers(BaseAction):
     """

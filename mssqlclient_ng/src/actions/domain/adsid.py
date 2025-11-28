@@ -15,7 +15,6 @@ from mssqlclient_ng.src.utils.common import sid_bytes_to_string
 @ActionFactory.register(
     "adsid",
     "Retrieves the current user's SID using SUSER_SID() function",
-    [],
 )
 class AdSid(BaseAction):
     """

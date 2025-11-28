@@ -1,6 +1,4 @@
-"""
-List tables in a database with schemas and permissions.
-"""
+# /mssqlclient_ng/src/actions/database/tables.py
 
 from typing import Optional, List, Dict
 from loguru import logger
@@ -14,14 +12,6 @@ from mssqlclient_ng.src.utils.formatter import OutputFormatter
 @ActionFactory.register(
     "tables",
     "List tables in a database with schemas and permissions",
-    [
-        {
-            "name": "database",
-            "type": "string",
-            "required": False,
-            "description": "Database name (uses current database if not specified)",
-        }
-    ],
 )
 class Tables(BaseAction):
     """
