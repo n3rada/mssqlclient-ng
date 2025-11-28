@@ -14,32 +14,6 @@ from mssqlclient_ng.src.utils.common import normalize_windows_path
 @ActionFactory.register(
     "tree",
     "Display directory tree structure in Linux tree-style format",
-    [
-        {
-            "name": "path",
-            "type": "string",
-            "required": True,
-            "description": "Directory path to display",
-        },
-        {
-            "name": "--depth",
-            "type": "int",
-            "required": False,
-            "description": "Directory depth to traverse (1-255)",
-        },
-        {
-            "name": "--files",
-            "type": "bool",
-            "required": False,
-            "description": "Show files (1|0 or true|false)",
-        },
-        {
-            "name": "--unicode",
-            "type": "bool",
-            "required": False,
-            "description": "Use Unicode box-drawing characters (default: true, set to false for ASCII)",
-        },
-    ],
 )
 class Tree(BaseAction):
     """

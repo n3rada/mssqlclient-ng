@@ -16,14 +16,6 @@ from mssqlclient_ng.src.utils.common import normalize_windows_path
 @ActionFactory.register(
     "read",
     "Read file content from the target server using OPENROWSET",
-    [
-        {
-            "name": "file_path",
-            "type": "string",
-            "required": True,
-            "description": "Full path to the file to read",
-        }
-    ],
 )
 class FileRead(BaseAction):
     """
