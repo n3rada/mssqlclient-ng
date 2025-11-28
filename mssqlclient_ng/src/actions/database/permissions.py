@@ -1,6 +1,4 @@
-"""
-Enumerate user and role permissions at server, database, and object levels.
-"""
+# /mssqlclient_ng/src/actions/database/permissions.py
 
 from typing import Optional, List, Dict
 from loguru import logger
