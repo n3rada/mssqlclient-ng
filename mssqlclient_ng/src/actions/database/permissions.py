@@ -14,14 +14,6 @@ from mssqlclient_ng.src.utils.formatter import OutputFormatter
 @ActionFactory.register(
     "permissions",
     "List permissions for the current user on server, databases, or specific table",
-    [
-        {
-            "name": "fqtn",
-            "type": "string",
-            "required": False,
-            "description": "Fully Qualified Table Name (database.schema.table) or empty for your permissions",
-        }
-    ],
 )
 class Permissions(BaseAction):
     """
