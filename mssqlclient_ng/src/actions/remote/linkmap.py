@@ -1,7 +1,6 @@
 # Built-in imports
 from typing import Optional
 import uuid
-from collections import defaultdict
 
 # Third party imports
 from loguru import logger
@@ -50,6 +49,7 @@ class LinkMap(BaseAction):
         self._server_mapping: dict[uuid.UUID, list[dict[str, str]]] = {}
         self._visited_states: dict[uuid.UUID, set[str]] = {}
         self._impersonation_stack: dict[uuid.UUID, list[str]] = {}
+        self._original_log_level = None
 
     def validate_arguments(self, additional_arguments: str) -> None:
         """
@@ -95,11 +95,14 @@ class LinkMap(BaseAction):
             logger.warning("No linked servers found.")
             return None
 
-        # Explore each linked server recursively
         logger.info("Exploring all possible linked server chains")
 
+        # Suppress Info/Task/Success logs during exploration to reduce noise
+        self._original_log_level = logger._core.min_level
+        logger.remove()
+        logger.add(lambda msg: print(msg, end=""), level="WARNING", format="{message}")
+
         for server_info in linked_servers:
-            print()  # Blank line between chains
             remote_server = server_info["Link"]
             local_login = (
                 server_info["Local Login"]
@@ -112,16 +115,33 @@ class LinkMap(BaseAction):
             self._visited_states[chain_id] = set()
             self._impersonation_stack[chain_id] = []
 
+            # Create a copy of the database context for this chain
+            from copy import deepcopy
+
+            temp_database_context = deepcopy(database_context)
+
             # Start exploration with depth 0
             self._explore_server(
-                database_context, remote_server, local_login, chain_id, current_depth=0
+                temp_database_context,
+                remote_server,
+                local_login,
+                chain_id,
+                current_depth=0,
             )
 
             # Revert all impersonations in LIFO order
-            self._revert_all_impersonations(database_context.user_service, chain_id)
+            self._revert_all_impersonations(
+                temp_database_context.user_service, chain_id
+            )
 
-        # Output final structured mapping
-        print()
+        # Restore original log level
+        logger.remove()
+        logger.add(
+            lambda msg: print(msg, end=""),
+            level=self._original_log_level,
+            format="{message}",
+        )
+
         initial_server_entry = f"{database_context.server.hostname} ({database_context.server.system_user} [{database_context.server.mapped_user}])"
 
         logger.debug(f"Initial server entry: {initial_server_entry}")
@@ -254,7 +274,7 @@ class LinkMap(BaseAction):
                 database_context.user_service.get_info()
             )
 
-            # Create ServerExecutionState for loop detection
+            # Create ServerExecutionState for loop detection - this now queries through the chain
             current_state = ServerExecutionState.from_context(
                 target_server, database_context.user_service
             )
@@ -308,9 +328,21 @@ class LinkMap(BaseAction):
                 next_server = server_info["Link"]
                 next_local_login = server_info["Local Login"] or "<Current Context>"
 
-                # Recursively explore - state is saved/restored in finally block
+                # Create a new context copy for each branch to avoid state pollution
+                from copy import deepcopy
+
+                branch_context = deepcopy(database_context)
+
+                # Copy current linked servers state
+                branch_context.query_service.linked_servers = LinkedServers(
+                    database_context.query_service.linked_servers
+                )
+                branch_context.query_service.execution_server = (
+                    database_context.query_service.execution_server
+                )
+
                 self._explore_server(
-                    database_context,
+                    branch_context,
                     next_server,
                     next_local_login,
                     chain_id,
@@ -342,7 +374,7 @@ class LinkMap(BaseAction):
         try:
             return self._get_linked_servers(database_context)
         except Exception as ex:
-            if "timeout" in str(ex).lower():
+            if "timeout" in str(ex).lower() or "Timeout" in str(ex):
                 logger.warning(f"Timeout querying linked servers on {server_name}")
                 logger.warning(
                     "Server may be slow or unresponsive. Skipping further exploration."

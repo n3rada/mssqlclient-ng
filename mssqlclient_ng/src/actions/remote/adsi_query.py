@@ -14,7 +14,9 @@ from mssqlclient_ng.src.utils.common import generate_random_string
 from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("adsiquery", "Perform LDAP queries against ADSI linked servers")
+@ActionFactory.register(
+    "adsi-query", "Perform LDAP queries against ADSI linked servers"
+)
 class AdsiQuery(BaseAction):
     """
     Performs LDAP queries against ADSI linked servers.

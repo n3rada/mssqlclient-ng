@@ -15,7 +15,7 @@ from mssqlclient_ng.src.utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
-    "adsi", "Manage ADSI (Active Directory Service Interfaces) linked servers"
+    "adsi-manager", "Manage ADSI (Active Directory Service Interfaces) linked servers"
 )
 class AdsiManager(BaseAction):
     """
