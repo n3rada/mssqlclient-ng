@@ -1,6 +1,4 @@
-"""
-Linked servers model for managing SQL Server linked server chains.
-"""
+# mssqlclient_ng/src/models/linked_servers.py
 
 from typing import List, Optional
 from loguru import logger
@@ -182,6 +180,7 @@ class LinkedServers:
 
         OPENQUERY passes the query string as-is to the linked server without attempting
         to parse or validate it as T-SQL on the local server.
+        https://learn.microsoft.com/en-us/sql/t-sql/functions/openquery-transact-sql
 
         Args:
             query: The SQL query to execute at the final server
@@ -206,11 +205,13 @@ class LinkedServers:
     ) -> str:
         """
         Recursively construct a nested OPENQUERY statement for querying linked SQL servers.
+        Executes as a remote SELECT engine on the linked server.
+        Each level doubles the single quotes to escape them properly.
 
         Args:
-            linked_servers: Array of server names (with "0" prefix)
+            linked_servers: Array of server names (with "0" prefix). '0' in front of them is mandatory to make the query work properly.
             query: SQL query to execute at the final server
-            ticks_counter: Counter for quote doubling at each nesting level
+            ticks_counter: Counter for quote doubling at each nesting level (used to double the single quotes for each level of nesting)
             linked_impersonation: Array of impersonation users
             linked_databases: Array of database contexts
 
@@ -237,17 +238,17 @@ class LinkedServers:
             database = linked_databases[0]
             linked_databases = linked_databases[1:]
 
-        ticks_repr = "'" * (2**ticks_counter)
+        ticks_repr = "'" * (1 << ticks_counter)
 
         # Base case: if this is the last server in the chain
         if len(linked_servers) == 1:
             base_query = []
 
             if login:
-                base_query.append(f"EXECUTE AS LOGIN = '{login}'; ")
+                base_query.append(f"EXECUTE AS LOGIN = '{login}';")
 
-            if database and database != "master":
-                base_query.append(f"USE [{database}]; ")
+            if database:
+                base_query.append(f"USE [{database}];")
 
             base_query.append(current_query.rstrip(";"))
             base_query.append(";")
@@ -258,21 +259,21 @@ class LinkedServers:
         # Construct the OPENQUERY statement for the next server in the chain
         result = []
         result.append("SELECT * FROM OPENQUERY(")
-        result.append(f"[{linked_servers[1]}], ")
+        result.append(f"[{linked_servers[1]}],")
         result.append(ticks_repr)
 
         # We are now inside the query, on the linked server
 
         # Add impersonation if applicable
         if login:
-            impersonation_ticks = "'" * (2 ** (ticks_counter + 1))
-            impersonation_query = f"EXECUTE AS LOGIN = '{login}'; "
+            impersonation_ticks = "'" * (1 << (ticks_counter + 1))
+            impersonation_query = f"EXECUTE AS LOGIN = '{login}';"
             result.append(impersonation_query.replace("'", impersonation_ticks))
 
         # Add database context if applicable
-        if database and database != "master":
-            database_ticks = "'" * (2 ** (ticks_counter + 1))
-            use_query = f"USE [{database}]; "
+        if database:
+            database_ticks = "'" * (1 << (ticks_counter + 1))
+            use_query = f"USE [{database}];"
             result.append(use_query.replace("'", database_ticks))
 
         # Recursive call for the remaining servers
@@ -320,6 +321,14 @@ class LinkedServers:
     ) -> str:
         """
         Recursively construct a nested EXEC AT statement for querying linked SQL servers.
+        It loops from innermost server to outermost server.
+        Each iteration adds impersonation and database context if provided. Then, appends prior query escaped.
+        And finally wraps everything in EXEC ('...') AT [server].
+
+        Big-O time complexity of O(n * L) where:
+            n = number of linked servers
+            L = final query string length
+        This is expected and optimal: you must touch the whole string each time because SQL must be re-encoded at each hop.
 
         Args:
             linked_servers: Array of server names (with "0" prefix)
