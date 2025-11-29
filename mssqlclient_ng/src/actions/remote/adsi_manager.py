@@ -1,7 +1,4 @@
-"""
-ADSI action for managing ADSI (Active Directory Service Interfaces) linked servers.
-Supports listing, creating, and deleting ADSI linked servers.
-"""
+# mssqlclient_ng/src/actions/remote/adsi_manager.py
 
 from typing import Optional, List
 from loguru import logger
@@ -36,7 +33,7 @@ class AdsiManager(BaseAction):
         Args:
             additional_arguments: Operation and parameters
                 Format: <operation> [server_name] [data_source]
-                Operations: list, create, delete/del/remove/rm
+                Operations: list, create, delete
 
         Raises:
             ValueError: If arguments are invalid
@@ -48,41 +45,30 @@ class AdsiManager(BaseAction):
         parts = self.split_arguments(additional_arguments)
         command = parts[0].lower()
 
-        if command == "list":
-            self._operation = "list"
-
-        elif command == "create":
-            self._operation = "create"
-
-            # If server name not provided, generate a random one
-            if len(parts) > 1 and parts[1].strip():
-                self._server_name = parts[1]
-            else:
-                self._server_name = f"ADSI-{generate_random_string(6)}"
-                logger.info(
-                    f"No server name provided. Generated random name: {self._server_name}"
-                )
-
-            # Optional data source parameter
-            if len(parts) > 2 and parts[2].strip():
-                self._data_source = parts[2]
-
-        elif command in ["delete", "del", "remove", "rm"]:
-            self._operation = "delete"
-
-            if len(parts) < 2 or not parts[1].strip():
-                raise ValueError(
-                    "Server name is required for delete operation. Example: /a:adsi delete SQL-02"
-                )
-
-            self._server_name = parts[1]
-
-        else:
+        if command not in ["list", "create", "delete"]:
             raise ValueError(
-                f"Invalid operation '{command}'. Use 'list', 'create', or 'delete'"
+                f"Invalid operation: {command}. Valid operations: list, create, delete"
             )
 
-    def execute(self, database_context: DatabaseContext) -> bool:
+        self._operation = command
+
+        # Parse server name (optional, used for create/delete)
+        if len(parts) > 1 and parts[1].strip():
+            self._server_name = parts[1]
+
+        # Parse data source (default: localhost)
+        if len(parts) > 2 and parts[2].strip():
+            self._data_source = parts[2]
+
+        # Validation
+        if self._operation == "delete" and not self._server_name:
+            raise ValueError("Server name is required for delete operation")
+
+        # Generate random name for create if not provided
+        if self._operation == "create" and not self._server_name:
+            self._server_name = f"ADSI_{generate_random_string(8)}"
+
+    def execute(self, database_context: DatabaseContext) -> Optional[object]:
         """
         Execute the ADSI manager action.
 
@@ -90,7 +76,7 @@ class AdsiManager(BaseAction):
             database_context: The database context containing services
 
         Returns:
-            True if operation succeeded; otherwise False
+            Operation result
         """
         if self._operation == "list":
             return self._list_adsi_servers(database_context)
@@ -99,10 +85,12 @@ class AdsiManager(BaseAction):
         elif self._operation == "delete":
             return self._delete_adsi_server(database_context)
         else:
-            logger.error("Unknown operation")
-            return False
+            logger.error("Unknown operation.")
+            return None
 
-    def _list_adsi_servers(self, database_context: DatabaseContext) -> bool:
+    def _list_adsi_servers(
+        self, database_context: DatabaseContext
+    ) -> Optional[List[str]]:
         """
         List all ADSI linked servers.
 
@@ -110,7 +98,7 @@ class AdsiManager(BaseAction):
             database_context: The database context
 
         Returns:
-            True if servers found; otherwise False
+            List of ADSI server names if found; otherwise None
         """
         logger.info("Enumerating ADSI linked servers")
 
@@ -118,15 +106,16 @@ class AdsiManager(BaseAction):
         adsi_servers = adsi_service.list_adsi_servers()
 
         if not adsi_servers:
-            logger.warning("No ADSI linked servers found")
-            return False
+            logger.warning("No ADSI linked servers found.")
+            return None
 
         plural = "s" if len(adsi_servers) > 1 else ""
         logger.success(f"Found {len(adsi_servers)} ADSI linked server{plural}")
+        print()
 
         print(OutputFormatter.convert_list(adsi_servers, "ADSI Servers"))
 
-        return True
+        return adsi_servers
 
     def _create_adsi_server(self, database_context: DatabaseContext) -> bool:
         """
@@ -144,7 +133,7 @@ class AdsiManager(BaseAction):
 
         # Check if server already exists
         if adsi_service.adsi_server_exists(self._server_name):
-            logger.error(f"ADSI linked server '{self._server_name}' already exists")
+            logger.error(f"ADSI linked server '{self._server_name}' already exists.")
             return False
 
         success = adsi_service.create_adsi_linked_server(
@@ -176,18 +165,19 @@ class AdsiManager(BaseAction):
 
         # Check if server exists and is ADSI
         if not adsi_service.adsi_server_exists(self._server_name):
-            logger.error(f"ADSI linked server '{self._server_name}' not found")
+            logger.error(f"ADSI linked server '{self._server_name}' not found.")
             return False
 
         try:
             adsi_service.drop_linked_server(self._server_name)
+
             logger.success(
                 f"ADSI linked server '{self._server_name}' deleted successfully"
             )
             return True
-        except Exception as e:
+        except Exception as ex:
             logger.error(
-                f"Failed to delete ADSI linked server '{self._server_name}': {e}"
+                f"Failed to delete ADSI linked server '{self._server_name}': {ex}"
             )
             return False
 
