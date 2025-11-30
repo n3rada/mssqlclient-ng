@@ -37,25 +37,22 @@ class Permissions(BaseAction):
         self._schema: Optional[str] = None  # Let SQL Server use user's default schema
         self._table: str = ""
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate the arguments for the permissions action.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: Argument string to parse
 
         Raises:
             ValueError: If the format is invalid
         """
-        if not args or len(args) == 0:
+        if not additional_arguments or not additional_arguments.strip():
             # No arguments - will show server and database permissions
-            return True
+            return
 
         # Parse both positional and named arguments
-        named_args, positional_args = self._parse_action_arguments(args)
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
         # Get table name from position 0
         table_name = positional_args[0] if len(positional_args) >= 1 else ""
@@ -85,8 +82,6 @@ class Permissions(BaseAction):
                 "'schema.table', or nothing to return current server permissions."
             )
 
-        return True
-
     def execute(self, database_context: DatabaseContext) -> None:
         """
         Execute the permissions enumeration.
@@ -109,6 +104,7 @@ class Permissions(BaseAction):
             )
             sorted_server_perms = self._sort_permissions_by_importance(server_perms)
             print(OutputFormatter.convert_list_of_dicts(sorted_server_perms))
+            print()
 
             logger.info("Database permissions")
 
@@ -117,6 +113,7 @@ class Permissions(BaseAction):
             )
             sorted_db_perms = self._sort_permissions_by_importance(db_perms)
             print(OutputFormatter.convert_list_of_dicts(sorted_db_perms))
+            print()
 
             logger.info("Database access")
 
@@ -170,6 +167,7 @@ class Permissions(BaseAction):
     def _sort_permissions_by_importance(self, permissions: List[Dict]) -> List[Dict]:
         """
         Sort permissions by exploitation value - most interesting permissions first.
+        Secondary sort by permission name for consistent ordering.
 
         Args:
             permissions: List of permission dictionaries
@@ -180,12 +178,13 @@ class Permissions(BaseAction):
         if not permissions:
             return permissions
 
-        def get_priority_tuple(perm_dict):
+        def get_sort_key(perm_dict):
+            # Sort by priority first, then by permission name alphabetically
             perm_name = perm_dict.get("Permission", "")
             priority = self._get_permission_priority(perm_name)
             return (priority, perm_name)
 
-        return sorted(permissions, key=get_priority_tuple)
+        return sorted(permissions, key=get_sort_key)
 
     def _get_permission_priority(self, permission: str) -> int:
         """
