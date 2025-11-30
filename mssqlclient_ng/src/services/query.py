@@ -1,17 +1,18 @@
-"""
-Query service for executing SQL queries against MSSQL servers using impacket's TDS.
-"""
+# mssqlclient_ng/src/services/query.py
 
-from typing import Optional, Any, List, Dict
+from typing import Optional, Any, List, Dict, TYPE_CHECKING
 
 # Third party imports
 from loguru import logger
-from impacket.tds import MSSQL, SQLErrorException
+from impacket.tds import SQLErrorException
 from impacket.tds import TDS_DONE_TOKEN, TDS_DONEINPROC_TOKEN, TDS_DONEPROC_TOKEN
+
+if TYPE_CHECKING:
+    # Import MSSQL only for type checking to avoid a runtime dependency
+    from impacket.tds import MSSQL  # pragma: no cover
 
 # Local library imports
 from mssqlclient_ng.src.models.linked_servers import LinkedServers
-
 
 class QueryService:
     """
@@ -20,7 +21,7 @@ class QueryService:
 
     MAX_RETRIES = 3
 
-    def __init__(self, mssql: MSSQL):
+    def __init__(self, mssql: "MSSQL"):
         """
         Initialize the query service with an MSSQL connection.
 
@@ -251,7 +252,7 @@ class QueryService:
                 logger.warning("Trying again with OPENQUERY")
                 self._linked_servers.use_remote_procedure_call = False
                 return self._execute_with_handling(
-                    query, tuple_mode, return_rows, timeout, self.MAX_RETRIES - 1
+                    query, tuple_mode, return_rows, timeout, retry_count + 1
                 )
 
             # Handle metadata errors
@@ -269,7 +270,7 @@ class QueryService:
                     tuple_mode,
                     return_rows,
                     timeout,
-                    self.MAX_RETRIES - 1,
+                    retry_count + 1,
                 )
 
             # Handle database prefix not supported on remote server
@@ -291,7 +292,7 @@ class QueryService:
                     tuple_mode,
                     return_rows,
                     timeout,
-                    self.MAX_RETRIES - 1,
+                    retry_count + 1,
                 )
 
             raise
@@ -307,6 +308,18 @@ class QueryService:
                 )
                 return self._execute_with_handling(
                     query, tuple_mode, return_rows, new_timeout, retry_count + 1
+                )
+
+            # If OPENQUERY is in use and we hit a metadata/no-rowset error,
+            # attempt to wrap the query so OPENQUERY returns a rowset.
+            if (
+                not self._linked_servers.use_remote_procedure_call
+                and self._is_openquery_rowset_failure(e)
+            ):
+                logger.debug("OPENQUERY returned no rowset. Wrapping query.")
+                wrapped = self._wrap_for_openquery(query)
+                return self._execute_with_handling(
+                    wrapped, tuple_mode, return_rows, timeout, retry_count + 1
                 )
 
             # Some stored procedures (like OLE Automation) may raise exceptions
@@ -341,6 +354,12 @@ class QueryService:
         if not self._linked_servers.is_empty:
             logger.debug("Linked server detected")
 
+            # If OPENQUERY is being used, refuse server-scoped commands that
+            # require RPC (e.g. login creation, server config changes).
+            if not self._linked_servers.use_remote_procedure_call and self._requires_rpc(query):
+                logger.warning("Server-level command rejected under OPENQUERY.")
+                raise ValueError("This query requires RPC and cannot be executed via OPENQUERY.")
+
             if self._linked_servers.use_remote_procedure_call:
                 final_query = self._linked_servers.build_remote_procedure_call_chain(
                     query
@@ -351,6 +370,60 @@ class QueryService:
             logger.debug(f"Linked query: {final_query}")
 
         return final_query
+
+    def _requires_rpc(self, sql: str) -> bool:
+        """
+        Determines if a SQL statement requires RPC execution because it modifies
+        server-level state. These commands cannot be executed over OPENQUERY.
+        """
+        if not sql:
+            return False
+
+        s = sql.upper()
+
+        return (
+            "CREATE LOGIN" in s
+            or "ALTER LOGIN" in s
+            or "DROP LOGIN" in s
+            or "ALTER SERVER" in s
+            or "SP_CONFIGURE" in s
+            or "RECONFIGURE" in s
+            or "XP_" in s
+            or "CREATE ENDPOINT" in s
+            or "SYS.SERVER_" in s
+        )
+
+    def _is_openquery_rowset_failure(self, ex: Exception) -> bool:
+        """
+        Detects typical OPENQUERY failures where no rowset is returned or
+        deferred/metadata errors occur.
+        """
+        if ex is None:
+            return False
+        m = str(ex).lower()
+        return (
+            "metadata" in m
+            or "no columns" in m
+            or "deferred prepare" in m
+            or "no column" in m
+        )
+
+    def _wrap_for_openquery(self, query: str) -> str:
+        """
+        Wrap a non-rowset SQL statement into a SELECT-able result so that
+        OPENQUERY can return a resultset instead of failing on metadata.
+        """
+        # Trim trailing semicolons and create a TRY/CATCH wrapper that returns
+        # either rowcount or the error message so OPENQUERY always sees a rowset.
+        core = query.rstrip(";")
+        wrapped = (
+            "DECLARE @result NVARCHAR(MAX); DECLARE @error NVARCHAR(MAX);"
+            " BEGIN TRY "
+            f" {core}; SET @result = CAST(@@ROWCOUNT AS NVARCHAR(MAX)); SET @error = NULL;"
+            " END TRY BEGIN CATCH SET @result = NULL; SET @error = ERROR_MESSAGE(); END CATCH;"
+            " SELECT @result AS Result, @error AS Error;"
+        )
+        return wrapped
 
     def _get_affected_rows(self) -> int:
         """
