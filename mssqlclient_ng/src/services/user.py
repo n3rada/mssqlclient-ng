@@ -1,12 +1,12 @@
-"""
-User service for managing SQL Server user information and permissions.
-"""
+# mssqlclient_ng/src/services/user.py
 
 from typing import Optional, Tuple
+
+# Third party imports
 from loguru import logger
 
+# Local library imports
 from mssqlclient_ng.src.services.query import QueryService
-
 
 class UserService:
     """
