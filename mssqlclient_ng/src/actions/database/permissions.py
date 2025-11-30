@@ -1,8 +1,12 @@
-# /mssqlclient_ng/src/actions/database/permissions.py
+# mssqlclient_ng/src/actions/database/permissions.py
 
+# Built-in imports
 from typing import Optional, List, Dict
+
+# Third party imports
 from loguru import logger
 
+# Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
