@@ -33,7 +33,7 @@ pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
 
-## 🚀 Quick Start
+## 🧸 Usage
 
 ```shell
 mssqlclient-ng <host> [options]
