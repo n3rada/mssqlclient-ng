@@ -1,8 +1,12 @@
 # /mssqlclient_ng/src/actions/database/tables.py
 
+# Built-in imports
 from typing import Optional, List, Dict
+
+# Third party imports
 from loguru import logger
 
+# Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext
@@ -24,29 +28,28 @@ class Tables(BaseAction):
         super().__init__()
         self._database: Optional[str] = None
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate the database argument.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: Optional database name argument
         """
-        named_args, positional_args = self._parse_action_arguments(args)
+        if not additional_arguments or not additional_arguments.strip():
+            self._database = None
+            return
+
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments.strip()
+        )
 
         # Get database from positional or named arguments
-        if len(positional_args) >= 1:
+        if positional_args:
             self._database = positional_args[0]
         else:
-            self._database = None
-
-        if not self._database:
-            self._database = named_args.get("database", named_args.get("db"))
+            self._database = named_args.get("database") or named_args.get("db")
 
         # If still None, will use current database in Execute()
-        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
         """
@@ -100,13 +103,10 @@ class Tables(BaseAction):
         # Get all permissions in a single query
         all_permissions_query = f"""
                 {use_statement}
-                SELECT 
-                    SCHEMA_NAME(o.schema_id) AS schema_name,
-                    o.name AS object_name,
-                    p.permission_name
-                FROM sys.objects o
-                CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p
-                WHERE o.type IN ('U', 'V')
+                SELECT SCHEMA_NAME(o.schema_id) AS schema_name, o.name AS object_name, p.permission_name 
+                FROM sys.objects o 
+                CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p 
+                WHERE o.type IN ('U', 'V') 
                 ORDER BY o.name, p.permission_name;"""
 
         all_permissions = database_context.query_service.execute_table(
