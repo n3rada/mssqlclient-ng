@@ -1,3 +1,5 @@
+# mssqlclient_ng/cli.py
+
 # Built-in imports
 import argparse
 import sys
