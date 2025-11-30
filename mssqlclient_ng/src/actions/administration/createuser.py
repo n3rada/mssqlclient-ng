@@ -45,32 +45,43 @@ class CreateUser(BaseAction):
             createuser myuser mypass123
             createuser myuser mypass123 sysadmin
         """
+        # Use the base action argument parser which supports
+        # short (-u) and long (--username) flags as well as positional args
+        named, positional = self._parse_action_arguments(additional_arguments)
+
+        # Priority 1: named args (short or long)
+        if "u" in named or "username" in named:
+            self._username = named.get("u", named.get("username", self._username))
+
+        if "p" in named or "password" in named:
+            self._password = named.get("p", named.get("password", self._password))
+
+        if "r" in named or "role" in named:
+            self._role = named.get("r", named.get("role", self._role))
+
+        # Priority 2: positional args (fallback)
+        if not ("u" in named or "username" in named) and len(positional) > 0:
+            self._username = positional[0]
+
+        if not ("p" in named or "password" in named) and len(positional) > 1:
+            self._password = positional[1]
+
+        if not ("r" in named or "role" in named) and len(positional) > 2:
+            self._role = positional[2]
+
         if not additional_arguments or not additional_arguments.strip():
             logger.info(
                 f"Using default credentials: {self._username} with role: {self._role}"
             )
-            return
-
-        parts = additional_arguments.split(maxsplit=2)
-
-        # Parse positional arguments
-        if len(parts) >= 1:
-            self._username = parts[0].strip()
-
-        if len(parts) >= 2:
-            self._password = parts[1].strip()
-
-        if len(parts) >= 3:
-            self._role = parts[2].strip()
 
         # Validate inputs
-        if not self._username:
+        if not self._username or not self._username.strip():
             raise ValueError("Username cannot be empty")
 
-        if not self._password:
+        if not self._password or not self._password.strip():
             raise ValueError("Password cannot be empty")
 
-        if not self._role:
+        if not self._role or not self._role.strip():
             raise ValueError("Role cannot be empty")
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
@@ -85,51 +96,64 @@ class CreateUser(BaseAction):
         """
         logger.info(f"Creating SQL login: {self._username} with {self._role} role")
 
+        # Log the intended operation (avoid leaking sensitive data in higher logs)
+        logger.info(f"Creating SQL login: {self._username} with {self._role} role")
+        logger.debug(f"Password (raw): '{self._password}'")
+
+        # Escape single quotes in password
+        escaped_password = self._password.replace("'", "''")
+
+        create_login_query = (
+            f"CREATE LOGIN [{self._username}] WITH PASSWORD = '{escaped_password}', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;"
+        )
+
         try:
-            # Create the SQL login
-            logger.info(f"Creating SQL login '{self._username}'")
-
-            # Escape single quotes in password
-            escaped_password = self._password.replace("'", "''")
-
-            create_login_query = f"""
-                CREATE LOGIN [{self._username}]
-                WITH PASSWORD = '{escaped_password}',
-                CHECK_POLICY = OFF,
-                CHECK_EXPIRATION = OFF;
-            """
-
-            if (
-                database_context.query_service.execute_non_processing(
-                    create_login_query
-                )
-                == -1
-            ):
-                return False
+            res = database_context.query_service.execute_non_processing(
+                create_login_query
+            )
+            # execute_non_processing returns -1 on error; if so, raise to handle below
+            if res == -1:
+                raise RuntimeError("create_login_failed")
 
             logger.success(f"SQL login '{self._username}' created successfully")
-
-            # Add the login to the specified server role
-            logger.info(f"Adding '{self._username}' to {self._role} server role")
-
-            add_role_query = (
-                f"ALTER SERVER ROLE [{self._role}] ADD MEMBER [{self._username}];"
-            )
-            database_context.query_service.execute_non_processing(add_role_query)
-
-            logger.success(
-                f"'{self._username}' added to {self._role} role successfully"
-            )
-            return True
-
         except Exception as ex:
-            logger.error(f"Failed to create SQL login: {ex}")
+            msg = str(ex).lower()
+            # If login already exists, update password instead
+            if "already exists" in msg or "already an object" in msg or "create login" in msg and "exists" in msg:
+                logger.warning(f"SQL login '{self._username}' already exists. Updating password.")
+                try:
+                    alter_query = f"ALTER LOGIN [{self._username}] WITH PASSWORD = '{escaped_password}';"
+                    database_context.query_service.execute_non_processing(alter_query)
+                    logger.success(f"Password updated for '{self._username}'.")
+                except Exception as ex2:
+                    logger.error(f"Failed to update password for existing login: {ex2}")
+                    return False
+            else:
+                logger.error(f"Failed to create SQL login: {ex}")
+                if "permission" in msg or "denied" in msg:
+                    logger.warning(
+                        "You may not have sufficient privileges to create logins or assign server roles"
+                    )
+                return False
 
-            error_msg = str(ex).lower()
-            if "permission" in error_msg:
-                logger.warning(
-                    "You may not have sufficient privileges to create logins or assign server roles"
-                )
+        # Now add the login to the server role
+        logger.info(f"Adding '{self._username}' to {self._role} server role")
+        add_role_query = f"ALTER SERVER ROLE [{self._role}] ADD MEMBER [{self._username}];"
+        try:
+            database_context.query_service.execute_non_processing(add_role_query)
+            logger.success(f"'{self._username}' added to {self._role} role successfully")
+            return True
+        except Exception as ex:
+            msg = str(ex).lower()
+            # Already a member
+            if "already a member" in msg or "is already a member" in msg:
+                logger.info(f"'{self._username}' is already a member of {self._role} role.")
+                return True
+
+            if "permission" in msg or "denied" in msg:
+                logger.error(f"Insufficient privileges: {ex}")
+            else:
+                logger.error(f"Failed to add user to role: {ex}")
 
             return False
 
