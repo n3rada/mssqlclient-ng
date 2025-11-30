@@ -1,3 +1,5 @@
+# mssqlclient_ng/src/actions/database/roles.py
+
 # Built-in imports
 from typing import Optional
 
@@ -117,12 +119,34 @@ class Roles(BaseAction):
             # Display Fixed Server Roles
             if fixed_server_roles:
                 logger.success(f"Fixed Server Roles ({len(fixed_server_roles)} roles)")
-                print(OutputFormatter.convert_list_of_dicts(fixed_server_roles))
+                # Filter to only show relevant columns
+                filtered_fixed = [
+                    {
+                        "RoleName": role["RoleName"],
+                        "RoleType": role["RoleType"],
+                        "CreateDate": role["CreateDate"],
+                        "ModifyDate": role["ModifyDate"],
+                        "Members": role.get("Members", ""),
+                    }
+                    for role in fixed_server_roles
+                ]
+                print(OutputFormatter.convert_list_of_dicts(filtered_fixed))
 
             # Display Custom Server Roles
             if custom_server_roles:
                 logger.success(f"Custom Server Roles ({len(custom_server_roles)} roles)")
-                print(OutputFormatter.convert_list_of_dicts(custom_server_roles))
+                # Filter to only show relevant columns
+                filtered_custom = [
+                    {
+                        "RoleName": role["RoleName"],
+                        "RoleType": role["RoleType"],
+                        "CreateDate": role["CreateDate"],
+                        "ModifyDate": role["ModifyDate"],
+                        "Members": role.get("Members", ""),
+                    }
+                    for role in custom_server_roles
+                ]
+                print(OutputFormatter.convert_list_of_dicts(filtered_custom))
 
         # ========== DATABASE-LEVEL ROLES ==========
 
@@ -142,7 +166,7 @@ class Roles(BaseAction):
         all_roles = database_context.query_service.execute_table(query)
 
         if not all_roles:
-            logger.warning("No database roles found in current database")
+            logger.warning("No database roles found in current database.")
             return None
 
         # Get all role members in a single query for performance
@@ -186,14 +210,36 @@ class Roles(BaseAction):
         # Display Fixed Roles
         if fixed_roles_data:
             logger.success(f"Fixed Database Roles ({len(fixed_roles_data)} roles)")
-            print(OutputFormatter.convert_list_of_dicts(fixed_roles_data))
+            # Filter to only show relevant columns
+            filtered_fixed = [
+                {
+                    "RoleName": role["RoleName"],
+                    "RoleType": role["RoleType"],
+                    "CreateDate": role["CreateDate"],
+                    "ModifyDate": role["ModifyDate"],
+                    "Members": role.get("Members", ""),
+                }
+                for role in fixed_roles_data
+            ]
+            print(OutputFormatter.convert_list_of_dicts(filtered_fixed))
 
         # Display Custom Roles
         if custom_roles_data:
             logger.success(f"Custom Database Roles ({len(custom_roles_data)} roles)")
-            print(OutputFormatter.convert_list_of_dicts(custom_roles_data))
+            # Filter to only show relevant columns
+            filtered_custom = [
+                {
+                    "RoleName": role["RoleName"],
+                    "RoleType": role["RoleType"],
+                    "CreateDate": role["CreateDate"],
+                    "ModifyDate": role["ModifyDate"],
+                    "Members": role.get("Members", ""),
+                }
+                for role in custom_roles_data
+            ]
+            print(OutputFormatter.convert_list_of_dicts(filtered_custom))
         else:
-            logger.info("No custom database roles found in current database")
+            logger.info("No custom database roles found in current database.")
 
         return None
 
