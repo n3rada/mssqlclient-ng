@@ -46,7 +46,12 @@ class LoginMap(BaseAction):
             additional_arguments: Optional server login name to filter mappings
         """
         if additional_arguments and additional_arguments.strip():
-            self._login_filter = additional_arguments.strip()
+            named_args, positional_args = self._parse_action_arguments(
+                additional_arguments.strip()
+            )
+            # Get login filter from positional argument
+            if positional_args:
+                self._login_filter = positional_args[0]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """
@@ -78,8 +83,7 @@ class LoginMap(BaseAction):
                 [Login Type] NVARCHAR(60),
                 [Database User] NVARCHAR(128),
                 [User Type] NVARCHAR(60),
-                [Effective Access Via] NVARCHAR(128),
-                [Orphaned] BIT
+                [Effective Access Via] NVARCHAR(128)
             );
 
             DECLARE @dbname NVARCHAR(128);
@@ -99,12 +103,12 @@ class LoginMap(BaseAction):
                 SET @sql = N'
                 SELECT
                     ''' + @dbname + ''' AS [Database],
-                    ISNULL(sp.name, ''<Orphaned>'') AS [Server Login],
-                    ISNULL(sp.type_desc, ''N/A'') AS [Login Type],
+                    sp.name AS [Server Login],
+                    sp.type_desc AS [Login Type],
                     dp.name AS [Database User],
                     dp.type_desc AS [User Type],
                     CASE
-                        WHEN sp.sid IS NOT NULL AND sp.name != dp.name
+                        WHEN sp.name != dp.name
                             AND EXISTS (
                                 SELECT 1 FROM master.sys.login_token lt
                                 WHERE lt.sid = dp.sid AND lt.type = ''WINDOWS GROUP''
@@ -114,16 +118,10 @@ class LoginMap(BaseAction):
                             FROM master.sys.login_token lt
                             WHERE lt.sid = dp.sid AND lt.type = ''WINDOWS GROUP''
                         )
-                        WHEN sp.sid IS NOT NULL THEN ''Direct''
-                        ELSE NULL
-                    END AS [Effective Access Via],
-                    CASE
-                        WHEN dp.name = ''guest'' THEN 0
-                        WHEN sp.sid IS NULL THEN 1
-                        ELSE 0
-                    END AS [Orphaned]
+                        ELSE ''Direct''
+                    END AS [Effective Access Via]
                 FROM [' + @dbname + '].sys.database_principals dp
-                LEFT JOIN master.sys.server_principals sp ON dp.sid = sp.sid
+                INNER JOIN master.sys.server_principals sp ON dp.sid = sp.sid
                 WHERE dp.type IN (''S'', ''U'', ''G'', ''E'', ''X'')
                 AND dp.name NOT LIKE ''##%''
                 AND dp.name NOT IN (''INFORMATION_SCHEMA'', ''sys'', ''guest'')';
@@ -143,7 +141,7 @@ class LoginMap(BaseAction):
             DEALLOCATE db_cursor;
 
             SELECT * FROM @mapping
-            ORDER BY [Orphaned] DESC, [Database], [Server Login];
+            ORDER BY [Database], [Server Login];
         """
 
         try:
@@ -171,16 +169,11 @@ class LoginMap(BaseAction):
 
                 results = filtered_results
                 logger.info(f"Filtered for login: '{self._login_filter}'")
-                print()
 
-            # Sort by security importance: orphaned users first, then by database
+            # Sort by database and server login
             results_sorted = sorted(
                 results,
-                key=lambda x: (
-                    not x["Orphaned"],  # Orphaned first (True > False, so negate)
-                    x["Database"],
-                    x["Server Login"],
-                ),
+                key=lambda x: (x["Database"], x["Server Login"]),
             )
 
             print(OutputFormatter.convert_list_of_dicts(results_sorted))
