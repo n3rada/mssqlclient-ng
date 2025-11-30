@@ -1,3 +1,5 @@
+# mssqlclient_ng/src/terminal.py
+
 # Built-in imports
 import shlex
 import os
