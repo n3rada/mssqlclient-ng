@@ -1,7 +1,4 @@
-"""
-ADSI service for managing ADSI-linked servers and LDAP server assembly operations.
-Provides methods to create linked servers, deploy CLR assemblies, and handle LDAP requests.
-"""
+# mssqlclient_ng/src/services/adsi.py
 
 # Built-in imports
 import asyncio
