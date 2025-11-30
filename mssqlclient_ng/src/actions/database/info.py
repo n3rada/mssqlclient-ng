@@ -1,11 +1,13 @@
-"""
-Info action for retrieving SQL Server instance information using DMVs and SERVERPROPERTY.
-"""
+# mssqlclient_ng/src/actions/database/info.py
 
+# Built-in imports
 import re
 from typing import Optional, Dict, List
+
+# Third party imports
 from loguru import logger
 
+# Local library imports
 from mssqlclient_ng.src.actions.base import BaseAction
 from mssqlclient_ng.src.actions.factory import ActionFactory
 from mssqlclient_ng.src.services.database import DatabaseContext

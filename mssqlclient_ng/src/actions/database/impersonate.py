@@ -1,6 +1,4 @@
-"""
-Impersonate action for checking SQL Server impersonation permissions.
-"""
+# mssqlclient_ng/src/actions/database/impersonate.py
 
 from typing import Optional, List, Dict, Any
 from loguru import logger

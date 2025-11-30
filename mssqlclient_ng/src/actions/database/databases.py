@@ -1,6 +1,4 @@
-"""
-Databases action for listing SQL Server databases with accessibility and security info.
-"""
+# mssqlclient_ng/src/actions/database/databases.py
 
 # Built-in imports
 from typing import Optional, List, Dict, Any
