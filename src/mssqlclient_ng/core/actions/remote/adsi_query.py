@@ -9,7 +9,7 @@ from ...utils.common import generate_random_string
 from ...utils.formatters import OutputFormatter
 
 from ...services.database import DatabaseContext
-from ...services.adsi import DatabaseContext
+from ...services.adsi import AdsiService
 
 from ..base import BaseAction
 from ..factory import ActionFactory
