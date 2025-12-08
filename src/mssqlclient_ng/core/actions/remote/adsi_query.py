@@ -1,17 +1,18 @@
-"""
-ADSI Query action for performing LDAP queries against ADSI linked servers.
-Allows querying Active Directory objects through SQL Server's OPENQUERY.
-"""
+# mssqlclient_ng/core/actions/remote/adsi_query.py
 
+# Built-in imports
 from typing import Optional, List
 from loguru import logger
 
-from ..base import BaseAction
-from ..factory import ActionFactory
-from ..database import DatabaseContext
-from ..adsi import AdsiService
+# Local library imports
 from ...utils.common import generate_random_string
 from ...utils.formatters import OutputFormatter
+
+from ...services.database import DatabaseContext
+from ...services.adsi import DatabaseContext
+
+from ..base import BaseAction
+from ..factory import ActionFactory
 
 
 @ActionFactory.register(

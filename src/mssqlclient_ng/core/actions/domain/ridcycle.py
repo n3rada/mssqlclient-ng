@@ -8,7 +8,7 @@ from loguru import logger
 from ..base import BaseAction
 from ..domain.addomain import DomainSid
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 from ...utils.formatter import OutputFormatter
 
 

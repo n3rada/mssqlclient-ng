@@ -7,7 +7,7 @@ from loguru import logger
 # Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 
 
 @ActionFactory.register("kill", "Kill a specific session or all sessions")

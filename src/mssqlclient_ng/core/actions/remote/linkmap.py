@@ -8,7 +8,7 @@ from loguru import logger
 # Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 from ...models.linked_servers import LinkedServers
 from ...models.server_execution_state import ServerExecutionState
 from ...utils.formatters import OutputFormatter

@@ -8,7 +8,7 @@ from loguru import logger
 
 from ..execution.powershell import PowerShell
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 
 
 @ActionFactory.register(

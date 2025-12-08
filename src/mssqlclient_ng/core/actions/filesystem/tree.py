@@ -9,7 +9,7 @@ from loguru import logger
 # Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 
 
 @ActionFactory.register(

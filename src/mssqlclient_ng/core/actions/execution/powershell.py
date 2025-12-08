@@ -8,7 +8,7 @@ from loguru import logger
 
 from ..execution.xpcmd import XpCmd
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 
 
 @ActionFactory.register("pwsh", "Execute PowerShell scripts via xp_cmdshell")

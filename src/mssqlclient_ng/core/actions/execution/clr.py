@@ -10,7 +10,7 @@ from loguru import logger
 
 from ..base import BaseAction
 from ..factory import ActionFactory
-from ..database import DatabaseContext
+from ...services.database import DatabaseContext
 from ...utils.common import (
     generate_random_string,
     get_hex_char,
