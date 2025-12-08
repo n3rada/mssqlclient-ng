@@ -238,7 +238,7 @@ def main() -> int:
     try:
         args = parser.parse_args()
     except argparse.ArgumentError as exc:
-        logger.error(str(exc))
+        print(str(exc))
         parser.print_usage()
         return 2
     except SystemExit:
