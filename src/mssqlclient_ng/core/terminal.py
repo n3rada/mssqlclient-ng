@@ -22,14 +22,18 @@ from pygments.lexers.sql import SqlLexer
 from pygments.styles.monokai import MonokaiStyle
 
 # Local library imports
-from mssqlclient_ng.src.utils import logbook
-from mssqlclient_ng.src.utils.common import yes_no_prompt
-from mssqlclient_ng.src.models.server import Server
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.actions.execution import query
-from mssqlclient_ng.src.utils.completions import ActionCompleter, SQLBuiltinCompleter
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from .utils import logbook
+from .utils.common import yes_no_prompt
+from .utils.completions import ActionCompleter, SQLBuiltinCompleter
+from .utils.formatters import OutputFormatter
+
+from .models.server import Server
+
+from .services.database import DatabaseContext
+
+from .actions.factory import ActionFactory
+from .actions.execution import query
+
 
 SQL_STYLE = style_from_pygments_cls(MonokaiStyle)
 
