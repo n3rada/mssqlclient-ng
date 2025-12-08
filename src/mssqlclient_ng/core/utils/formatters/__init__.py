@@ -1,11 +1,9 @@
-"""
-Output formatters for converting data structures to various formats.
-"""
+# mssqlclient_ng/core/utils/formatters/__init__.py
 
-from mssqlclient_ng.src.utils.formatters.base import IOutputFormatter
-from mssqlclient_ng.src.utils.formatters.markdown import MarkdownFormatter
-from mssqlclient_ng.src.utils.formatters.csv import CsvFormatter
-from mssqlclient_ng.src.utils.formatters.formatter import OutputFormatter
+from .base import IOutputFormatter
+from .markdown import MarkdownFormatter
+from .csv import CsvFormatter
+from .formatter import OutputFormatter
 
 __all__ = [
     "IOutputFormatter",
