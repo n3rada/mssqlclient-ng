@@ -13,7 +13,7 @@ license = {text = "GPL-3.0-or-later"}
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
 dependencies = [
-    "impacket[tds] @ git+https://github.com/fortra/impacket.git@master",
+    "impacket (>=0.13,<0.2)",
     "loguru (>=0.7.3,<0.8.0)",
     "prompt-toolkit (>=3.0.52,<4.0.0)",
     "pygments (>=2.19.2,<3.0.0)"
@@ -23,7 +23,6 @@ dependencies = [
 repository  = "https://github.com/n3rada/mssqlclient-ng"
 homepage = "https://github.com/n3rada/mssqlclient-ng"
 documentation = "https://github.com/n3rada/mssqlclient-ng/blob/main/README.md"
-"Impacket (upstream)" = "https://github.com/fortra/impacket"
 
 [project.scripts]
 mssqlclient-ng = 'mssqlclientng.cli:main'
