@@ -235,12 +235,20 @@ def main() -> int:
     print(banner.display_banner())
 
     parser = build_parser()
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except argparse.ArgumentError as exc:
+        logger.error(str(exc))
+        parser.print_usage()
+        return 2
+    except SystemExit:
+        # Raised by argparse for things like --version or malformed invocations
+        return 2
 
-    # Show help if no cli args provided
+    # Show help if no cli args provided at all
     if len(sys.argv) <= 1:
         parser.print_help()
-        return 1
+        return 0
 
     # Determine log level: --log-level takes precedence, then --debug, then --trace, then default INFO
     if args.log_level:
