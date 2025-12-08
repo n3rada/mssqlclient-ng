@@ -1,3 +1,6 @@
+# mssqlclient_ng/__init__.py
+
+# Built-in imports
 from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 import tomllib

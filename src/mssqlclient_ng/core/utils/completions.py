@@ -1,9 +1,11 @@
+# mssqlclient_ng/core/utils/completions.py
+
 # External library imports
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
 
 # Local library imports
-from mssqlclient_ng.src.actions.factory import ActionFactory
+from ..actions.factory import ActionFactory
 
 
 # SQL keywords and built-in functions for autocompletion

@@ -1,9 +1,10 @@
-"""
-Markdown formatter for data structures.
-"""
+# mssqlclient_ng/core/utils/formatters/markdown.py
 
+# Built-in imports
 from typing import Dict, List
-from mssqlclient_ng.src.utils.formatters.base import IOutputFormatter
+
+# Local library imports
+from .base import IOutputFormatter
 
 
 class MarkdownFormatter(IOutputFormatter):

@@ -1,12 +1,14 @@
-# mssqlclient_ng/src/services/user.py
+# mssqlclient_ng/core/services/user.py
 
+# Built-in imports
 from typing import Optional, Tuple
 
 # Third party imports
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.services.query import QueryService
+from .query import QueryService
+
 
 class UserService:
     """

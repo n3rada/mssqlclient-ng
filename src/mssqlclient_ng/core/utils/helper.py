@@ -1,6 +1,10 @@
+# mssqlclient_ng/core/utils/helper.py
+
+# Built-in imports
 from typing import List, Tuple
 
-from mssqlclient_ng.src.actions.factory import ActionFactory
+# Local library imports
+from ..actions.factory import ActionFactory
 
 
 def get_all_actions_info() -> List[Tuple[str, str, List[str]]]:

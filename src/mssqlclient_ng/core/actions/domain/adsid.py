@@ -5,11 +5,11 @@ Retrieves the current user's SID using SUSER_SID() function.
 from typing import Optional, Dict, List
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatter import OutputFormatter
-from mssqlclient_ng.src.utils.common import sid_bytes_to_string
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatter import OutputFormatter
+from ...utils.common import sid_bytes_to_string
 
 
 @ActionFactory.register(

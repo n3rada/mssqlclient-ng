@@ -1,14 +1,16 @@
-"""
-Links action for enumerating linked SQL servers and their configurations.
-"""
+# mssqlclient_ng/core/actions/remote/links.py
 
+# Built-in imports
 from typing import Optional, List, Dict, Any
+
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+# Local library imports
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("links", "Enumerate linked SQL servers and configurations")

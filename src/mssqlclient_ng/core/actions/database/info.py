@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/actions/database/info.py
+# mssqlclient_ng/core/actions/database/info.py
 
 # Built-in imports
 import re
@@ -8,10 +8,10 @@ from typing import Optional, Dict, List
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 # Query sets organized by environment type

@@ -7,10 +7,10 @@ from typing import Optional, List, Dict
 
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatter import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatter import OutputFormatter
 
 
 @ActionFactory.register(
@@ -107,7 +107,9 @@ class AdMembers(BaseAction):
             )
 
             if not xproc_check:
-                logger.warning("xp_logininfo extended stored procedure is not available.")
+                logger.warning(
+                    "xp_logininfo extended stored procedure is not available."
+                )
                 return None
 
             # Escape single quotes in group name to prevent SQL injection

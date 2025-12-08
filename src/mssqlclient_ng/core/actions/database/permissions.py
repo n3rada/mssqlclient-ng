@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/actions/database/permissions.py
+# mssqlclient_ng/core/actions/database/permissions.py
 
 # Built-in imports
 from typing import Optional, List, Dict
@@ -7,10 +7,10 @@ from typing import Optional, List, Dict
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatter import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatter import OutputFormatter
 
 
 @ActionFactory.register(
@@ -154,7 +154,7 @@ class Permissions(BaseAction):
             {use_statement}
             SELECT DISTINCT
                 permission_name AS [Permission]
-            FROM 
+            FROM
                 fn_my_permissions('{target_table}', 'OBJECT');
             """
 

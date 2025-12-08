@@ -8,10 +8,10 @@ import urllib.request
 from typing import Optional, List
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.common import (
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.common import (
     generate_random_string,
     get_hex_char,
     normalize_windows_path,

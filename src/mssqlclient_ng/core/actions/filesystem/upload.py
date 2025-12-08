@@ -1,16 +1,18 @@
-"""
-Upload action for uploading local files to the SQL Server filesystem.
-"""
+# mssqlclient_ng/core/actions/filesystem/upload.py
 
+# Built-in imports
 import base64
 from pathlib import Path
 from typing import Optional, List
+
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.common import normalize_windows_path
+# Local library imports
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.common import normalize_windows_path
 
 
 @ActionFactory.register("upload", "Upload a local file to the SQL Server filesystem")

@@ -1,11 +1,11 @@
-"""Network-related actions for SQL Server enumeration and exploitation."""
+# mssqlclient_ng/core/actions/remote/__init__.py
 
-from mssqlclient_ng.src.actions.remote.smb_coerce import SmbCoerce
-from mssqlclient_ng.src.actions.remote.links import Links
-from mssqlclient_ng.src.actions.remote.rpc import RemoteProcedureCall
-from mssqlclient_ng.src.actions.remote.adsi_query import AdsiQuery
-from mssqlclient_ng.src.actions.remote.adsi_manager import AdsiManager
-from mssqlclient_ng.src.actions.remote.linkmap import LinkMap
+from .smb_coerce import SmbCoerce
+from .links import Links
+from .rpc import RemoteProcedureCall
+from .adsi_query import AdsiQuery
+from .adsi_manager import AdsiManager
+from .linkmap import LinkMap
 
 __all__ = [
     "SmbCoerce",

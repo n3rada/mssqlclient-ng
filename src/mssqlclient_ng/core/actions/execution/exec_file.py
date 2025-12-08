@@ -5,10 +5,10 @@ ExecFile action for executing remote files on the SQL Server.
 from typing import Optional, List
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.common import normalize_windows_path
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.common import normalize_windows_path
 
 
 @ActionFactory.register("exec", "Execute a remote file on the SQL Server")

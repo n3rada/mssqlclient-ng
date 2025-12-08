@@ -1,5 +1,6 @@
-# mssqlclient_ng/src/services/query.py
+# mssqlclient_ng/core/services/query.py
 
+# Built-in imports
 from typing import Optional, Any, List, Dict, TYPE_CHECKING
 
 # Third party imports
@@ -9,10 +10,11 @@ from impacket.tds import TDS_DONE_TOKEN, TDS_DONEINPROC_TOKEN, TDS_DONEPROC_TOKE
 
 if TYPE_CHECKING:
     # Import MSSQL only for type checking to avoid a runtime dependency
-    from impacket.tds import MSSQL  # pragma: no cover
+    from impacket.tds import MSSQL
 
 # Local library imports
-from mssqlclient_ng.src.models.linked_servers import LinkedServers
+from ..models.linked_servers import LinkedServers
+
 
 class QueryService:
     """
@@ -356,9 +358,14 @@ class QueryService:
 
             # If OPENQUERY is being used, refuse server-scoped commands that
             # require RPC (e.g. login creation, server config changes).
-            if not self._linked_servers.use_remote_procedure_call and self._requires_rpc(query):
+            if (
+                not self._linked_servers.use_remote_procedure_call
+                and self._requires_rpc(query)
+            ):
                 logger.warning("Server-level command rejected under OPENQUERY.")
-                raise ValueError("This query requires RPC and cannot be executed via OPENQUERY.")
+                raise ValueError(
+                    "This query requires RPC and cannot be executed via OPENQUERY."
+                )
 
             if self._linked_servers.use_remote_procedure_call:
                 final_query = self._linked_servers.build_remote_procedure_call_chain(

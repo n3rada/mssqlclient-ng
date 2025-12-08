@@ -1,14 +1,15 @@
-"""
-Main output formatter that delegates to the appropriate formatter based on user selection.
-Provides a static interface for formatting data structures.
-"""
+# mssqlclient_ng/core/utils/formatters/formatter.py
 
+# Built-in imports
 from typing import Dict, List
+
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.utils.formatters.base import IOutputFormatter
-from mssqlclient_ng.src.utils.formatters.markdown import MarkdownFormatter
-from mssqlclient_ng.src.utils.formatters.csv import CsvFormatter
+# Local library imports
+from .base import IOutputFormatter
+from .markdown import MarkdownFormatter
+from .csv import CsvFormatter
 
 
 class OutputFormatter:

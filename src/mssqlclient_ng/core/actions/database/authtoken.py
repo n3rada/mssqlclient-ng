@@ -8,11 +8,11 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
-from mssqlclient_ng.src.utils.common import convert_table_to_dicts
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
+from ...utils.common import convert_table_to_dicts
 
 
 @ActionFactory.register("authtoken", "Retrieve Windows authentication token groups")

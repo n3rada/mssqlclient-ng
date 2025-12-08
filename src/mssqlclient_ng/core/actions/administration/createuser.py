@@ -7,9 +7,9 @@ from typing import Optional
 # Third party imports
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
 
 
 @ActionFactory.register(
@@ -103,9 +103,7 @@ class CreateUser(BaseAction):
         # Escape single quotes in password
         escaped_password = self._password.replace("'", "''")
 
-        create_login_query = (
-            f"CREATE LOGIN [{self._username}] WITH PASSWORD = '{escaped_password}', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;"
-        )
+        create_login_query = f"CREATE LOGIN [{self._username}] WITH PASSWORD = '{escaped_password}', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;"
 
         try:
             res = database_context.query_service.execute_non_processing(
@@ -119,8 +117,15 @@ class CreateUser(BaseAction):
         except Exception as ex:
             msg = str(ex).lower()
             # If login already exists, update password instead
-            if "already exists" in msg or "already an object" in msg or "create login" in msg and "exists" in msg:
-                logger.warning(f"SQL login '{self._username}' already exists. Updating password.")
+            if (
+                "already exists" in msg
+                or "already an object" in msg
+                or "create login" in msg
+                and "exists" in msg
+            ):
+                logger.warning(
+                    f"SQL login '{self._username}' already exists. Updating password."
+                )
                 try:
                     alter_query = f"ALTER LOGIN [{self._username}] WITH PASSWORD = '{escaped_password}';"
                     database_context.query_service.execute_non_processing(alter_query)
@@ -138,16 +143,22 @@ class CreateUser(BaseAction):
 
         # Now add the login to the server role
         logger.info(f"Adding '{self._username}' to {self._role} server role")
-        add_role_query = f"ALTER SERVER ROLE [{self._role}] ADD MEMBER [{self._username}];"
+        add_role_query = (
+            f"ALTER SERVER ROLE [{self._role}] ADD MEMBER [{self._username}];"
+        )
         try:
             database_context.query_service.execute_non_processing(add_role_query)
-            logger.success(f"'{self._username}' added to {self._role} role successfully")
+            logger.success(
+                f"'{self._username}' added to {self._role} role successfully"
+            )
             return True
         except Exception as ex:
             msg = str(ex).lower()
             # Already a member
             if "already a member" in msg or "is already a member" in msg:
-                logger.info(f"'{self._username}' is already a member of {self._role} role.")
+                logger.info(
+                    f"'{self._username}' is already a member of {self._role} role."
+                )
                 return True
 
             if "permission" in msg or "denied" in msg:

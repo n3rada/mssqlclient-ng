@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/actions/database/roles.py
+# mssqlclient_ng/core/actions/database/roles.py
 
 # Built-in imports
 from typing import Optional
@@ -7,10 +7,10 @@ from typing import Optional
 from loguru import logger
 
 # Local imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("roles", "Enumerate database-level roles and their members")
@@ -52,12 +52,14 @@ class Roles(BaseAction):
         Returns:
             None
         """
-        logger.info("Enumerating server-level and database-level roles with their members")
+        logger.info(
+            "Enumerating server-level and database-level roles with their members"
+        )
 
         # ========== SERVER-LEVEL ROLES ==========
 
         server_roles_query = """
-            SELECT 
+            SELECT
                 r.name AS RoleName,
                 r.is_fixed_role AS IsFixedRole,
                 r.type_desc AS RoleType,
@@ -75,7 +77,7 @@ class Roles(BaseAction):
         if all_server_roles:
             # Get all server role members in a single query
             server_members_query = """
-                SELECT 
+                SELECT
                     r.name AS role_name,
                     m.name AS member_name
                 FROM sys.server_principals r
@@ -134,7 +136,9 @@ class Roles(BaseAction):
 
             # Display Custom Server Roles
             if custom_server_roles:
-                logger.success(f"Custom Server Roles ({len(custom_server_roles)} roles)")
+                logger.success(
+                    f"Custom Server Roles ({len(custom_server_roles)} roles)"
+                )
                 # Filter to only show relevant columns
                 filtered_custom = [
                     {
@@ -152,7 +156,7 @@ class Roles(BaseAction):
 
         # Query all database roles (both fixed and custom)
         query = """
-            SELECT 
+            SELECT
                 r.name AS RoleName,
                 r.is_fixed_role AS IsFixedRole,
                 r.type_desc AS RoleType,
@@ -171,7 +175,7 @@ class Roles(BaseAction):
 
         # Get all role members in a single query for performance
         all_members_query = """
-            SELECT 
+            SELECT
                 r.name AS role_name,
                 m.name AS member_name
             FROM sys.database_principals r

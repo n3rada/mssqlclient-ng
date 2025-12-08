@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/actions/database/rows.py
+# mssqlclient_ng/core/actions/database/rows.py
 
 # Built-in imports
 from typing import Optional
@@ -7,13 +7,15 @@ from typing import Optional
 from loguru import logger
 
 # Local imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("search", "Search for keywords in column names and data across databases")
+@ActionFactory.register(
+    "search", "Search for keywords in column names and data across databases"
+)
 class Search(BaseAction):
     """
     Search for keywords in column names and data across databases.
@@ -157,7 +159,9 @@ class Search(BaseAction):
             for db in accessible_databases:
                 databases_to_search.append(db["name"])
 
-            logger.info(f"Found {len(databases_to_search)} accessible database(s) to search")
+            logger.info(
+                f"Found {len(databases_to_search)} accessible database(s) to search"
+            )
 
         total_header_matches = 0
         total_row_matches = 0
@@ -180,9 +184,7 @@ class Search(BaseAction):
 
         return None
 
-    def _search_columns_only(
-        self, database_context: DatabaseContext
-    ) -> Optional[dict]:
+    def _search_columns_only(self, database_context: DatabaseContext) -> Optional[dict]:
         """
         Search only column names across all accessible databases (fast, no row data scanning).
 
@@ -192,9 +194,7 @@ class Search(BaseAction):
         Returns:
             None
         """
-        logger.info(
-            f"Searching for '{self._keyword}' in column names only"
-        )
+        logger.info(f"Searching for '{self._keyword}' in column names only")
 
         # Get all accessible databases
         databases_to_search = []
@@ -289,7 +289,9 @@ class Search(BaseAction):
         if target_table:
             escaped_schema = target_schema.replace("'", "''")
             escaped_table = target_table.replace("'", "''")
-            table_filter = f" AND s.name = '{escaped_schema}' AND t.name = '{escaped_table}' "
+            table_filter = (
+                f" AND s.name = '{escaped_schema}' AND t.name = '{escaped_table}' "
+            )
 
         # Query to get all columns in all tables of the specified database
         metadata_query = f"""

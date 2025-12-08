@@ -1,11 +1,7 @@
-"""
-ServerExecutionState model for tracking runtime execution context.
-Used for loop detection in linked server chains.
-"""
+# mssqlclient_ng/core/models/server_execution_state.py
 
+# Built-in imports
 import hashlib
-from typing import Tuple
-from loguru import logger
 
 
 class ServerExecutionState:

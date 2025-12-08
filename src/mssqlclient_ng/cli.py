@@ -9,20 +9,19 @@ from getpass import getpass
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng import __version__
-from mssqlclient_ng.src.models import server
-from mssqlclient_ng.src.models.linked_servers import LinkedServers
-from mssqlclient_ng.src.services.authentication import AuthenticationService
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.terminal import Terminal
-from mssqlclient_ng.src.utils import logbook
-from mssqlclient_ng.src.utils import banner
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from . import __version__, banner
+from .core.models import server
+from .core.models.linked_servers import LinkedServers
+from .core.services.authentication import AuthenticationService
+from .core.services.database import DatabaseContext
+from .core.terminal import Terminal
+from .core.utils import logbook
+from .core.utils.formatters import OutputFormatter
 
 # Import actions to register them with the factory
-from mssqlclient_ng.src import actions
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.actions.execution import query
+from .core import actions
+from .core.actions.factory import ActionFactory
+from .core.actions.execution import query
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -276,7 +275,7 @@ def main() -> int:
     database_context = None
 
     if args.ntlm_relay:
-        from mssqlclient_ng.src.services.ntlmrelay import RelayMSSQL
+        from .core.services.ntlmrelay import RelayMSSQL
 
         relay = RelayMSSQL(hostname=server_instance.hostname, port=server_instance.port)
         relay.start(smb2support=args.smb2support, ntlmchallenge=args.ntlmchallenge)
@@ -420,7 +419,9 @@ def main() -> int:
         # Compute and display the final execution context
         database_context.query_service.compute_execution_database()
         if database_context.query_service.execution_database:
-            logger.info(f"Execution database: {database_context.query_service.execution_database}")
+            logger.info(
+                f"Execution database: {database_context.query_service.execution_database}"
+            )
 
         # Detect Azure SQL on the final execution server
         database_context.query_service.is_azure_sql

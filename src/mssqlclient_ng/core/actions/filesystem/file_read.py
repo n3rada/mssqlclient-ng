@@ -1,16 +1,16 @@
-"""
-Read file contents from the SQL Server filesystem using OPENROWSET BULK.
+# mssqlclient_ng/core/actions/filesystem/file_read.py
 
-Requires ADMINISTER BULK OPERATIONS or ADMINISTER DATABASE BULK OPERATIONS permission.
-"""
-
+# Built-in imports
 from typing import Optional, List
+
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.common import normalize_windows_path
+# Local library imports
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.common import normalize_windows_path
 
 
 @ActionFactory.register(
@@ -74,7 +74,9 @@ class FileRead(BaseAction):
             escaped_path = self._file_path.replace("'", "''")
 
             # Use OPENROWSET BULK to read file content
-            query = f"SELECT A FROM OPENROWSET(BULK '{escaped_path}', SINGLE_CLOB) AS R(A);"
+            query = (
+                f"SELECT A FROM OPENROWSET(BULK '{escaped_path}', SINGLE_CLOB) AS R(A);"
+            )
 
             file_content = database_context.query_service.execute_scalar(query)
 

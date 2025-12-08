@@ -1,12 +1,12 @@
-# mssqlclient_ng/src/actions/database/impersonate.py
+# mssqlclient_ng/core/actions/database/impersonate.py
 
 from typing import Optional, List, Dict, Any
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(

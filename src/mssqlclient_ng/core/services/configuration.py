@@ -1,12 +1,11 @@
-"""
-Configuration service for managing SQL Server configuration options (sp_configure).
-Handles assemblies, trusted assemblies, procedures, and server options.
-"""
+# mssqlclient_ng/core/services/configuration.py
 
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.services.query import QueryService
-from mssqlclient_ng.src.models.server import Server
+# Local library imports
+from ..models.server import Server
+from .query import QueryService
 
 
 class ConfigurationService:

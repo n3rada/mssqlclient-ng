@@ -5,9 +5,9 @@ XpCmd action for executing operating system commands via xp_cmdshell.
 from typing import Optional, List
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
 
 
 @ActionFactory.register("xpcmd", "Execute operating system commands via xp_cmdshell")
@@ -86,13 +86,18 @@ class XpCmd(BaseAction):
         except Exception as ex:
             # Handle specific xp_cmdshell proxy account error
             error_message = str(ex)
-            if "xp_cmdshell_proxy_account" in error_message or "proxy account" in error_message:
+            if (
+                "xp_cmdshell_proxy_account" in error_message
+                or "proxy account" in error_message
+            ):
                 logger.error("xp_cmdshell proxy account is not configured or invalid.")
-                logger.error("  1. SQL Server service account lacks permissions to execute the command")
+                logger.error(
+                    "  1. SQL Server service account lacks permissions to execute the command"
+                )
                 logger.error("  2. No xp_cmdshell proxy credential is configured")
             else:
                 logger.error(f"Error executing xp_cmdshell: {ex}")
-            
+
             return None
 
     def get_arguments(self) -> List[str]:

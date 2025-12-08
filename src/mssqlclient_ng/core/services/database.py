@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/services/database.py
+# mssqlclient_ng/core/services/database.py
 
 from typing import TYPE_CHECKING
 
@@ -6,13 +6,13 @@ from typing import TYPE_CHECKING
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.services.query import QueryService
-from mssqlclient_ng.src.services.user import UserService
-from mssqlclient_ng.src.services.configuration import ConfigurationService
+from .query import QueryService
+from .user import UserService
+from .configuration import ConfigurationService
 
 if TYPE_CHECKING:
     from impacket.tds import MSSQL
-    from mssqlclient_ng.src.models.server import Server
+    from ..models.server import Server
 
 
 class DatabaseContext:

@@ -1,14 +1,16 @@
-"""
-SMB coercion action for triggering SMB authentication via xp_* extended stored procedures.
-"""
+# mssqlclient_ng/core/actions/remote/smb_coerce.py
 
+# Built-in imports
 import re
 from typing import Optional
+
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
+# Local library imports
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
 
 
 @ActionFactory.register(

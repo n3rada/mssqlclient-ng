@@ -1,10 +1,10 @@
-"""
-CSV formatter for data structures.
-Uses semicolon (;) as separator for better compatibility with European Excel versions.
-"""
+# mssqlclient_ng/core/utils/formatters/csv.py
 
+# Built-in imports
 from typing import Dict, List
-from mssqlclient_ng.src.utils.formatters.base import IOutputFormatter
+
+# Local library imports
+from .base import IOutputFormatter
 
 
 class CsvFormatter(IOutputFormatter):

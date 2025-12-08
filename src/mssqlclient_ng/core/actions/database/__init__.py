@@ -3,22 +3,22 @@ Database actions for SQL Server database management.
 """
 
 # Import actions to trigger registration with ActionFactory
-from mssqlclient_ng.src.actions.database.authtoken import AuthToken
-from mssqlclient_ng.src.actions.database.databases import Databases
-from mssqlclient_ng.src.actions.database.xprocs import ExtendedProcs
-from mssqlclient_ng.src.actions.database.impersonate import Impersonation
-from mssqlclient_ng.src.actions.database.info import Info
-from mssqlclient_ng.src.actions.database.loginmap import LoginMap
-from mssqlclient_ng.src.actions.database.oledb_providers import OleDbProviders
-from mssqlclient_ng.src.actions.database.permissions import Permissions
-from mssqlclient_ng.src.actions.database.procedures import Procedures
-from mssqlclient_ng.src.actions.database.rolemembers import RoleMembers
-from mssqlclient_ng.src.actions.database.roles import Roles
-from mssqlclient_ng.src.actions.database.rows import Rows
-from mssqlclient_ng.src.actions.database.search import Search
-from mssqlclient_ng.src.actions.database.tables import Tables
-from mssqlclient_ng.src.actions.database.users import Users
-from mssqlclient_ng.src.actions.database.whoami import Whoami
+from ..database.authtoken import AuthToken
+from ..database.databases import Databases
+from ..database.xprocs import ExtendedProcs
+from ..database.impersonate import Impersonation
+from ..database.info import Info
+from ..database.loginmap import LoginMap
+from ..database.oledb_providers import OleDbProviders
+from ..database.permissions import Permissions
+from ..database.procedures import Procedures
+from ..database.rolemembers import RoleMembers
+from ..database.roles import Roles
+from ..database.rows import Rows
+from ..database.search import Search
+from ..database.tables import Tables
+from ..database.users import Users
+from ..database.whoami import Whoami
 
 __all__ = [
     "AuthToken",

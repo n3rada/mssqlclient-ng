@@ -6,9 +6,9 @@ from typing import Optional, List
 from urllib.parse import urlparse
 from loguru import logger
 
-from mssqlclient_ng.src.actions.execution.powershell import PowerShell
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
+from ..execution.powershell import PowerShell
+from ..factory import ActionFactory
+from ..database import DatabaseContext
 
 
 @ActionFactory.register(

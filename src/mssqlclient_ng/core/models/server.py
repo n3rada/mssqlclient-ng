@@ -1,8 +1,9 @@
-"""
-Server model representing a SQL Server instance with connection details.
-"""
+# mssqlclient_ng/core/models/server.py
 
+# Built-in imports
 from typing import Optional
+
+# Third party imports
 from loguru import logger
 
 
@@ -121,10 +122,10 @@ class Server:
     ) -> "Server":
         """
         Parses a server string in the format "server[,port][:user][@database]".
-        
+
         Order is completely flexible - components can appear in any order after the hostname.
         The hostname is always the part before any delimiter (,, :, @).
-        
+
         Format supports any combination in any order:
         - server (required) - hostname or IP
         - ,port (optional) - port number
@@ -166,13 +167,17 @@ class Server:
         """
         if not server_input or not server_input.strip():
             raise ValueError("Server input cannot be null or empty.")
-        
+
         remaining = server_input.strip()
-        
+
         # Find the first delimiter
-        delimiters = {',': remaining.find(','), ':': remaining.find(':'), '@': remaining.find('@')}
+        delimiters = {
+            ",": remaining.find(","),
+            ":": remaining.find(":"),
+            "@": remaining.find("@"),
+        }
         valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
-        
+
         if not valid_delimiters:
             # No delimiters, just hostname
             return cls(
@@ -181,71 +186,83 @@ class Server:
                 database=database,
                 impersonation_user=None,
             )
-        
+
         # Find first delimiter
         first_delimiter_pos = min(valid_delimiters.values())
-        first_delimiter = next(k for k, v in valid_delimiters.items() if v == first_delimiter_pos)
-        
+        first_delimiter = next(
+            k for k, v in valid_delimiters.items() if v == first_delimiter_pos
+        )
+
         # Extract hostname
         hostname = remaining[:first_delimiter_pos]
         if not hostname or not hostname.strip():
             raise ValueError("Server hostname cannot be empty")
-        
-        remaining = remaining[first_delimiter_pos + 1:]
-        
+
+        remaining = remaining[first_delimiter_pos + 1 :]
+
         # Initialize with defaults
         parsed_port = port
         parsed_database = database
         impersonation_user = None
-        
+
         # Parse all components
         while remaining:
             # Find next delimiter
-            delimiters = {',': remaining.find(','), ':': remaining.find(':'), '@': remaining.find('@')}
+            delimiters = {
+                ",": remaining.find(","),
+                ":": remaining.find(":"),
+                "@": remaining.find("@"),
+            }
             valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
-            
+
             if not valid_delimiters:
                 # Last component
                 next_delimiter_pos = len(remaining)
                 next_delimiter = None
             else:
                 next_delimiter_pos = min(valid_delimiters.values())
-                next_delimiter = next(k for k, v in valid_delimiters.items() if v == next_delimiter_pos)
-            
+                next_delimiter = next(
+                    k for k, v in valid_delimiters.items() if v == next_delimiter_pos
+                )
+
             component = remaining[:next_delimiter_pos]
-            
+
             if not component or not component.strip():
-                if first_delimiter == ',':
+                if first_delimiter == ",":
                     raise ValueError("Port cannot be empty after ,")
-                elif first_delimiter == ':':
+                elif first_delimiter == ":":
                     raise ValueError("Impersonation user cannot be empty after :")
                 else:
                     raise ValueError("Database cannot be empty after @")
-            
+
             # Determine what component this is based on the delimiter that preceded it
-            if first_delimiter == ',':
+            if first_delimiter == ",":
                 # This is a port
                 try:
                     parsed_port = int(component)
                     if not (1 <= parsed_port <= 65535):
-                        raise ValueError(f"Port must be between 1 and 65535, got {parsed_port}")
+                        raise ValueError(
+                            f"Port must be between 1 and 65535, got {parsed_port}"
+                        )
                 except ValueError as e:
                     if "invalid literal" in str(e):
-                        raise ValueError(f"Invalid port number: {component}. Port must be between 1 and 65535.")
+                        raise ValueError(
+                            f"Invalid port number: {component}. Port must be between 1 and 65535."
+                        )
                     raise
-            elif first_delimiter == ':':
+            elif first_delimiter == ":":
                 # This is an impersonation user
                 impersonation_user = component
-            elif first_delimiter == '@':
+            elif first_delimiter == "@":
                 # This is a database
                 parsed_database = component
-            
+
             if next_delimiter is None:
                 break
-            
+
             first_delimiter = next_delimiter
-            remaining = remaining[next_delimiter_pos + 1:]
-        
+            remaining = remaining[next_delimiter_pos + 1 :]
+
         return cls(
             hostname=hostname.strip(),
             port=parsed_port,

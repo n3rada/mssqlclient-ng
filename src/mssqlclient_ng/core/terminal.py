@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/terminal.py
+# mssqlclient_ng/core/terminal.py
 
 # Built-in imports
 import shlex

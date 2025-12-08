@@ -1,9 +1,13 @@
-# mssqlclient_ng/src/models/linked_servers.py
+# mssqlclient_ng/core/models/linked_servers.py
 
+# Built-in imports
 from typing import List, Optional
+
+# Third party imports
 from loguru import logger
 
-from mssqlclient_ng.src.models.server import Server
+# Local library imports
+from .server import Server
 
 
 class LinkedServers:

@@ -5,9 +5,9 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("sessions", "List active SQL Server sessions")

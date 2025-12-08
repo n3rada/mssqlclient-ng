@@ -1,8 +1,8 @@
-"""Models for SQL Server connections and execution state."""
+# mssqlclient_ng/core/models/__init__.py
 
-from mssqlclient_ng.src.models.server import Server
-from mssqlclient_ng.src.models.server_execution_state import ServerExecutionState
-from mssqlclient_ng.src.models.linked_servers import LinkedServers
+from .server import Server
+from .server_execution_state import ServerExecutionState
+from .linked_servers import LinkedServers
 
 __all__ = [
     "Server",

@@ -1,4 +1,4 @@
-# mssqlclient_ng/src/services/adsi.py
+# mssqlclient_ng/core/services/adsi.py
 
 # Built-in imports
 import asyncio
@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.utils.common import (
+from ..utils.common import (
     generate_random_string,
     get_random_unused_port,
 )

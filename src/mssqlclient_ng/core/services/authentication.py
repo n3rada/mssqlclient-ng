@@ -1,6 +1,4 @@
-"""
-Authentication service for managing SQL Server connections using impacket's TDS.
-"""
+# mssqlclient_ng/core/services/authentication.py
 
 # Built-in imports
 from typing import Optional
@@ -10,7 +8,7 @@ from loguru import logger
 from impacket.tds import MSSQL
 
 # Local library imports
-from mssqlclient_ng.src.models.server import Server
+from ..models.server import Server
 
 
 class AuthenticationService:

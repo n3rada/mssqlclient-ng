@@ -1,3 +1,5 @@
+# mssqlclient_ng/core/utils/logbook.py
+
 """Logbook module for logging capabilities using Loguru.
 
 Is this message about...
@@ -15,6 +17,7 @@ Is this message about...
    └─ Use WARNING/ERROR
 """
 
+# Built-in imports
 import os
 import sys
 import logging

@@ -1,3 +1,5 @@
+# mssqlclient_ng/core/services/ntlmrelay.py
+
 # Built-in imports
 import sys
 import time
@@ -14,8 +16,8 @@ from impacket.examples.ntlmrelayx.servers import SMBRelayServer
 from impacket.examples.ntlmrelayx.utils.config import NTLMRelayxConfig
 
 # Local library imports
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.models.server import Server
+from ..models.server import Server
+from .database import DatabaseContext
 
 
 class RelayMSSQL:

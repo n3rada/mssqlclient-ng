@@ -1,14 +1,15 @@
-"""
-Tree action for displaying directory structure in Linux tree-style format.
-"""
+# mssqlclient_ng/core/actions/filesystem/tree.py
 
+# Built-in imports
 from typing import Optional, List, Dict, Any
+
+# Third-party imports
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.common import normalize_windows_path
+# Local library imports
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
 
 
 @ActionFactory.register(
@@ -65,13 +66,18 @@ class Tree(BaseAction):
 
         # Get depth from named argument or positional argument
         depth_str = named_args.get(
-            "depth", named_args.get("d", positional_args[1] if len(positional_args) > 1 else "3")
+            "depth",
+            named_args.get(
+                "d", positional_args[1] if len(positional_args) > 1 else "3"
+            ),
         )
 
         try:
             self._depth = int(depth_str)
         except ValueError:
-            logger.warning(f"Invalid depth value '{depth_str}', using default depth of 3")
+            logger.warning(
+                f"Invalid depth value '{depth_str}', using default depth of 3"
+            )
             self._depth = 3
 
         if self._depth < 1 or self._depth > 255:
@@ -79,7 +85,10 @@ class Tree(BaseAction):
 
         # Get show files flag from named argument or positional argument
         files_str = named_args.get(
-            "files", named_args.get("f", positional_args[2] if len(positional_args) > 2 else "true")
+            "files",
+            named_args.get(
+                "f", positional_args[2] if len(positional_args) > 2 else "true"
+            ),
         )
 
         files_lower = files_str.strip().lower()
@@ -87,7 +96,10 @@ class Tree(BaseAction):
 
         # Get Unicode mode flag from named argument or positional argument
         unicode_str = named_args.get(
-            "unicode", named_args.get("u", positional_args[3] if len(positional_args) > 3 else "true")
+            "unicode",
+            named_args.get(
+                "u", positional_args[3] if len(positional_args) > 3 else "true"
+            ),
         )
 
         unicode_lower = unicode_str.strip().lower()

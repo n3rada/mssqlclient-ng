@@ -1,10 +1,10 @@
-"""
-Formatter: Utility functions to format data in various formats (Markdown, CSV, etc.)
-This module provides a backward-compatible interface to the new formatters system.
-"""
+# mssqlclient_ng/core/utils/formatter.py
 
+# Built-in imports
 from typing import Dict, List, Optional, Sequence, Any
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+
+# Local library imports
+from .formatters import OutputFormatter
 
 
 def normalize_value(value: Any) -> str:

@@ -1,7 +1,6 @@
-"""
-Base interface for output formatters.
-"""
+# mssqlclient_ng/core/utils/formatters/base.py
 
+# Built-in imports
 from abc import ABC, abstractmethod
 from typing import Dict, List
 

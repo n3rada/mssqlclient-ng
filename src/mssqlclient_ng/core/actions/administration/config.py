@@ -5,10 +5,10 @@ from typing import Optional, List
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("config", "Configure SQL Server options or list configurations")
@@ -175,4 +175,3 @@ class Config(BaseAction):
             List of argument descriptions
         """
         return ["[option_name] [value]"]
-

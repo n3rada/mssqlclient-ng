@@ -5,11 +5,11 @@ from typing import Optional
 from loguru import logger
 
 # Local imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatters import OutputFormatter
-from mssqlclient_ng.src.utils import common
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatters import OutputFormatter
+from ...utils import common
 
 
 @ActionFactory.register(
@@ -63,8 +63,11 @@ class DomainSid(BaseAction):
             sid_result_table = database_context.query_service.execute_table(
                 f"SELECT SUSER_SID('{domain}\\Domain Admins');"
             )
-            
-            if not sid_result_table or not sid_result_table[0][next(iter(sid_result_table[0]))]:
+
+            if (
+                not sid_result_table
+                or not sid_result_table[0][next(iter(sid_result_table[0]))]
+            ):
                 logger.error(
                     "Could not obtain domain SID via SUSER_SID(). "
                     "Ensure the server has access to the domain."
@@ -105,7 +108,9 @@ class DomainSid(BaseAction):
             return result
 
         except Exception as e:
-            logger.error(f"Failed to retrieve domain SID: {e.message if hasattr(e, 'message') else str(e)}")
+            logger.error(
+                f"Failed to retrieve domain SID: {e.message if hasattr(e, 'message') else str(e)}"
+            )
             return None
 
     def get_arguments(self) -> list[str]:

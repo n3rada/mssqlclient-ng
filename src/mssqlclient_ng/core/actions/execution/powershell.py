@@ -6,9 +6,9 @@ import base64
 from typing import Optional, List
 from loguru import logger
 
-from mssqlclient_ng.src.actions.execution.xpcmd import XpCmd
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
+from ..execution.xpcmd import XpCmd
+from ..factory import ActionFactory
+from ..database import DatabaseContext
 
 
 @ActionFactory.register("pwsh", "Execute PowerShell scripts via xp_cmdshell")

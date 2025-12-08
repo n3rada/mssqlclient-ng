@@ -5,10 +5,10 @@ OLE action for executing operating system commands via OLE Automation.
 from typing import Optional, List
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils import common
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils import common
 
 
 @ActionFactory.register(

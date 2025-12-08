@@ -1,4 +1,4 @@
-# /mssqlclient_ng/src/actions/database/tables.py
+# /mssqlclient_ng/core/actions/database/tables.py
 
 # Built-in imports
 from typing import Optional, List, Dict
@@ -7,10 +7,10 @@ from typing import Optional, List, Dict
 from loguru import logger
 
 # Local library imports
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatter import OutputFormatter
+from ..base import BaseAction
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatter import OutputFormatter
 
 
 @ActionFactory.register(
@@ -75,23 +75,23 @@ class Tables(BaseAction):
 
         query = f"""
                 {use_statement}
-                SELECT 
+                SELECT
                     s.name AS SchemaName,
                     t.name AS TableName,
                     t.type_desc AS TableType,
                     SUM(p.rows) AS Rows
-                FROM 
+                FROM
                     sys.objects t
-                JOIN 
+                JOIN
                     sys.schemas s ON t.schema_id = s.schema_id
-                LEFT JOIN 
+                LEFT JOIN
                     sys.partitions p ON t.object_id = p.object_id
-                WHERE 
+                WHERE
                     t.type IN ('U', 'V')
                     AND p.index_id IN (0, 1)
-                GROUP BY 
+                GROUP BY
                     s.name, t.name, t.type_desc
-                ORDER BY 
+                ORDER BY
                     SchemaName, TableName;"""
 
         tables = database_context.query_service.execute_table(query)
@@ -103,10 +103,10 @@ class Tables(BaseAction):
         # Get all permissions in a single query
         all_permissions_query = f"""
                 {use_statement}
-                SELECT SCHEMA_NAME(o.schema_id) AS schema_name, o.name AS object_name, p.permission_name 
-                FROM sys.objects o 
-                CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p 
-                WHERE o.type IN ('U', 'V') 
+                SELECT SCHEMA_NAME(o.schema_id) AS schema_name, o.name AS object_name, p.permission_name
+                FROM sys.objects o
+                CROSS APPLY fn_my_permissions(QUOTENAME(SCHEMA_NAME(o.schema_id)) + '.' + QUOTENAME(o.name), 'OBJECT') p
+                WHERE o.type IN ('U', 'V')
                 ORDER BY o.name, p.permission_name;"""
 
         all_permissions = database_context.query_service.execute_table(

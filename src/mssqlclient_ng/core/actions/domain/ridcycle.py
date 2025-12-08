@@ -5,11 +5,11 @@ RID enumeration via cycling through RIDs using SUSER_SNAME(SID_BINARY('S-...-RID
 from typing import Optional, List, Dict
 from loguru import logger
 
-from mssqlclient_ng.src.actions.base import BaseAction
-from mssqlclient_ng.src.actions.domain.addomain import DomainSid
-from mssqlclient_ng.src.actions.factory import ActionFactory
-from mssqlclient_ng.src.services.database import DatabaseContext
-from mssqlclient_ng.src.utils.formatter import OutputFormatter
+from ..base import BaseAction
+from ..domain.addomain import DomainSid
+from ..factory import ActionFactory
+from ..database import DatabaseContext
+from ...utils.formatter import OutputFormatter
 
 
 DEFAULT_MAX_RID = 10000
@@ -109,7 +109,9 @@ class RidCycle(BaseAction):
             domain_info = domain_sid_action.execute(database_context)
 
             if domain_info is None:
-                logger.error("Failed to retrieve domain SID. Cannot proceed with RID cycling.")
+                logger.error(
+                    "Failed to retrieve domain SID. Cannot proceed with RID cycling."
+                )
                 return results
 
             domain = domain_info["Domain"]
@@ -129,7 +131,9 @@ class RidCycle(BaseAction):
                 queries = []
                 for i in range(sids_to_check):
                     rid = start + i
-                    queries.append(f"SELECT SUSER_SNAME(SID_BINARY(N'{domain_sid_prefix}-{rid}'))")
+                    queries.append(
+                        f"SELECT SUSER_SNAME(SID_BINARY(N'{domain_sid_prefix}-{rid}'))"
+                    )
 
                 sql = "; ".join(queries)
 
@@ -146,23 +150,31 @@ class RidCycle(BaseAction):
                             continue
 
                         found_rid = start + result_index
-                        account_name = username.split("\\")[1] if "\\" in username else username
+                        account_name = (
+                            username.split("\\")[1] if "\\" in username else username
+                        )
 
                         logger.success(f"RID {found_rid}: {username}")
                         found_count += 1
 
-                        results.append({
-                            "RID": found_rid,
-                            "Domain": domain,
-                            "Username": account_name,
-                            "Full Account": username,
-                        })
+                        results.append(
+                            {
+                                "RID": found_rid,
+                                "Domain": domain,
+                                "Username": account_name,
+                                "Full Account": username,
+                            }
+                        )
 
                 except Exception as ex:
-                    logger.warning(f"Batch failed for RIDs {start}-{start + sids_to_check - 1}: {ex}")
+                    logger.warning(
+                        f"Batch failed for RIDs {start}-{start + sids_to_check - 1}: {ex}"
+                    )
                     continue
 
-            logger.success(f"RID cycling completed. Found {found_count} domain accounts.")
+            logger.success(
+                f"RID cycling completed. Found {found_count} domain accounts."
+            )
 
             # Print results if any found
             if results:
