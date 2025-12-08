@@ -25,4 +25,4 @@ homepage = "https://github.com/n3rada/mssqlclient-ng"
 documentation = "https://github.com/n3rada/mssqlclient-ng/blob/main/README.md"
 
 [project.scripts]
-mssqlclient-ng = 'mssqlclientng.cli:main'
+mssqlclient-ng = 'mssqlclient_ng.cli:main'
