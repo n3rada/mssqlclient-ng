@@ -66,6 +66,8 @@ class AdSid(BaseAction):
 
             # Extract the binary SID from the query result
             raw_sid_obj = dt_sid[0].get("")
+            raw_sid_obj_size = len(raw_sid_obj) if raw_sid_obj else 0
+            logger.trace(f"Raw SID object size: {raw_sid_obj_size}")
 
             if not dt_sid or raw_sid_obj is None:
                 logger.error("Could not obtain user SID via SUSER_SID().")
@@ -75,7 +77,7 @@ class AdSid(BaseAction):
             if isinstance(raw_sid_obj, bytes):
                 
                 # Ensure proper length of bytes
-                if len(raw_sid_obj) < 8:
+                if raw_sid_obj_size < 4:
                     logger.error("SID byte array is too short to be valid.")
                     return None
 
