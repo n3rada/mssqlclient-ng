@@ -55,13 +55,8 @@ class AdSid(BaseAction):
             system_user = database_context.user_service.system_user
             logger.info(f"System User: {system_user}")
 
-            # Escape single quotes to prevent SQL injection
-            escaped_user = system_user.replace("'", "''")
-
-            # Get the user's SID using SUSER_SID()
-            # When executing through linked servers, we need to convert to string format
-            # to avoid binary data conversion issues
-            query = f"SELECT CONVERT(VARCHAR(200), SUSER_SID('{escaped_user}'), 1) AS SID;"
+            # Convert to VARCHAR to avoid binary data conversion issues through linked servers
+            query = "SELECT CONVERT(VARCHAR(200), SUSER_SID(), 1) AS SID;"
             dt_sid = database_context.query_service.execute_table(query)
 
             if not dt_sid or not dt_sid[0]:
