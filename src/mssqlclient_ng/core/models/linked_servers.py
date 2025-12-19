@@ -153,22 +153,19 @@ class LinkedServers:
     @staticmethod
     def _quote_identifier(name: str) -> str:
         """
-        Wrap SQL Server identifier in brackets if it contains special characters.
-        Simple alphanumeric names (and underscores) don't need brackets.
+        Wrap SQL Server identifier in brackets if it contains separator characters.
+        Only quote if the name contains delimiters used in our syntax: : / @ ;
         
         Args:
             name: The identifier name
             
         Returns:
-            Quoted identifier if special chars present, otherwise unchanged
+            Quoted identifier if separators present, otherwise unchanged
         """
-        # Simple identifier: starts with letter or underscore, contains only alphanumeric and underscore
-        if name and name[0].isalpha() or name[0] == '_':
-            if name.replace('_', '').isalnum():
-                # Simple identifier, no brackets needed
-                return name
-        # Everything else needs brackets (special chars, starts with digit, etc.)
-        return f"[{name}]"
+        # Only bracket if name contains our special delimiter characters
+        if any(char in name for char in (':','/', '@', ';')):
+            return f"[{name}]"
+        return name
 
     def get_chain_arguments(self) -> str:
         """
