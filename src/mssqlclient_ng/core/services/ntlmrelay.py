@@ -145,17 +145,17 @@ class RelayMSSQL:
                 logger.trace(
                     f"Creating DatabaseContext for {domain}\\{username}@{server_instance.hostname}"
                 )
-                db_context = DatabaseContext(
+                database_context = DatabaseContext(
                     server=server_instance, mssql_instance=mssql_client
                 )
 
                 # Update server with relayed user info
-                db_context.server.mapped_user = (
+                database_context.server.mapped_user = (
                     f"{domain}\\{username}" if domain else username
                 )
                 logger.trace("DatabaseContext created successfully")
 
-                return db_context
+                return database_context
 
             time.sleep(0.1)
 

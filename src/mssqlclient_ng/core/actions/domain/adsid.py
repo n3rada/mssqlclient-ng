@@ -39,12 +39,12 @@ class AdSid(BaseAction):
         # No additional arguments needed
         pass
 
-    def execute(self, db_context: DatabaseContext) -> Optional[Dict[str, str]]:
+    def execute(self, database_context: DatabaseContext) -> Optional[Dict[str, str]]:
         """
         Execute the user SID retrieval action.
 
         Args:
-            db_context: Database context with connection and services
+            database_context: Database context with connection and services
 
         Returns:
             Optional[Dict[str, str]]: Dictionary with user SID information or None if failed
@@ -52,7 +52,7 @@ class AdSid(BaseAction):
         logger.info("Retrieving current user's SID")
 
         try:
-            system_user = db_context.user_service.system_user
+            system_user = database_context.user_service.system_user
             logger.info(f"System User: {system_user}")
 
             # Escape single quotes to prevent SQL injection
@@ -60,7 +60,7 @@ class AdSid(BaseAction):
 
             # Get the user's SID using SUSER_SID()
             query = f"SELECT SUSER_SID('{escaped_user}');"
-            dt_sid = db_context.query_service.execute_table(query)
+            dt_sid = database_context.query_service.execute_table(query)
 
             if not dt_sid or dt_sid[0].get("") is None:
                 logger.error("Could not obtain user SID via SUSER_SID().")

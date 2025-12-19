@@ -56,12 +56,12 @@ class AdMembers(BaseAction):
         if "\\\\" not in self._group_name:
             raise ValueError("Group name must be in format: DOMAIN\\\\GroupName")
 
-    def execute(self, db_context: DatabaseContext) -> Optional[List[Dict]]:
+    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
         """
         Execute the AD group member enumeration action.
 
         Args:
-            db_context: Database context with connection and services
+            database_context: Database context with connection and services
 
         Returns:
             Optional[List[Dict]]: List of group members or None if enumeration fails
@@ -69,7 +69,7 @@ class AdMembers(BaseAction):
         logger.info(f"Retrieving members of AD group: {self._group_name}")
 
         # Try xp_logininfo first (most common method)
-        result = self._try_xp_logininfo(db_context)
+        result = self._try_xp_logininfo(database_context)
 
         if result is not None:
             return result
@@ -77,7 +77,7 @@ class AdMembers(BaseAction):
         # If xp_logininfo fails and openquery flag is set, try OPENQUERY with ADSI
         if self._use_openquery:
             logger.info("Attempting OPENQUERY method with ADSI...")
-            result = self._try_openquery_adsi(db_context)
+            result = self._try_openquery_adsi(database_context)
 
             if result is not None:
                 return result
@@ -85,12 +85,12 @@ class AdMembers(BaseAction):
         logger.error("All enumeration methods failed.")
         return None
 
-    def _try_xp_logininfo(self, db_context: DatabaseContext) -> Optional[List[Dict]]:
+    def _try_xp_logininfo(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
         """
         Try to enumerate group members using xp_logininfo (default method).
 
         Args:
-            db_context: Database context with connection and services
+            database_context: Database context with connection and services
 
         Returns:
             Optional[List[Dict]]: List of group members or None if method fails
@@ -99,7 +99,7 @@ class AdMembers(BaseAction):
             logger.info("Trying xp_logininfo method...")
 
             # Check if xp_logininfo is available
-            xproc_check = db_context.query_service.execute_table(
+            xproc_check = database_context.query_service.execute_table(
                 "SELECT * FROM master.sys.all_objects WHERE name = 'xp_logininfo' AND type = 'X';"
             )
 
@@ -114,7 +114,7 @@ class AdMembers(BaseAction):
 
             # Query group members using xp_logininfo
             query = f"EXEC xp_logininfo @acctname = '{escaped_group_name}', @option = 'members';"
-            members_table = db_context.query_service.execute_table(query)
+            members_table = database_context.query_service.execute_table(query)
 
             if not members_table:
                 logger.warning(
@@ -131,13 +131,13 @@ class AdMembers(BaseAction):
             logger.warning(f"xp_logininfo method failed: {ex}")
             return None
 
-    def _try_openquery_adsi(self, db_context: DatabaseContext) -> Optional[List[Dict]]:
+    def _try_openquery_adsi(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
         """
         Try to enumerate group members using OPENQUERY with ADSI.
         Requires 'Ad Hoc Distributed Queries' to be enabled.
 
         Args:
-            db_context: Database context with connection and services
+            database_context: Database context with connection and services
 
         Returns:
             Optional[List[Dict]]: List of group members or None if method fails
@@ -168,7 +168,7 @@ class AdMembers(BaseAction):
                 );
             """
 
-            members_table = db_context.query_service.execute_table(query)
+            members_table = database_context.query_service.execute_table(query)
 
             if not members_table:
                 logger.warning("No members found using OPENQUERY method.")
