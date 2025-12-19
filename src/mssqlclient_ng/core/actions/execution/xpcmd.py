@@ -25,24 +25,20 @@ class XpCmd(BaseAction):
         super().__init__()
         self._command: str = ""
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate that a command is provided.
 
         Args:
-            args: List of command arguments to execute
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: Command to execute
 
         Raises:
             ValueError: If no command is provided
         """
-        if not args or len(args) == 0:
-            raise ValueError("Shell action requires a CMD command.")
+        if not additional_arguments or not additional_arguments.strip():
+            raise ValueError("xpcmd action requires a command to execute.")
 
-        self._command = " ".join(args)
-        return True
+        self._command = additional_arguments.strip()
 
     def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
         """
@@ -111,11 +107,3 @@ class XpCmd(BaseAction):
         """
         return ["Operating system command to execute via xp_cmdshell"]
 
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["Operating system command to execute via xp_cmdshell"]
