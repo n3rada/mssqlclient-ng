@@ -1,10 +1,13 @@
-"""
-Retrieves the current user's SID using SUSER_SID() function.
-"""
+# mssqlclient_ng/core/actions/domain/adsid.py
 
+# Built-in imports
 from typing import Optional, Dict, List
+
+# Third-party imports
 from loguru import logger
 
+
+# Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

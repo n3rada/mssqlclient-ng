@@ -1,10 +1,14 @@
-"""
-RID enumeration via cycling through RIDs using SUSER_SNAME(SID_BINARY('S-...-RID')).
-"""
+# mssqlclient_ng/core/actions/domain/ridcycle.py
 
+
+# Built-in imports
 from typing import Optional, List, Dict
+
+# Third-party imports
 from loguru import logger
 
+
+# Local imports
 from ..base import BaseAction
 from ..domain.addomain import DomainSid
 from ..factory import ActionFactory

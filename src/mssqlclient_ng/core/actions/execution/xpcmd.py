@@ -1,10 +1,12 @@
-"""
-XpCmd action for executing operating system commands via xp_cmdshell.
-"""
+# mssqlclient_ng/core/actions/execution/xpcmd.py
 
+# Built-in imports
 from typing import Optional, List
+
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
