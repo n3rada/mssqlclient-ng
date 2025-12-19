@@ -64,15 +64,21 @@ class AdSid(BaseAction):
 
             logger.trace(f"SUSER_SID() query result: {dt_sid}")
 
-            if not dt_sid or dt_sid[0].get("") is None:
-                logger.error("Could not obtain user SID via SUSER_SID().")
-                return None
-
             # Extract the binary SID from the query result
             raw_sid_obj = dt_sid[0].get("")
 
+            if not dt_sid or raw_sid_obj is None:
+                logger.error("Could not obtain user SID via SUSER_SID().")
+                return None
+
             # Parse the binary SID
             if isinstance(raw_sid_obj, bytes):
+                
+                # Ensure proper length of bytes
+                if len(raw_sid_obj) < 8:
+                    logger.error("SID byte array is too short to be valid.")
+                    return None
+
                 ad_sid_string = sid_bytes_to_string(raw_sid_obj)
             else:
                 logger.error("Unexpected SID format from SUSER_SID() result.")
