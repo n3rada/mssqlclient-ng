@@ -31,6 +31,12 @@ class Tree(BaseAction):
     - Indentation to show hierarchy levels
 
     Use --unicode:false or -u:false flag to fall back to ASCII characters (|, \\, |) for legacy terminals
+    
+    Note: Paths containing spaces must be enclosed in quotes.
+    Examples:
+        tree "C:\Program Files" 3
+        tree "C:\My Documents" --depth 5
+        tree C:\Windows 2 --files false
     """
 
     def __init__(self):
@@ -73,7 +79,8 @@ class Tree(BaseAction):
             self._depth = int(depth_str)
         except ValueError:
             logger.warning(
-                f"Invalid depth value '{depth_str}', using default depth of 3"
+                f"Invalid depth value '{depth_str}', using default depth of 3. "
+                f"If your path contains spaces, enclose it in quotes (e.g., \"C:\\Program Files\")"
             )
             self._depth = 3
 
