@@ -48,10 +48,6 @@ Format: `server:port/user@database` or any combination `server/user@database:por
 - `/user` (optional) - User to impersonate on this server ("execute as user")
 - `@database` (optional) - Database context (defaults to 'master' if not specified)
 
-```shell
-mssqlclient-ng localhost -c token
-```
-
 ### 🔗 Linked Servers Chain
 
 Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the separator**:
@@ -65,7 +61,6 @@ Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the sep
 - **Forward slash (`/`)** - Specifies user to impersonate ("execute as user")
 - **At sign (`@`)** - Specifies database context
 - **Brackets (`[...]`)** - Used to protect the server name from being split by our delimiters
-
 
 **Examples:**
 ```shell
