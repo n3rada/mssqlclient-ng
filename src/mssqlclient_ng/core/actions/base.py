@@ -29,12 +29,19 @@ class BaseAction(ABC):
         if not additional_arguments or additional_arguments.strip() == "":
             logger.debug("No arguments provided.")
             return []
+        
         # Use shlex to split respecting quotes
-        splitted = [
-            arg for arg in shlex.split(additional_arguments) if arg != separator
-        ]
-        logger.debug(f"Splitted arguments: {splitted}")
-        return splitted
+        # Set posix=False to preserve backslashes in Windows paths
+        try:
+            splitted = [
+                arg for arg in shlex.split(additional_arguments, posix=False) if arg != separator
+            ]
+            logger.debug(f"Splitted arguments: {splitted}")
+            return splitted
+        except ValueError as e:
+            # If shlex fails (e.g., unclosed quotes), fall back to simple split
+            logger.warning(f"shlex parsing failed: {e}. Falling back to simple split.")
+            return [arg.strip() for arg in additional_arguments.split() if arg.strip() and arg != separator]
 
     def parse_arguments(
         self, additional_arguments: str
