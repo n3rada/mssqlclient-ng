@@ -31,10 +31,10 @@ class BaseAction(ABC):
             return []
         
         # Use shlex to split respecting quotes
-        # Set posix=False to preserve backslashes in Windows paths
+        # Use posix=True (default) to properly strip quotes from arguments
         try:
             splitted = [
-                arg for arg in shlex.split(additional_arguments, posix=False) if arg != separator
+                arg for arg in shlex.split(additional_arguments) if arg != separator
             ]
             logger.debug(f"Splitted arguments: {splitted}")
             return splitted
