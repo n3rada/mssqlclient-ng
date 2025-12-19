@@ -2,6 +2,7 @@
 
 # Built-in imports
 import argparse
+import shlex
 import sys
 from getpass import getpass
 
@@ -491,7 +492,8 @@ def main() -> int:
                         return 1
 
                     try:
-                        args_str = " ".join(argument_list)
+                        # Use shlex.join to preserve arguments with spaces
+                        args_str = shlex.join(argument_list)
                         action_instance.validate_arguments(args_str)
                     except ValueError as ve:
                         logger.error(f"Argument validation error: {ve}")

@@ -109,13 +109,13 @@ class Terminal:
             return None
 
         # Check if help is requested
-        args_str = " ".join(argument_list)
-        if "--help" in argument_list or "-h" in argument_list or args_str.strip() == "--help" or args_str.strip() == "-h":
+        if "--help" in argument_list or "-h" in argument_list:
             ActionFactory.display_action_help(action_name)
             return None
 
         try:
-            # Pass the arguments as a string
+            # Use shlex.join to preserve arguments with spaces
+            args_str = shlex.join(argument_list)
             action.validate_arguments(args_str)
         except ValueError as ve:
             logger.error(f"Argument validation error: {ve}")
