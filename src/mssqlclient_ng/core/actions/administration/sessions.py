@@ -1,3 +1,5 @@
+# mssqlclient_ng/core/actions/administration/sessions.py
+
 # Standard library imports
 from typing import Optional, List, Dict, Any
 

@@ -1,3 +1,5 @@
+# mssqlclient_ng/core/actions/administration/kill.py
+
 # Built-in imports
 from typing import Optional
 
