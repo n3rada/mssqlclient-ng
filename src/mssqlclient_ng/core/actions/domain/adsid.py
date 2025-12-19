@@ -12,7 +12,7 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatter import OutputFormatter
-from ...utils.common import sid_bytes_to_string
+from ...utils.common import sid_hex_to_string
 
 
 @ActionFactory.register(
@@ -78,15 +78,9 @@ class AdSid(BaseAction):
 
             # Parse the SID - it's now in string format like '0x01050000...'
             if isinstance(raw_sid_obj, str):
-                # Remove '0x' prefix and convert hex string to bytes
-                hex_string = raw_sid_obj
-                if hex_string.startswith('0x') or hex_string.startswith('0X'):
-                    hex_string = hex_string[2:]
-                
                 try:
-                    # Convert hex string to bytes
-                    sid_bytes = bytes.fromhex(hex_string)
-                    ad_sid_string = sid_bytes_to_string(sid_bytes)
+                    # Use utility function to convert hex string to SID
+                    ad_sid_string = sid_hex_to_string(raw_sid_obj)
                 except (ValueError, Exception) as parse_error:
                     logger.error(f"Failed to parse SID from hex string: {parse_error}")
                     logger.debug(f"Raw SID string: {raw_sid_obj}")
@@ -94,6 +88,8 @@ class AdSid(BaseAction):
             elif isinstance(raw_sid_obj, bytes):
                 # Direct binary format (shouldn't happen with CONVERT, but handle it)
                 try:
+                    # Import here to avoid circular dependency
+                    from ...utils.common import sid_bytes_to_string
                     ad_sid_string = sid_bytes_to_string(raw_sid_obj)
                 except Exception as parse_error:
                     logger.error(f"Failed to parse SID bytes: {parse_error}")

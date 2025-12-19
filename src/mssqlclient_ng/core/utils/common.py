@@ -141,8 +141,33 @@ def sid_bytes_to_string(sid_bytes: bytes) -> str:
     Returns:
         SID in string format (e.g., S-1-5-21-...)
     """
+    return SID(sid_bytes).formatCanonical()
 
-    return SID(bytes.fromhex(sid_bytes.decode())).formatCanonical()
+
+def sid_hex_to_string(hex_string: str) -> str:
+    """
+    Converts hexadecimal SID string to canonical string format (S-1-5-21-...).
+    
+    Handles hex strings with or without '0x' prefix.
+
+    Args:
+        hex_string: Hexadecimal SID string (e.g., '0x01050000...' or '01050000...')
+
+    Returns:
+        SID in string format (e.g., S-1-5-21-...)
+
+    Raises:
+        ValueError: If hex string is invalid
+    """
+    # Remove '0x' or '0X' prefix if present
+    if hex_string.startswith('0x') or hex_string.startswith('0X'):
+        hex_string = hex_string[2:]
+    
+    # Convert hex string to bytes
+    sid_bytes = bytes.fromhex(hex_string)
+    
+    # Use existing bytes-to-string conversion
+    return sid_bytes_to_string(sid_bytes)
 
 
 def normalize_windows_path(path: str) -> str:
