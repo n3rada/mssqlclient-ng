@@ -64,20 +64,39 @@ class AdSid(BaseAction):
 
             logger.trace(f"SUSER_SID() query result: {dt_sid}")
 
-            # Extract the binary SID from the query result
-            raw_sid_obj = dt_sid[0].get("")
-            raw_sid_obj_size = len(raw_sid_obj) if raw_sid_obj else 0
-            logger.trace(f"Raw SID object size: {raw_sid_obj_size}")
-
-            if not dt_sid or raw_sid_obj is None:
+            if not dt_sid or not dt_sid[0]:
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
 
+            # Extract the binary SID from the query result
+            raw_sid_obj = dt_sid[0].get("")
+            
+            if raw_sid_obj is None or raw_sid_obj == "NULL":
+                logger.error("SUSER_SID() returned NULL.")
+                return None
+
+            logger.trace(f"Raw SID object size: {len(raw_sid_obj) if raw_sid_obj else 0}")
+
             # Parse the binary SID
             if isinstance(raw_sid_obj, bytes):
-                ad_sid_string = sid_bytes_to_string(raw_sid_obj)
+                # Check if it's ASCII hex (normal case) or actual binary (linked server artifact)
+                try:
+                    # First, assume it's hex ASCII representation (normal case)
+                    # This will work for: b'010500000000000515000000...'
+                    ad_sid_string = sid_bytes_to_string(raw_sid_obj)
+                except (UnicodeDecodeError, ValueError):
+                    # If that fails, it might be actual binary SID data
+                    # Convert to hex string first, then use sid_bytes_to_string
+                    try:
+                        hex_str = raw_sid_obj.hex()
+                        pseudo_hex_bytes = hex_str.encode('ascii')
+                        ad_sid_string = sid_bytes_to_string(pseudo_hex_bytes)
+                    except Exception as e:
+                        logger.error(f"Failed to parse SID from binary: {e}")
+                        logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
+                        return None
             else:
-                logger.error("Unexpected SID format from SUSER_SID() result.")
+                logger.error(f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}")
                 return None
 
             if not ad_sid_string:
