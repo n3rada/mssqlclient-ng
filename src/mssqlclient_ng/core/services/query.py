@@ -382,21 +382,49 @@ class QueryService:
         """
         Determines if a SQL statement requires RPC execution because it modifies
         server-level state. These commands cannot be executed over OPENQUERY.
+        
+        Note: This checks for actual DDL/configuration commands, not system view queries.
+        Queries like "SELECT * FROM sys.servers" should NOT trigger this.
         """
         if not sql:
             return False
 
-        s = sql.upper()
+        s = sql.upper().strip()
+        
+        # Remove common query prefixes to avoid false positives
+        # (e.g., "SELECT * FROM sys.servers" contains "servers" but isn't DDL)
+        if s.startswith("SELECT ") or s.startswith("WITH "):
+            return False
 
-        return (
-            "CREATE LOGIN" in s
-            or "ALTER LOGIN" in s
-            or "DROP LOGIN" in s
-            or "ALTER SERVER" in s
-            or "SP_CONFIGURE" in s
-            or "RECONFIGURE" in s
-            or "CREATE ENDPOINT" in s
-        )
+        # Check for server-level DDL and configuration commands
+        rpc_commands = [
+            "CREATE LOGIN",
+            "ALTER LOGIN", 
+            "DROP LOGIN",
+            "ALTER SERVER CONFIGURATION",
+            "ALTER SERVER ROLE",
+            "EXEC SP_CONFIGURE",
+            "EXEC MASTER..SP_CONFIGURE",
+            "EXEC MASTER.DBO.SP_CONFIGURE",
+            "SP_CONFIGURE",
+            "RECONFIGURE",
+            "CREATE ENDPOINT",
+            "ALTER ENDPOINT",
+            "DROP ENDPOINT",
+            "GRANT ",  # Server-level GRANT (not database-level)
+            "REVOKE ",  # Server-level REVOKE
+            "SP_ADDLINKEDSERVER",
+            "SP_ADDLINKEDSRVLOGIN",
+            "SP_DROPLINKEDSRVLOGIN",
+            "SP_DROPSERVER",
+        ]
+        
+        for cmd in rpc_commands:
+            if cmd in s:
+                logger.trace(f"Query requires RPC: matched '{cmd}' in SQL statement")
+                return True
+        
+        return False
 
     def _is_openquery_rowset_failure(self, ex: Exception) -> bool:
         """
