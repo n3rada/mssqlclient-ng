@@ -27,20 +27,17 @@ class FileRead(BaseAction):
         super().__init__()
         self._file_path: str = ""
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate and bind the arguments passed to the FileRead action.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: The argument string to parse
 
         Raises:
             ValueError: If the file path is empty
         """
-        named_args, positional_args = self._parse_action_arguments(args)
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
         if len(positional_args) >= 1:
             self._file_path = positional_args[0]
@@ -54,8 +51,6 @@ class FileRead(BaseAction):
 
         # Normalize Windows path to handle single backslashes
         self._file_path = normalize_windows_path(self._file_path)
-
-        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
