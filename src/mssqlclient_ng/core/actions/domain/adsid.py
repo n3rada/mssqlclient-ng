@@ -29,18 +29,15 @@ class AdSid(BaseAction):
         """Initialize the AdSid action."""
         super().__init__()
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate arguments (no arguments required).
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: The argument string to parse (unused)
         """
         # No additional arguments needed
-        return True
+        pass
 
     def execute(self, db_context: DatabaseContext) -> Optional[Dict[str, str]]:
         """

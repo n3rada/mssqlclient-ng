@@ -32,20 +32,17 @@ class ObjectLinkingEmbedding(BaseAction):
         super().__init__()
         self._command: str = ""
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate that a command is provided.
 
         Args:
-            args: List of command arguments to execute
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: Command arguments to execute
 
         Raises:
             ValueError: If no command is provided
         """
-        if not args or len(args) == 0:
+        if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "A command must be provided for OLE execution. Usage: <command>"
             )

@@ -37,20 +37,17 @@ class RidCycle(BaseAction):
         self._python_output: bool = False
         self._table_output: bool = False
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate arguments for RID cycling.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: The argument string to parse
 
         Raises:
             ValueError: If arguments are invalid
         """
-        if not args or len(args) == 0:
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
             return True
 
         named_args, positional_args = self._parse_action_arguments(args)

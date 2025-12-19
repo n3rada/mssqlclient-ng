@@ -43,21 +43,18 @@ class ClrExecution(BaseAction):
         self._dll_uri: str = ""
         self._function: str = "Main"
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate arguments for CLR execution.
 
         Args:
-            args: List of command line arguments
+            additional_arguments: The argument string to parse
                 Format: <dll_uri> [function]
-
-        Returns:
-            bool: True if validation succeeds
 
         Raises:
             ValueError: If arguments are invalid
         """
-        named_args, positional_args = self._parse_action_arguments(args)
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
         # Parse DLL URI (required)
         if len(positional_args) >= 1:

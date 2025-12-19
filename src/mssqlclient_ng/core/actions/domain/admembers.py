@@ -30,20 +30,17 @@ class AdMembers(BaseAction):
         self._group_name: Optional[str] = None
         self._use_openquery: bool = False
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate that a group name is provided and check for openquery flag.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: The argument string to parse
 
         Raises:
             ValueError: If group name is missing or invalid format
         """
-        if not args or len(args) == 0:
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
             raise ValueError(
                 "Group name is required. Example: DOMAIN\\IT or DOMAIN\\Domain Admins"
             )
