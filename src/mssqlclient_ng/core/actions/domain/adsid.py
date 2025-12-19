@@ -53,7 +53,9 @@ class AdSid(BaseAction):
 
         try:
             # Get the user's SID using SUSER_SID()
-            query = "SELECT SUSER_SID();"
+            # Convert to VARCHAR with style 1 to get hex string format (0x...)
+            # This ensures the data isn't corrupted when crossing linked server boundaries
+            query = "SELECT CONVERT(VARCHAR(200), SUSER_SID(), 1) AS SID;"
             dt_sid = database_context.query_service.execute_table(query)
 
             logger.trace(f"SUSER_SID() query result: {dt_sid}")
@@ -62,33 +64,40 @@ class AdSid(BaseAction):
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
 
-            # Extract the binary SID from the query result
-            raw_sid_obj = dt_sid[0].get("")
+            # Extract the SID from the query result (first column value)
+            raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
             
             if raw_sid_obj is None or raw_sid_obj == "NULL":
                 logger.error("SUSER_SID() returned NULL.")
                 return None
 
-            logger.trace(f"Raw SID object size: {len(raw_sid_obj) if raw_sid_obj else 0}")
+            logger.trace(f"Raw SID object: {raw_sid_obj} (type: {type(raw_sid_obj)})")
 
-            # Parse the binary SID
-            if isinstance(raw_sid_obj, bytes):
-                # Check if it's ASCII hex (normal case) or actual binary (linked server artifact)
+            # Parse the SID - should now be in hex string format like '0x01050000...'
+            if isinstance(raw_sid_obj, str):
+                # Hex string format from CONVERT (e.g., '0x01050000...')
                 try:
-                    # First, assume it's hex ASCII representation (normal case)
-                    # This will work for: b'010500000000000515000000...'
+                    # Remove '0x' prefix and convert to hex bytes for sid_bytes_to_string
+                    hex_str = raw_sid_obj
+                    if hex_str.startswith('0x') or hex_str.startswith('0X'):
+                        hex_str = hex_str[2:]
+                    
+                    # Convert to ASCII bytes format that sid_bytes_to_string expects
+                    hex_bytes = hex_str.encode('ascii')
+                    ad_sid_string = sid_bytes_to_string(hex_bytes)
+                except Exception as e:
+                    logger.error(f"Failed to parse SID from hex string: {e}")
+                    logger.debug(f"Raw SID string: {raw_sid_obj}")
+                    return None
+            elif isinstance(raw_sid_obj, bytes):
+                # Fallback: direct bytes (shouldn't happen with CONVERT, but handle it)
+                try:
+                    # Assume it's hex ASCII representation
                     ad_sid_string = sid_bytes_to_string(raw_sid_obj)
-                except (UnicodeDecodeError, ValueError):
-                    # If that fails, it might be actual binary SID data
-                    # Convert to hex string first, then use sid_bytes_to_string
-                    try:
-                        hex_str = raw_sid_obj.hex()
-                        pseudo_hex_bytes = hex_str.encode('ascii')
-                        ad_sid_string = sid_bytes_to_string(pseudo_hex_bytes)
-                    except Exception as e:
-                        logger.error(f"Failed to parse SID from binary: {e}")
-                        logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
-                        return None
+                except Exception as e:
+                    logger.error(f"Failed to parse SID from bytes: {e}")
+                    logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
+                    return None
             else:
                 logger.error(f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}")
                 return None
