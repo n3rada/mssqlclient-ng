@@ -59,14 +59,16 @@ class AdSid(BaseAction):
             escaped_user = system_user.replace("'", "''")
 
             # Get the user's SID using SUSER_SID()
-            query = f"SELECT SUSER_SID('{escaped_user}');"
+            # When executing through linked servers, we need to convert to string format
+            # to avoid binary data conversion issues
+            query = f"SELECT CONVERT(VARCHAR(200), SUSER_SID('{escaped_user}'), 1) AS SID;"
             dt_sid = database_context.query_service.execute_table(query)
 
             if not dt_sid or not dt_sid[0]:
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
 
-            # Extract the binary SID from the query result
+            # Extract the SID from the query result
             # Get first column value regardless of column name
             raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
             
@@ -74,8 +76,23 @@ class AdSid(BaseAction):
                 logger.error("SUSER_SID() returned NULL.")
                 return None
 
-            # Parse the binary SID
-            if isinstance(raw_sid_obj, bytes):
+            # Parse the SID - it's now in string format like '0x01050000...'
+            if isinstance(raw_sid_obj, str):
+                # Remove '0x' prefix and convert hex string to bytes
+                hex_string = raw_sid_obj
+                if hex_string.startswith('0x') or hex_string.startswith('0X'):
+                    hex_string = hex_string[2:]
+                
+                try:
+                    # Convert hex string to bytes
+                    sid_bytes = bytes.fromhex(hex_string)
+                    ad_sid_string = sid_bytes_to_string(sid_bytes)
+                except (ValueError, Exception) as parse_error:
+                    logger.error(f"Failed to parse SID from hex string: {parse_error}")
+                    logger.debug(f"Raw SID string: {raw_sid_obj}")
+                    return None
+            elif isinstance(raw_sid_obj, bytes):
+                # Direct binary format (shouldn't happen with CONVERT, but handle it)
                 try:
                     ad_sid_string = sid_bytes_to_string(raw_sid_obj)
                 except Exception as parse_error:
