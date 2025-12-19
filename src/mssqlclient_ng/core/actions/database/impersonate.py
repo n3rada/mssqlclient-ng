@@ -1,8 +1,13 @@
 # mssqlclient_ng/core/actions/database/impersonate.py
 
+# Built-in imports
 from typing import Optional, List, Dict, Any
+
+# Third-party imports
 from loguru import logger
 
+
+# Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

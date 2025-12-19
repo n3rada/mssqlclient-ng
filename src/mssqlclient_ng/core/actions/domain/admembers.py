@@ -55,8 +55,6 @@ class AdMembers(BaseAction):
         if "\\" not in self._group_name:
             raise ValueError("Group name must be in format: DOMAIN\\GroupName")
 
-        return True
-
     def execute(self, db_context: DatabaseContext) -> Optional[List[Dict]]:
         """
         Execute the AD group member enumeration action.

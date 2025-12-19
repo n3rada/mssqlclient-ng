@@ -86,9 +86,7 @@ class RidCycle(BaseAction):
                 "Too many positional arguments. Expected: [maxRid]. Use --format flag for output format."
             )
 
-        return True
-
-    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
+    def execute(self, db_context: DatabaseContext) -> Dict:
         """
         Execute the RID cycling enumeration.
 

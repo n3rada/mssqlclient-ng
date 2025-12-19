@@ -71,7 +71,8 @@ class ClrExecution(BaseAction):
         if not self._dll_uri:
             raise ValueError("DLL URI is required. Usage: <dllURI> [function]")
 
-        return True
+        logger.info(f"DLL URI: {self._dll_uri}")
+        logger.info(f"Function: {self._function}")
 
     def execute(self, database_context: DatabaseContext) -> bool:
         """

@@ -47,8 +47,8 @@ class ObjectLinkingEmbedding(BaseAction):
                 "A command must be provided for OLE execution. Usage: <command>"
             )
 
-        self._command = " ".join(args)
-        return True
+        self._command = additional_arguments
+        logger.info(f"Command to execute: {self._command}")
 
     def execute(self, database_context: DatabaseContext) -> None:
         """
