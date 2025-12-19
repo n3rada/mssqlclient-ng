@@ -1,17 +1,20 @@
-"""
-ExecFile action for executing remote files on the SQL Server.
-"""
+# mssqlclient_ng/core/actions/execution/exec_file.py
 
+# Built-in imports
 from typing import Optional, List
+
+# Third-party imports
 from loguru import logger
 
+
+# Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
 
 
-@ActionFactory.register("exec", "Execute a remote file on the SQL Server")
+@ActionFactory.register("run", "Execute a remote file on the SQL Server")
 class ExecFile(BaseAction):
     """
     Execute a remote file on the SQL Server filesystem.
@@ -32,39 +35,55 @@ class ExecFile(BaseAction):
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
-        Validate arguments for the exec action.
+        Validate arguments for the run action.
 
         Args:
             additional_arguments: File path and optional arguments
-                Format: <file_path> [arguments...]
+                Format: [--wait|-w] <file_path> [arguments...]
                 Use --wait or -w flag to execute synchronously (wait for completion)
 
         Raises:
             ValueError: If no file path is provided
         """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("Exec action requires a file path as an argument.")
+        parser = self.create_argument_parser(
+            description="Execute a remote file on the SQL Server"
+        )
+        
+        parser.add_argument(
+            "--wait", "-w",
+            action="store_true",
+            help="Execute synchronously and wait for completion"
+        )
+        
+        parser.add_argument(
+            "file_path",
+            help="Remote file path to execute"
+        )
+        
+        parser.add_argument(
+            "arguments",
+            nargs="*",
+            help="Optional command-line arguments to pass to the file"
+        )
 
-        # Check for --wait or -w flag
-        args_str = additional_arguments.strip()
-        if args_str.startswith("--wait ") or args_str.startswith("-w "):
-            self._async_mode = False
-            # Remove the flag from arguments
-            args_str = (
-                args_str.split(maxsplit=1)[1]
-                if len(args_str.split(maxsplit=1)) > 1
-                else ""
-            )
-            logger.info("Synchronous mode enabled (will wait for completion)")
-        else:
+        positional_args, optional_args = self.parse_arguments(parser, additional_arguments)
+        
+        # Extract wait flag
+        self._async_mode = not optional_args.get("wait", False)
+        
+        if self._async_mode:
             logger.info("Asynchronous mode enabled (non-blocking)")
+        else:
+            logger.info("Synchronous mode enabled (will wait for completion)")
 
-        if not args_str:
-            raise ValueError("Exec action requires a file path as an argument.")
-
-        parts = args_str.split(maxsplit=1)
-        self._file_path = normalize_windows_path(parts[0])
-        self._arguments = parts[1] if len(parts) > 1 else ""
+        # Extract file path
+        self._file_path = normalize_windows_path(positional_args[0])
+        
+        # Extract additional arguments (join them with spaces)
+        if len(positional_args) > 1:
+            self._arguments = " ".join(positional_args[1:])
+        else:
+            self._arguments = ""
 
         logger.info(f"Target file: {self._file_path}")
         if self._arguments:
@@ -337,5 +356,5 @@ class ExecFile(BaseAction):
         return [
             "Remote file path to execute",
             "Optional: --wait or -w to execute synchronously",
-            "Optional: command-line arguments",
+            "Optional: additional command-line arguments to pass to the file",
         ]

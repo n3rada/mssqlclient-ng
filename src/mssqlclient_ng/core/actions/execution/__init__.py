@@ -7,7 +7,7 @@ from .remote_powershell import RemotePowerShell
 from .ole import ObjectLinkingEmbedding
 from .agents import Agents
 from .clr import ClrExecution
-from .exec_file import ExecFile
+from .run import ExecFile
 
 __all__ = [
     "Query",
