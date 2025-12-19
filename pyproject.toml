@@ -16,7 +16,7 @@ dependencies = [
     "loguru>=0.7.3,<0.8.0",
     "prompt-toolkit>=3.0.52,<4.0.0",
     "pygments>=2.19.2,<3.0.0",
-    "impacket>=0.13.0,<0.14.0"
+    "impacket @ git+https://github.com/fortra/impacket.git@master"
 ]
 
 [project.urls]
