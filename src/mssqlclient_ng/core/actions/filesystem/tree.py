@@ -40,20 +40,17 @@ class Tree(BaseAction):
         self._show_files: bool = True
         self._use_unicode: bool = True
 
-    def validate_arguments(self, args: List[str]) -> bool:
+    def validate_arguments(self, additional_arguments: str) -> None:
         """
         Validate arguments for the tree action.
 
         Args:
-            args: List of command line arguments
-
-        Returns:
-            bool: True if validation succeeds
+            additional_arguments: The argument string to parse
 
         Raises:
             ValueError: If the path is empty or depth is invalid
         """
-        named_args, positional_args = self._parse_action_arguments(args)
+        named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
         # Get path from positional argument or throw error
         if len(positional_args) >= 1:
@@ -104,8 +101,6 @@ class Tree(BaseAction):
 
         unicode_lower = unicode_str.strip().lower()
         self._use_unicode = unicode_lower in ["1", "true", "yes"]
-
-        return True
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
