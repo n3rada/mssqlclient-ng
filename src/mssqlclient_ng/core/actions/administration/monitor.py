@@ -1,4 +1,4 @@
-# mssqlclient_ng/core/actions/administration/kill.py
+# mssqlclient_ng/core/actions/administration/monitor.py
 
 # Built-in imports
 from typing import Optional
