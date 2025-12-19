@@ -29,7 +29,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mssqlclient-ng",
         description="Interract with Microsoft SQL Server (MS SQL | MSSQL) servers and their linked instances, without the need for complex T-SQL queries.",
-        usage="%(prog)s <host> [options] [action [action-options]]",
+        usage="%(prog)s <host> [options] [-a [action_args]]",
         allow_abbrev=True,
         exit_on_error=False,
         add_help=True,
