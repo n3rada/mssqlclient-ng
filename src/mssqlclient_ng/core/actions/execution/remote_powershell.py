@@ -1,11 +1,13 @@
-"""
-RemotePowerShell action for downloading and executing remote PowerShell scripts via xp_cmdshell.
-"""
+# mssqlclient_ng/core/actions/execution/remote_powershell.py
 
+# Built-in imports
 from typing import Optional, List
 from urllib.parse import urlparse
+
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from ..execution.powershell import PowerShell
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

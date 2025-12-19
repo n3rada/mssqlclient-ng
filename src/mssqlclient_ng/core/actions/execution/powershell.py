@@ -1,11 +1,13 @@
-"""
-PowerShell action for executing PowerShell scripts via xp_cmdshell.
-"""
+# mssqlclient_ng/core/actions/execution/powershell.py
 
+# Built-in imports
 import base64
 from typing import Optional, List
+
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from ..execution.xpcmd import XpCmd
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
