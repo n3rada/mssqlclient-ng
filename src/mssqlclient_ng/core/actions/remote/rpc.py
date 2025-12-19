@@ -148,6 +148,6 @@ class RemoteProcedureCall(BaseAction):
             List of argument descriptions.
         """
         return [
-            "Action: 'add' to enable RPC Out, 'del' to disable RPC Out",
+            "Action: add/on/1/true/enable to enable RPC Out, del/off/0/false/disable to disable",
             "Linked server name"
         ]
