@@ -1,10 +1,11 @@
 # mssqlclient_ng/core/actions/base.py
 
 # Built-in imports
+import argparse
 import shlex
 import re
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 # Third party imports
 from loguru import logger
@@ -171,3 +172,71 @@ class BaseAction(ABC):
         """
         # Default implementation using docstring
         return self.__doc__.strip() if self.__doc__ else "No help available."
+
+    def create_argument_parser(self, description: str = "") -> argparse.ArgumentParser:
+        """
+        Create an argument parser for this action.
+
+        Args:
+            description: Description of the action
+
+        Returns:
+            ArgumentParser instance configured to exit_on_error=False
+        """
+        parser = argparse.ArgumentParser(
+            description=description,
+            add_help=False,  # We handle help ourselves
+            exit_on_error=False  # Don't exit on parse errors, raise instead
+        )
+        return parser
+
+    def parse_arguments(
+        self, parser: argparse.ArgumentParser, additional_arguments: str = ""
+    ) -> Tuple[List[str], Dict[str, Any]]:
+        """
+        Parse arguments using an argparse parser.
+
+        Args:
+            parser: The argument parser to use
+            additional_arguments: The argument string to parse
+
+        Returns:
+            Tuple of (positional_args, optional_args_dict)
+
+        Raises:
+            ValueError: If argument parsing fails
+        """
+        if not additional_arguments or not additional_arguments.strip():
+            # Return empty positional args and empty dict for optional args
+            return [], {}
+
+        try:
+            # Split arguments respecting quotes
+            args_list = self.split_arguments(additional_arguments)
+            
+            # Parse with argparse
+            parsed = parser.parse_args(args_list)
+            
+            # Convert Namespace to dict for optional args
+            optional_args = vars(parsed)
+            
+            # Extract positional arguments from parsed results
+            positional_args = []
+            for key, value in list(optional_args.items()):
+                # Check if this is a positional argument (typically not starting with uppercase)
+                # Positional args in argparse are stored directly in the namespace
+                if value is not None and not key.startswith('_'):
+                    # Check if it's a list (nargs='*' or nargs='+')
+                    if isinstance(value, list):
+                        positional_args.extend(value)
+                        # Remove from optional_args since it's positional
+                        if key in ['arguments', 'args']:
+                            del optional_args[key]
+                    # Check if it looks like a positional arg (common names)
+                    elif key in ['path', 'file_path', 'local_path', 'remote_path', 'query', 'command']:
+                        positional_args.append(value)
+            
+            return positional_args, optional_args
+            
+        except (argparse.ArgumentError, SystemExit) as e:
+            raise ValueError(f"Failed to parse arguments: {e}")

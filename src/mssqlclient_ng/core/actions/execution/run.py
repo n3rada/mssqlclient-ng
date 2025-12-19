@@ -45,41 +45,29 @@ class ExecFile(BaseAction):
         Raises:
             ValueError: If no file path is provided
         """
-        parser = self.create_argument_parser(
-            description="Execute a remote file on the SQL Server"
-        )
-        
-        parser.add_argument(
-            "--wait", "-w",
-            action="store_true",
-            help="Execute synchronously and wait for completion"
-        )
-        
-        parser.add_argument(
-            "file_path",
-            help="Remote file path to execute"
-        )
-        
-        parser.add_argument(
-            "arguments",
-            nargs="*",
-            help="Optional command-line arguments to pass to the file"
-        )
+        if not additional_arguments or not additional_arguments.strip():
+            raise ValueError("Run action requires a file path as an argument.")
 
-        positional_args, optional_args = self.parse_arguments(parser, additional_arguments)
+        # Parse arguments using the base class method
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments=additional_arguments
+        )
         
-        # Extract wait flag
-        self._async_mode = not optional_args.get("wait", False)
+        # Check for --wait or -w flag
+        self._async_mode = not ("wait" in named_args or "w" in named_args)
         
         if self._async_mode:
             logger.info("Asynchronous mode enabled (non-blocking)")
         else:
             logger.info("Synchronous mode enabled (will wait for completion)")
 
-        # Extract file path
+        # Extract file path (first positional argument)
+        if len(positional_args) < 1:
+            raise ValueError("Run action requires a file path as an argument.")
+            
         self._file_path = normalize_windows_path(positional_args[0])
         
-        # Extract additional arguments (join them with spaces)
+        # Extract additional arguments (remaining positional args, joined with spaces)
         if len(positional_args) > 1:
             self._arguments = " ".join(positional_args[1:])
         else:

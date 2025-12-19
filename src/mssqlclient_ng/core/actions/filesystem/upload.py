@@ -46,23 +46,15 @@ class Upload(BaseAction):
         Raises:
             ValueError: If arguments are invalid or file doesn't exist
         """
-        parser = self.create_argument_parser(
-            description="Upload a local file to the SQL Server filesystem"
+        # Parse arguments using the base class method
+        _, positional_args = self._parse_action_arguments(
+            additional_arguments=additional_arguments
         )
         
-        parser.add_argument(
-            "local_path",
-            help="Local file path to upload (must exist)"
-        )
-        
-        parser.add_argument(
-            "remote_path",
-            nargs="?",
-            default=None,
-            help="Remote destination path (defaults to C:\\Windows\\Tasks\\<filename>)"
-        )
-
-        positional_args, _ = self.parse_arguments(parser, additional_arguments)
+        if len(positional_args) < 1:
+            raise ValueError(
+                "Upload action requires at least one argument: <local_path> [remote_path]"
+            )
 
         local_path_str = positional_args[0]
 
