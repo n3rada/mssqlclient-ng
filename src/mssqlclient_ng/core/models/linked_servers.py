@@ -162,12 +162,12 @@ class LinkedServers:
         Returns:
             Quoted identifier if special chars present, otherwise unchanged
         """
-        # Check if name needs quoting (contains anything other than alphanumeric and underscore)
-        if name.replace('_', '').replace('-', '').isalnum() and not name[0].isdigit():
-            # Simple identifier, no brackets needed unless it starts with digit or has hyphen
-            if '-' in name or name[0].isdigit():
-                return f"[{name}]"
-            return name
+        # Simple identifier: starts with letter or underscore, contains only alphanumeric and underscore
+        if name and name[0].isalpha() or name[0] == '_':
+            if name.replace('_', '').isalnum():
+                # Simple identifier, no brackets needed
+                return name
+        # Everything else needs brackets (special chars, starts with digit, etc.)
         return f"[{name}]"
 
     def get_chain_arguments(self) -> str:
