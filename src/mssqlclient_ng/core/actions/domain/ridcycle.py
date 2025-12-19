@@ -14,7 +14,7 @@ from ...services.database import DatabaseContext
 from ...utils.formatter import OutputFormatter
 
 
-DEFAULT_MAX_RID = 10000
+DEFAULT_MAX_RID = 5000
 BATCH_SIZE = 1000
 
 
