@@ -52,14 +52,8 @@ class AdSid(BaseAction):
         logger.info("Retrieving current user's SID")
 
         try:
-            system_user = database_context.user_service.system_user
-            logger.info(f"System User: {system_user}")
-
-            # Escape single quotes to prevent SQL injection
-            escaped_user = system_user.replace("'", "''")
-
             # Get the user's SID using SUSER_SID()
-            query = f"SELECT SUSER_SID('{escaped_user}');"
+            query = "SELECT SUSER_SID();"
             dt_sid = database_context.query_service.execute_table(query)
 
             logger.trace(f"SUSER_SID() query result: {dt_sid}")
@@ -105,7 +99,7 @@ class AdSid(BaseAction):
 
             # Create result dictionary
             result = {
-                "System User": system_user,
+                "System User": database_context.user_service.system_user,
                 "User SID": ad_sid_string,
             }
 
