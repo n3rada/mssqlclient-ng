@@ -469,9 +469,8 @@ def main() -> int:
         # Detect Azure SQL on the final execution server
         database_context.query_service.is_azure_sql
 
-        terminal_instance = Terminal(database_context)
-
         if args.query or args.action:
+            # Execute single action/query and exit
             if args.action:
                 # args.action is a list: [action_name, arg1, arg2, ...]
                 if isinstance(args.action, list) and len(args.action) > 0:
@@ -481,18 +480,35 @@ def main() -> int:
                     logger.error("No action specified")
                     return 1
 
-                # Execute specified action
+                # Handle special case: query action
                 if action_name == "query":
                     args.query = " ".join(argument_list)
                 else:
-                    terminal_instance.execute_action(
-                        action_name=action_name, argument_list=argument_list
-                    )
-                    return 0
+                    # Get and execute the action directly
+                    action_instance = ActionFactory.get_action(action_name)
+                    if action_instance is None:
+                        logger.error(f"Unknown action: {action_name}")
+                        return 1
+
+                    try:
+                        args_str = " ".join(argument_list)
+                        action_instance.validate_arguments(args_str)
+                    except ValueError as ve:
+                        logger.error(f"Argument validation error: {ve}")
+                        return 1
+
+                    server_name = database_context.query_service.execution_server
+                    logger.info(f"Executing action '{action_name}' against {server_name}")
+
+                    try:
+                        action_instance.execute(database_context=database_context)
+                        return 0
+                    except Exception as exc:
+                        logger.error(f"Action execution failed: {exc}")
+                        return 1
 
             # Execute query if provided
             if args.query:
-                # Execute query without prefix
                 query_action = query.Query()
                 try:
                     query_action.validate_arguments(additional_arguments=args.query)
@@ -504,7 +520,8 @@ def main() -> int:
                 return 0
 
         else:
-            # Starting interactive fake-shell
+            # Starting interactive shell - only create Terminal instance here
+            terminal_instance = Terminal(database_context)
             terminal_instance.start(
                 prefix=args.prefix, multiline=args.multiline, history=args.history
             )
