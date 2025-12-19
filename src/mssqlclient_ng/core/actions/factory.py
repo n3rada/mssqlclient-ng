@@ -155,3 +155,41 @@ class ActionFactory:
     def clear_registry(cls) -> None:
         """Clear all registered actions. Mainly for testing."""
         cls._registry.clear()
+
+    @classmethod
+    def display_action_help(cls, action_name: str) -> None:
+        """
+        Display help information for an action.
+
+        Args:
+            action_name: The action name
+        """
+        action = cls.get_action(action_name)
+        if action is None:
+            print(f"Unknown action: {action_name}")
+            return
+
+        # Get description from factory
+        description = cls.get_action_description(action_name)
+        
+        print()
+        print(f"Action: {action_name}")
+        print(f"Description: {description}")
+        
+        # Get docstring if available
+        if action.__class__.__doc__:
+            doc = action.__class__.__doc__.strip()
+            if doc and doc != description:
+                print()
+                print(doc)
+        
+        # Get arguments if available
+        if hasattr(action, "get_arguments"):
+            arguments = action.get_arguments()
+            if arguments:
+                print()
+                print("Arguments:")
+                for i, arg in enumerate(arguments, 1):
+                    print(f"  {i}. {arg}")
+        
+        print()

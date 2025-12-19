@@ -103,7 +103,7 @@ class Terminal:
         # Check if help is requested
         args_str = " ".join(argument_list)
         if "--help" in argument_list or "-h" in argument_list or args_str.strip() == "--help" or args_str.strip() == "-h":
-            self._display_action_help(action_name, action)
+            ActionFactory.display_action_help(action_name)
             return None
 
         try:
@@ -127,39 +127,6 @@ class Terminal:
         except Exception as e:
             logger.error(f"Error executing action '{action_name}': {e}")
             return None
-
-    def _display_action_help(self, action_name: str, action: "BaseAction") -> None:
-        """
-        Display help information for an action.
-
-        Args:
-            action_name: The name of the action
-            action: The action instance
-        """
-        # Get description from factory
-        description = ActionFactory.get_action_description(action_name)
-        
-        print()
-        print(f"Action: {action_name}")
-        print(f"Description: {description}")
-        
-        # Get docstring if available
-        if action.__class__.__doc__:
-            doc = action.__class__.__doc__.strip()
-            if doc and doc != description:
-                print()
-                print(doc)
-        
-        # Get arguments if available
-        if hasattr(action, "get_arguments"):
-            arguments = action.get_arguments()
-            if arguments:
-                print()
-                print("Arguments:")
-                for i, arg in enumerate(arguments, 1):
-                    print(f"  {i}. {arg}")
-        
-        print()
 
     def start(
         self,

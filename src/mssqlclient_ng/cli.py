@@ -289,6 +289,21 @@ def main() -> int:
         logger.error(f"Invalid output format: {e}")
         return 1
 
+    # Check if help is requested for an action (before connecting)
+    if args.action and isinstance(args.action, list) and len(args.action) > 0:
+        action_name = args.action[0]
+        argument_list = args.action[1:]
+        
+        # Check if --help or -h is in the arguments
+        if "--help" in argument_list or "-h" in argument_list:
+            # Display help without connecting
+            if not ActionFactory.action_exists(action_name):
+                logger.error(f"Unknown action: {action_name}")
+                return 1
+            
+            ActionFactory.display_action_help(action_name)
+            return 0
+
     try:
         server_instance = server.Server.parse_server(server_input=args.host)
         # For initial connection, default to master if no database specified
