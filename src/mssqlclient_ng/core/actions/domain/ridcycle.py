@@ -48,9 +48,6 @@ class RidCycle(BaseAction):
             ValueError: If arguments are invalid
         """
         named_args, positional_args = self._parse_action_arguments(additional_arguments)
-            return True
-
-        named_args, positional_args = self._parse_action_arguments(args)
 
         # Check for --format flag
         if "format" in named_args:
