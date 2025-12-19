@@ -91,7 +91,7 @@ class Impersonation(BaseAction):
                 enriched_users = []
 
                 # Get current user to skip checking self
-                current_user = database_context.user_service.get_mapped_user()
+                current_user = database_context.user_service.mapped_user
 
                 for user in result_rows:
                     username = user["name"]
