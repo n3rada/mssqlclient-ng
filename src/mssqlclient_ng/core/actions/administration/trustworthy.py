@@ -113,7 +113,7 @@ class Trustworthy(BaseAction):
         database_filter = (
             ""
             if not specific_database
-            else f"WHERE d.name = '{specific_database.replace('\'', '\'\'')}'"
+            else f"WHERE name = '{specific_database.replace('\'', '\'\'')}'"
         )
 
         # Query to find vulnerable databases
