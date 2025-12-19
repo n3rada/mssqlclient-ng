@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/domain/adsid.py
 
 # Built-in imports
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 # Third-party imports
 from loguru import logger
@@ -62,18 +62,28 @@ class AdSid(BaseAction):
             query = f"SELECT SUSER_SID('{escaped_user}');"
             dt_sid = database_context.query_service.execute_table(query)
 
-            if not dt_sid or dt_sid[0].get("") is None:
+            if not dt_sid or not dt_sid[0]:
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
 
             # Extract the binary SID from the query result
-            raw_sid_obj = dt_sid[0].get("")
+            # Get first column value regardless of column name
+            raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
+            
+            if raw_sid_obj is None:
+                logger.error("SUSER_SID() returned NULL.")
+                return None
 
             # Parse the binary SID
             if isinstance(raw_sid_obj, bytes):
-                ad_sid_string = sid_bytes_to_string(raw_sid_obj)
+                try:
+                    ad_sid_string = sid_bytes_to_string(raw_sid_obj)
+                except Exception as parse_error:
+                    logger.error(f"Failed to parse SID bytes: {parse_error}")
+                    logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
+                    return None
             else:
-                logger.error("Unexpected SID format from SUSER_SID() result.")
+                logger.error(f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}")
                 return None
 
             if not ad_sid_string:
