@@ -111,12 +111,9 @@ class RemoteProcedureCall(BaseAction):
             f"RPC Out on '{self._linked_server_name}'"
         )
 
-        # Escape single quotes to prevent SQL injection
-        escaped_server_name = self._linked_server_name.replace("'", "''")
-
         query = f"""
             EXEC sp_serveroption
-                 @server = '{escaped_server_name}',
+                 @server = '{self._linked_server_name}',
                  @optname = 'rpc out',
                  @optvalue = '{rpc_value}';
         """
