@@ -59,57 +59,25 @@ class AdSid(BaseAction):
             escaped_user = system_user.replace("'", "''")
 
             # Get the user's SID using SUSER_SID()
-            # Convert to VARCHAR to get hex string format which works reliably through linked servers
-            query = f"SELECT CONVERT(VARCHAR(200), SUSER_SID('{escaped_user}'), 1) AS SID;"
+            query = f"SELECT SUSER_SID('{escaped_user}');"
             dt_sid = database_context.query_service.execute_table(query)
 
             logger.trace(f"SUSER_SID() query result: {dt_sid}")
 
-            if not dt_sid or not dt_sid[0]:
+            # Extract the binary SID from the query result
+            raw_sid_obj = dt_sid[0].get("")
+            raw_sid_obj_size = len(raw_sid_obj) if raw_sid_obj else 0
+            logger.trace(f"Raw SID object size: {raw_sid_obj_size}")
+
+            if not dt_sid or raw_sid_obj is None:
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
 
-            # Extract the SID from the query result (first column value)
-            raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
-            
-            if raw_sid_obj is None:
-                logger.error("SUSER_SID() returned NULL.")
-                return None
-
-            logger.trace(f"Raw SID object: {raw_sid_obj} (type: {type(raw_sid_obj)})")
-
-            # Parse the SID - handle both string (hex) and binary formats
-            if isinstance(raw_sid_obj, str):
-                # Hex string format like '0x01050000...' (from CONVERT)
-                try:
-                    from ...utils.common import sid_hex_to_string
-                    ad_sid_string = sid_hex_to_string(raw_sid_obj)
-                except Exception as parse_error:
-                    logger.error(f"Failed to parse SID from hex string: {parse_error}")
-                    logger.debug(f"Raw SID string: {raw_sid_obj}")
-                    return None
-            elif isinstance(raw_sid_obj, bytes):
-                # Check if it's hex ASCII representation (linked server artifact)
-                try:
-                    # Try to decode as ASCII and check if it's hex
-                    hex_str = raw_sid_obj.decode('ascii')
-                    if all(c in '0123456789abcdefABCDEF' for c in hex_str):
-                        # It's a hex string, convert to actual binary
-                        logger.trace("Detected hex string in bytes, converting...")
-                        sid_bytes_actual = bytes.fromhex(hex_str)
-                        ad_sid_string = sid_bytes_to_string(sid_bytes_actual)
-                    else:
-                        # Actual binary SID
-                        ad_sid_string = sid_bytes_to_string(raw_sid_obj)
-                except (UnicodeDecodeError, ValueError):
-                    # Not ASCII or not hex, treat as binary SID
-                    ad_sid_string = sid_bytes_to_string(raw_sid_obj)
-                except Exception as parse_error:
-                    logger.error(f"Failed to parse SID bytes: {parse_error}")
-                    logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
-                    return None
+            # Parse the binary SID
+            if isinstance(raw_sid_obj, bytes):
+                ad_sid_string = sid_bytes_to_string(raw_sid_obj)
             else:
-                logger.error(f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}")
+                logger.error("Unexpected SID format from SUSER_SID() result.")
                 return None
 
             if not ad_sid_string:
