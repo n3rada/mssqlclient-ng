@@ -241,9 +241,6 @@ ORDER BY [Database];
 
                 if exploitable > 0:
                     logger.warning(
-                        f"{exploitable} of {vulnerable} vulnerable database(s) are immediately exploitable (you are db_owner)"
-                    )
-                    logger.warning(
                         "Use 'trustworthy <database> -e' to escalate to sysadmin"
                     )
                 else:
