@@ -41,19 +41,20 @@ class AdMembers(BaseAction):
             ValueError: If group name is missing or invalid format
         """
         named_args, positional_args = self._parse_action_arguments(additional_arguments)
+
+        if len(positional_args) < 1:
             raise ValueError(
-                "Group name is required. Example: DOMAIN\\IT or DOMAIN\\Domain Admins"
+                "Group name is required. Example: DOMAIN\\\\IT or DOMAIN\\\\Domain Admins"
             )
 
-        self._group_name = args[0].strip()
+        self._group_name = positional_args[0].strip()
 
         # Check for openquery flag
-        if len(args) > 1 and args[1].strip().lower() == "openquery":
-            self._use_openquery = True
+        self._use_openquery = "openquery" in named_args or "o" in named_args
 
         # Ensure the group name contains a backslash (domain separator)
-        if "\\" not in self._group_name:
-            raise ValueError("Group name must be in format: DOMAIN\\GroupName")
+        if "\\\\" not in self._group_name:
+            raise ValueError("Group name must be in format: DOMAIN\\\\GroupName")
 
     def execute(self, db_context: DatabaseContext) -> Optional[List[Dict]]:
         """
