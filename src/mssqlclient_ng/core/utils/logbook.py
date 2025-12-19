@@ -134,12 +134,13 @@ def setup_impacket_logging(level: str = "INFO"):
         impacket_logger.propagate = False
 
 
-def setup_logging(level: str = "INFO"):
+def setup_logging(level: str = "INFO", stream: str = "err"):
     """
     Setup logging with compact, visually intuitive output.
 
     Args:
         level: Log level (TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL)
+        stream: Output stream ('err' for stderr, 'out' for stdout)
     """
     level = level.upper()
 
@@ -148,13 +149,21 @@ def setup_logging(level: str = "INFO"):
     if level not in valid_levels:
         level = "INFO"
 
+    # Determine output stream
+    if stream == "out":
+        output_stream = sys.stdout
+        stream_name = "stdout"
+    else:
+        output_stream = sys.stderr
+        stream_name = "stderr"
+
     # Remove all Loguru handlers to avoid duplicates
     logger.remove()
 
     # Add custom formatted handler
     # enqueue=False for synchronous output to maintain ordering when using print()
     logger.add(
-        sys.stderr,
+        output_stream,
         enqueue=False,
         backtrace=True,
         diagnose=True,
@@ -186,7 +195,7 @@ def setup_logging(level: str = "INFO"):
         enqueue=True,  # Thread-safe
     )
 
-    logger.trace(f"Logger initialized at level {level}")
+    logger.trace(f"Logger initialized at level {level} on {stream_name}")
     logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
 
     # Setup Impacket logging interception with same level

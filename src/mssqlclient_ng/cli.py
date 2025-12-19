@@ -228,6 +228,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Set the logging level explicitly.",
     )
 
+    advanced_group.add_argument(
+        "--std",
+        type=str,
+        choices=["err", "out"],
+        default="err",
+        help="Output stream for logs: 'err' for stderr (default), 'out' for stdout. Useful in restricted environments.",
+    )
+
     return parser
 
 
@@ -260,7 +268,10 @@ def main() -> int:
     else:
         log_level = "INFO"
 
-    logbook.setup_logging(level=log_level)
+    # Determine output stream
+    log_stream = args.std if hasattr(args, 'std') else "err"
+
+    logbook.setup_logging(level=log_level, stream=log_stream)
 
     # Set output format based on CLI argument
     try:
