@@ -12,7 +12,7 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatter import OutputFormatter
-from ...utils.common import sid_hex_to_string
+from ...utils.common import sid_bytes_to_string
 
 
 @ActionFactory.register(
@@ -55,43 +55,25 @@ class AdSid(BaseAction):
             system_user = database_context.user_service.system_user
             logger.info(f"System User: {system_user}")
 
-            # Convert to VARCHAR to avoid binary data conversion issues through linked servers
-            query = "SELECT CONVERT(VARCHAR(200), SUSER_SID(), 1) AS SID;"
+            # Escape single quotes to prevent SQL injection
+            escaped_user = system_user.replace("'", "''")
+
+            # Get the user's SID using SUSER_SID()
+            query = f"SELECT SUSER_SID('{escaped_user}');"
             dt_sid = database_context.query_service.execute_table(query)
 
-            if not dt_sid or not dt_sid[0]:
+            if not dt_sid or dt_sid[0].get("") is None:
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
 
-            # Extract the SID from the query result
-            # Get first column value regardless of column name
-            raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
-            
-            if raw_sid_obj is None:
-                logger.error("SUSER_SID() returned NULL.")
-                return None
+            # Extract the binary SID from the query result
+            raw_sid_obj = dt_sid[0].get("")
 
-            # Parse the SID - it's now in string format like '0x01050000...'
-            if isinstance(raw_sid_obj, str):
-                try:
-                    # Use utility function to convert hex string to SID
-                    ad_sid_string = sid_hex_to_string(raw_sid_obj)
-                except (ValueError, Exception) as parse_error:
-                    logger.error(f"Failed to parse SID from hex string: {parse_error}")
-                    logger.debug(f"Raw SID string: {raw_sid_obj}")
-                    return None
-            elif isinstance(raw_sid_obj, bytes):
-                # Direct binary format (shouldn't happen with CONVERT, but handle it)
-                try:
-                    # Import here to avoid circular dependency
-                    from ...utils.common import sid_bytes_to_string
-                    ad_sid_string = sid_bytes_to_string(raw_sid_obj)
-                except Exception as parse_error:
-                    logger.error(f"Failed to parse SID bytes: {parse_error}")
-                    logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
-                    return None
+            # Parse the binary SID
+            if isinstance(raw_sid_obj, bytes):
+                ad_sid_string = sid_bytes_to_string(raw_sid_obj)
             else:
-                logger.error(f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}")
+                logger.error("Unexpected SID format from SUSER_SID() result.")
                 return None
 
             if not ad_sid_string:
