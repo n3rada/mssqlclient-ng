@@ -115,24 +115,29 @@ class LinkMap(BaseAction):
             self._visited_states[chain_id] = set()
             self._impersonation_stack[chain_id] = []
 
-            # Create a copy of the database context for this chain
-            from copy import deepcopy
-
-            temp_database_context = deepcopy(database_context)
-
-            # Start exploration with depth 0
-            self._explore_server(
-                temp_database_context,
-                remote_server,
-                local_login,
-                chain_id,
-                current_depth=0,
+            # Save original state to restore after exploration
+            original_linked_servers = LinkedServers(
+                database_context.query_service.linked_servers
             )
+            original_execution_server = database_context.query_service.execution_server
 
-            # Revert all impersonations in LIFO order
-            self._revert_all_impersonations(
-                temp_database_context.user_service, chain_id
-            )
+            try:
+                # Start exploration with depth 0
+                self._explore_server(
+                    database_context,
+                    remote_server,
+                    local_login,
+                    chain_id,
+                    current_depth=0,
+                )
+            finally:
+                # Revert all impersonations in LIFO order
+                self._revert_all_impersonations(
+                    database_context.user_service, chain_id
+                )
+                # Restore original state
+                database_context.query_service.linked_servers = original_linked_servers
+                database_context.query_service.execution_server = original_execution_server
 
         # Restore original log level
         logger.remove()
@@ -329,21 +334,9 @@ class LinkMap(BaseAction):
                 next_server = server_info["Link"]
                 next_local_login = server_info["Local Login"] or "<Current Context>"
 
-                # Create a new context copy for each branch to avoid state pollution
-                from copy import deepcopy
-
-                branch_context = deepcopy(database_context)
-
-                # Copy current linked servers state
-                branch_context.query_service.linked_servers = LinkedServers(
-                    database_context.query_service.linked_servers
-                )
-                branch_context.query_service.execution_server = (
-                    database_context.query_service.execution_server
-                )
-
+                # Explore with current context - state will be restored in finally block
                 self._explore_server(
-                    branch_context,
+                    database_context,
                     next_server,
                     next_local_login,
                     chain_id,
