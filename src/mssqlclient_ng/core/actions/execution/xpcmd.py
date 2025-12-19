@@ -72,9 +72,10 @@ class XpCmd(BaseAction):
                 print()
                 for row in result:
                     # Handle NULL values and extract first column
-                    output = row[0] if row and row[0] is not None else ""
-                    print(output)
-                    output_lines.append(output)
+                    output = row[0] if row and row[0] is not None else None
+                    if output is not None:  # Skip NULL rows
+                        print(output)
+                        output_lines.append(output)
 
                 return output_lines
 
