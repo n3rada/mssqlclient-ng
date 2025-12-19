@@ -66,14 +66,14 @@ class XpCmd(BaseAction):
         output_lines: List[str] = []
 
         try:
-            result = database_context.query_service.execute(query, tuple_mode=True)
+            result = database_context.query_service.execute(query, tuple_mode=True, silent=True)
 
             if result:
                 print()
                 for row in result:
-                    # Handle NULL values and extract first column
-                    output = row[0] if row and row[0] is not None else None
-                    if output is not None:  # Skip NULL rows
+                    # Skip NULL/empty rows entirely
+                    if row and row[0] is not None:
+                        output = row[0]
                         print(output)
                         output_lines.append(output)
 
