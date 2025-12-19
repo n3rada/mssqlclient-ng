@@ -1,12 +1,13 @@
-"""
-Query action for executing T-SQL queries.
-"""
+# mssqlclient_ng/core/actions/execution/query.py
 
+
+# Built-in imports
 from typing import Optional, List, Dict, Any
+
+# Third-party imports
 from loguru import logger
 
 from ..base import BaseAction
-from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
 
 
@@ -85,15 +86,17 @@ class Query(BaseAction):
             if rows == 0:
                 return result_rows
 
-            # If only one row, display the result directly
-            if rows == 1:
-                result = result_rows[0][""]
+            # Check if it's a scalar result (single row with empty string key)
+            if rows == 1 and len(result_rows[0]) == 1 and "" in result_rows[0]:
+                scalar_value = result_rows[0][""]
                 print()
-                print(result)
+                print(scalar_value)
                 print()
-            else:
-                # Format and print results as Markdown table
-                print(OutputFormatter.convert_list_of_dicts(result_rows))
+                return result_rows
+
+            # Format and print results as table
+            print()
+            print(OutputFormatter.convert_list_of_dicts(result_rows))
             return result_rows
 
         except Exception as e:
