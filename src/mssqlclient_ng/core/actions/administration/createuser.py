@@ -1,12 +1,12 @@
-"""
-CreateUser action for creating SQL Server logins with server role privileges.
-"""
+# mssqlclient_ng/core/actions/administration/createuser.py
 
+# Built-in imports
 from typing import Optional
 
 # Third party imports
 from loguru import logger
 
+# Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
@@ -94,8 +94,6 @@ class CreateUser(BaseAction):
         Returns:
             True if successful, False otherwise
         """
-        logger.info(f"Creating SQL login: {self._username} with {self._role} role")
-
         # Log the intended operation (avoid leaking sensitive data in higher logs)
         logger.info(f"Creating SQL login: {self._username} with {self._role} role")
         logger.debug(f"Password (raw): '{self._password}'")
