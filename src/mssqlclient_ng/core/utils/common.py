@@ -235,3 +235,20 @@ def convert_table_to_dicts(headers, table_data):
         [{'Name': 'Alice', 'Age': 30}, {'Name': 'Bob', 'Age': 25}]
     """
     return [dict(zip(headers, row)) for row in table_data]
+
+
+def bracket_identifier(name: str) -> str:
+    """
+    Wrap SQL Server identifier in brackets if it contains separator characters.
+    Only bracket if the name contains delimiters used in our syntax: : / @ ;
+    
+    Args:
+        name: The identifier name
+        
+    Returns:
+        Bracketed identifier if separators present, otherwise unchanged
+    """
+    # Only bracket if name contains our special delimiter characters
+    if any(char in name for char in (':', '/', '@', ';')):
+        return f"[{name}]"
+    return name

@@ -8,6 +8,7 @@ from loguru import logger
 
 # Local library imports
 from .server import Server
+from ..utils.common import bracket_identifier
 
 
 class LinkedServers:
@@ -136,7 +137,7 @@ class LinkedServers:
 
         for server in self.server_chain:
             # Wrap server name in brackets if it contains special characters
-            part = self._quote_identifier(server.hostname)
+            part = bracket_identifier(server.hostname)
 
             # Add user@database or just /user or just @database
             if server.impersonation_user and server.database:
@@ -149,23 +150,6 @@ class LinkedServers:
             chain_parts.append(part)
 
         return chain_parts
-    
-    @staticmethod
-    def _quote_identifier(name: str) -> str:
-        """
-        Wrap SQL Server identifier in brackets if it contains separator characters.
-        Only quote if the name contains delimiters used in our syntax: : / @ ;
-        
-        Args:
-            name: The identifier name
-            
-        Returns:
-            Quoted identifier if separators present, otherwise unchanged
-        """
-        # Only bracket if name contains our special delimiter characters
-        if any(char in name for char in (':','/', '@', ';')):
-            return f"[{name}]"
-        return name
 
     def get_chain_arguments(self) -> str:
         """

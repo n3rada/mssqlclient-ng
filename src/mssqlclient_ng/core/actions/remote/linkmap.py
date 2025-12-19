@@ -14,6 +14,7 @@ from ...services.database import DatabaseContext
 from ...models.linked_servers import LinkedServers
 from ...models.server_execution_state import ServerExecutionState
 from ...utils.formatters import OutputFormatter
+from ...utils.common import bracket_identifier
 
 
 @ActionFactory.register(
@@ -180,11 +181,11 @@ class LinkMap(BaseAction):
                 )
 
                 # Build chain command with proper bracketing for special characters
-                quoted_server = LinkedServers._quote_identifier(server_name)
+                bracketed_server = bracket_identifier(server_name)
                 if impersonated_user != "-":
-                    chain_parts.append(f"{quoted_server}/{impersonated_user}")
+                    chain_parts.append(f"{bracketed_server}/{impersonated_user}")
                 else:
-                    chain_parts.append(quoted_server)
+                    chain_parts.append(bracketed_server)
 
             print()
             print(" ".join(formatted_lines))
