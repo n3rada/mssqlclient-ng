@@ -1,12 +1,10 @@
 # mssqlclient_ng/core/actions/domain/ridcycle.py
 
-
 # Built-in imports
-from typing import Optional, List, Dict
+from typing import List, Dict
 
 # Third-party imports
 from loguru import logger
-
 
 # Local imports
 from ..base import BaseAction
@@ -83,7 +81,7 @@ class RidCycle(BaseAction):
                 "Too many positional arguments. Expected: [maxRid]. Use --format flag for output format."
             )
 
-    def execute(self, db_context: DatabaseContext) -> Dict:
+    def execute(self, database_context: DatabaseContext) -> Dict:
         """
         Execute the RID cycling enumeration.
 
@@ -100,7 +98,7 @@ class RidCycle(BaseAction):
         try:
             # Use DomainSid action to get domain SID information
             domain_sid_action = DomainSid()
-            domain_sid_action.validate_arguments([])
+            domain_sid_action.validate_arguments("")
 
             domain_info = domain_sid_action.execute(database_context)
 
