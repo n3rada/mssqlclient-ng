@@ -134,13 +134,14 @@ def setup_impacket_logging(level: str = "INFO"):
         impacket_logger.propagate = False
 
 
-def setup_logging(level: str = "INFO", stream: str = "err"):
+def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = True):
     """
     Setup logging with compact, visually intuitive output.
 
     Args:
         level: Log level (TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL)
         stream: Output stream ('err' for stderr, 'out' for stdout)
+        enable_file: Whether to enable file logging (default: True)
     """
     level = level.upper()
 
@@ -173,30 +174,33 @@ def setup_logging(level: str = "INFO", stream: str = "err"):
     )
 
     # --- File handler (rotating, UTC timestamps)
-    log_dir = _xdg_state_dir()
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_file = log_dir / "mssqlclient-ng.log"
+    if enable_file:
+        log_dir = _xdg_state_dir()
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / "mssqlclient-ng.log"
 
-    # File format without colors
-    file_format = (
-        "{time:YYYY-MM-DD HH:mm:ss.SSS!UTC} (UTC) "
-        "[{level:7}] {message}\n"
-        "{exception}"
-    )
+        # File format without colors
+        file_format = (
+            "{time:YYYY-MM-DD HH:mm:ss.SSS!UTC} (UTC) "
+            "[{level:7}] {message}\n"
+            "{exception}"
+        )
 
-    logger.add(
-        log_file,
-        format=file_format,
-        level=level,
-        rotation="10 MB",
-        retention=f"14 days",
-        compression="zip",
-        encoding="utf-8",
-        enqueue=True,  # Thread-safe
-    )
+        logger.add(
+            log_file,
+            format=file_format,
+            level=level,
+            rotation="10 MB",
+            retention=f"14 days",
+            compression="zip",
+            encoding="utf-8",
+            enqueue=True,  # Thread-safe
+        )
 
-    logger.trace(f"Logger initialized at level {level} on {stream_name}")
-    logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
+        logger.trace(f"Logger initialized at level {level} on {stream_name}")
+        logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
+    else:
+        logger.trace(f"Logger initialized at level {level} on {stream_name} (file logging disabled)")
 
     # Setup Impacket logging interception with same level
     setup_impacket_logging(level=level)

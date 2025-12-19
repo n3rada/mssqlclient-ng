@@ -236,6 +236,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output stream for logs: 'err' for stderr (default), 'out' for stdout. Useful in restricted environments.",
     )
 
+    advanced_group.add_argument(
+        "--no-log-file",
+        action="store_true",
+        help="Disable file logging (only output to console).",
+    )
+
     return parser
 
 
@@ -270,8 +276,11 @@ def main() -> int:
 
     # Determine output stream
     log_stream = args.std if hasattr(args, 'std') else "err"
+    
+    # Check if file logging should be disabled
+    no_log_file = args.no_log_file if hasattr(args, 'no_log_file') else False
 
-    logbook.setup_logging(level=log_level, stream=log_stream)
+    logbook.setup_logging(level=log_level, stream=log_stream, enable_file=not no_log_file)
 
     # Set output format based on CLI argument
     try:
