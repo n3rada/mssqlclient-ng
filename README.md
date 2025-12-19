@@ -15,6 +15,18 @@ N.B. It can handle NTLM relaying 🔄
 
 To install `mssqlclient-ng`, you can use `pip`, `pip3` or `pipx`. Either from `pypi` repository or from `GitHub` source. Prefer using [`pipx`](https://pypa.github.io/pipx/), since it install Python applications in isolated virtual environments.
 
+### From GitHub
+
+This is the way to ensure the most up-to-date version available.
+
+```bash
+pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
+```
+
+```bash
+pip install 'git+https://github.com/n3rada/mssqlclient-ng.git'
+```
+
 ### From [PyPI](https://pypi.org/project/mssqlclient-ng/)
 
 ```bash
@@ -23,16 +35,6 @@ pipx install mssqlclient-ng
 
 ```bash
 pip install mssqlclient-ng
-```
-
-### From GitHub
-
-```bash
-pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
-```
-
-```bash
-pip install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
 ## 🧸 Usage
