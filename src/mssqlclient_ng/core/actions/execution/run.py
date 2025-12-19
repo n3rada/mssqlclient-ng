@@ -32,6 +32,7 @@ class RunExecutable(BaseAction):
         self._file_path: str = ""
         self._arguments: str = ""
         self._async_mode: bool = True  # Default to async (non-blocking)
+        self._capture_output: bool = False  # Force xp_cmdshell for output capture
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -39,8 +40,9 @@ class RunExecutable(BaseAction):
 
         Args:
             additional_arguments: File path and optional arguments
-                Format: [--wait|-w] <file_path> [arguments...]
-                Use --wait or -w flag to execute synchronously (wait for completion)
+                Format: [--wait|-w] [--capture-output|-o] <file_path> [arguments...]
+                --wait/-w: Execute synchronously (wait for completion)
+                --capture-output/-o: Capture stdout/stderr (implies --wait, forces xp_cmdshell)
 
         Raises:
             ValueError: If no file path is provided
@@ -53,10 +55,18 @@ class RunExecutable(BaseAction):
             additional_arguments=additional_arguments
         )
         
-        # Check for --wait or -w flag
-        self._async_mode = not ("wait" in named_args or "w" in named_args)
+        # Check for --capture-output or -o flag (forces sync + xp_cmdshell)
+        self._capture_output = "capture-output" in named_args or "o" in named_args
         
-        if self._async_mode:
+        # Check for --wait or -w flag
+        wait_requested = "wait" in named_args or "w" in named_args
+        
+        # If capture_output is requested, force synchronous mode
+        self._async_mode = not (wait_requested or self._capture_output)
+        
+        if self._capture_output:
+            logger.info("Output capture mode enabled (synchronous via xp_cmdshell)")
+        elif self._async_mode:
             logger.info("Asynchronous mode enabled (non-blocking)")
         else:
             logger.info("Synchronous mode enabled (will wait for completion)")
@@ -93,6 +103,11 @@ class RunExecutable(BaseAction):
             return None
 
         logger.info(f"Executing file: {self._file_path}")
+
+        # If output capture is requested, force xp_cmdshell
+        if self._capture_output:
+            logger.info("Output capture requested, using xp_cmdshell method")
+            return self._execute_via_xpcmdshell(database_context, self._async_mode)
 
         # Check if OLE Automation is available
         ole_available = database_context.config_service.set_configuration_option(
@@ -343,6 +358,7 @@ class RunExecutable(BaseAction):
         """
         return [
             "Remote file path to execute",
-            "Optional: --wait or -w to execute synchronously",
+            "Optional: --wait or -w to execute synchronously (returns exit code)",
+            "Optional: --capture-output or -o to capture stdout/stderr (forces xp_cmdshell)",
             "Optional: additional command-line arguments to pass to the file",
         ]
