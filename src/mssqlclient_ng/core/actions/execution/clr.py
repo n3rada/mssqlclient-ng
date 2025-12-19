@@ -9,7 +9,6 @@ from typing import List
 # Third-party imports
 from loguru import logger
 
-
 # Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory

@@ -1,10 +1,12 @@
-"""
-OLE action for executing operating system commands via OLE Automation.
-"""
+# mssqlclient_ng/core/actions/execution/ole.py
 
-from typing import Optional, List
+# Built-in imports
+from typing import List
+
+# Third-party imports   
 from loguru import logger
 
+# Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
@@ -95,15 +97,6 @@ class ObjectLinkingEmbedding(BaseAction):
         logger.success("Executed command")
 
         return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["Operating system command to execute via OLE Automation"]
 
     def get_arguments(self) -> List[str]:
         """
