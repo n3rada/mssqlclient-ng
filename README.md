@@ -7,7 +7,6 @@ Enhanced version of impacket's `mssqlclient.py`. It lets you interact with Micro
 
 N.B. It can handle NTLM relaying 🔄
 
-
 > [!TIP]
 > If you have only access to a MS SQL instance through your implant/beacon, use [MSSQLand](https://github.com/n3rada/MSSQLand), the `C#` version built with assembly execution in mind.
 
@@ -43,25 +42,47 @@ mssqlclient-ng <host> [options]
 > Avoid typing out all the **[RPC Out](https://learn.microsoft.com/fr-fr/sql/t-sql/functions/openquery-transact-sql)** or **[OPENQUERY](https://learn.microsoft.com/fr-fr/sql/t-sql/functions/openquery-transact-sql)** calls manually. Let the tool handle any linked servers chain with the `-l` argument, so you can focus on the big picture.
 
 
-Format: `server,port:user@database` or any combination `server:user@database,port`.
+Format: `server:port/user@database` or any combination `server/user@database:port`.
 - `server` (required) - The SQL Server hostname or IP
-- `,port` (optional) - Port number (default: 1433, also common: 1434, 14333, 2433)
-- `:user` (optional) - User to impersonate on this server
+- `:port` (optional) - Port number (default: 1433, also common: 1434, 14333, 2433)
+- `/user` (optional) - User to impersonate on this server ("execute as user")
 - `@database` (optional) - Database context (defaults to 'master' if not specified)
 
 ```shell
 mssqlclient-ng localhost -c token
 ```
 
-> [!IMPORTANT]
-> The **host** (first argument) and **action** (after flags) are positional arguments. All flags use `-` prefix. For example: `localhost -c token createuser -p p@ssword!` - here `-p` belongs to the action, not the global arguments.
+### 🔗 Linked Servers Chain
 
-**Common options:**
-- `--timeout 30` - Connection timeout in seconds (default: 15)
-- `-l SERVER1:user1,SERVER2:user2@dbclients` - Chain through linked servers (uses configured linked server names)
+Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the separator**:
+
+```shell
+-l SQL01;SQL02/user;SQL03@database
+```
+
+**Syntax:**
+- **Semicolon (`;`)** - Separates servers in the chain
+- **Forward slash (`/`)** - Specifies user to impersonate ("execute as user")
+- **At sign (`@`)** - Specifies database context
+- **Brackets (`[...]`)** - Protect semicolons in server names (rare)
+
+**Examples:**
+```shell
+# Simple chain
+-l SQL01;SQL02;SQL03
+
+# With impersonation and databases
+-l SQL01/admin;SQL02;SQL03/manager@clients
+
+# Server names can contain hyphens, dots (no brackets needed)
+-l SQL-01;SERVER.001;HOST.DOMAIN.COM
+
+# Brackets only needed if server name contains semicolon
+-l [SERVER;PROD];SQL02;SQL03
+```
 
 > [!NOTE]
-> Port specification (`,port`) only applies to the initial host connection. Linked server chains (`-l`) use the linked server names as configured in `sys.servers`, not `hostname:port` combinations.
+> Port specification (`:port`) only applies to the initial host connection. Linked server chains (`-l`) use the linked server names as configured in `sys.servers`, not `hostname:port` combinations.
 
 ## 🤝 Contributing 
 
