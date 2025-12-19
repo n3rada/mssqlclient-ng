@@ -16,11 +16,11 @@ from ...utils.formatter import OutputFormatter
 
 @ActionFactory.register(
     "trustworthy",
-    "Check for privilege escalation vulnerabilities via TRUSTWORTHY database setting",
+    "Check for privilege escalation via TRUSTWORTHY database setting",
 )
 class Trustworthy(BaseAction):
     """
-    Checks for privilege escalation vulnerabilities via the TRUSTWORTHY database setting.
+    Checks for privilege escalation via the TRUSTWORTHY database setting.
 
     This action identifies databases that are vulnerable to privilege escalation attacks
     where a low-privileged user (e.g., db_owner) can escalate to sysadmin by exploiting:
@@ -30,7 +30,7 @@ class Trustworthy(BaseAction):
     3. User membership in db_owner role (can impersonate dbo)
 
     Usage:
-    - No arguments: Check all databases for privilege escalation vulnerabilities
+    - No arguments: Check all databases for privilege escalation
     - trustworthy [database]: Check specific database
     - trustworthy -d [database] -e: Exploit and escalate current user to sysadmin
     """
@@ -92,7 +92,7 @@ class Trustworthy(BaseAction):
         self, database_context: DatabaseContext, specific_database: Optional[str]
     ) -> Optional[List[Dict]]:
         """
-        Scan databases for TRUSTWORTHY privilege escalation vulnerabilities.
+        Scan databases for TRUSTWORTHY privilege escalation.
 
         Args:
             database_context: The database context
@@ -103,17 +103,17 @@ class Trustworthy(BaseAction):
         """
         if not specific_database:
             logger.info(
-                "Scanning all databases for TRUSTWORTHY privilege escalation vulnerabilities"
+                "Scanning all databases for TRUSTWORTHY privilege escalation"
             )
         else:
             logger.info(
-                f"Checking database '{specific_database}' for TRUSTWORTHY vulnerabilities"
+                f"Checking database '{specific_database}'"
             )
 
         database_filter = (
             ""
             if not specific_database
-            else "AND d.name = '" + specific_database.replace("'", "''") + "'"
+            else f"WHERE d.name = '{specific_database.replace('\'', '\'\'')}'"
         )
 
         # Query to find vulnerable databases
@@ -255,7 +255,7 @@ ORDER BY [Database];
                     "These are misconfigured but not exploitable for privilege escalation"
                 )
             else:
-                logger.success("No TRUSTWORTHY vulnerabilities detected")
+                logger.success("No TRUSTWORTHY detected")
 
             return results
 
