@@ -115,8 +115,8 @@ class Terminal:
             return None
 
         try:
-            # Pass the pre-split list to avoid double-parsing and losing quote boundaries
-            action.validate_arguments(argument_list=argument_list)
+            # Pass the arguments as a string
+            action.validate_arguments(args_str)
         except ValueError as ve:
             logger.error(f"Argument validation error: {ve}")
             return None
