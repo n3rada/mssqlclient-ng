@@ -77,7 +77,7 @@ class AdSid(BaseAction):
             if isinstance(raw_sid_obj, bytes):
                 
                 # Ensure proper length of bytes
-                if raw_sid_obj_size < 4:
+                if raw_sid_obj_size < 4 * 8:
                     logger.error("SID byte array is too short to be valid.")
                     return None
 
