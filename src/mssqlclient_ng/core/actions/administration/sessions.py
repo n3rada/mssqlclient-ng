@@ -61,8 +61,8 @@ class Sessions(BaseAction):
             ORDER BY login_time DESC;
         """
 
-        result = database_context.query_service.execute(sessions_query)
-        print(OutputFormatter.convert_sql_data_reader(result))
+        result = database_context.query_service.execute_table(sessions_query)
+        print(OutputFormatter.convert_list_of_dicts(result))
 
         return None
 
