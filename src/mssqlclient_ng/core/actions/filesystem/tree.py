@@ -52,9 +52,22 @@ class Tree(BaseAction):
         """
         named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
-        # Get path from positional argument or use current directory
-        if len(positional_args) >= 1:
-            self._path = positional_args[0]
+        # Handle paths with spaces by joining positional args until we hit a numeric value
+        path_parts = []
+        depth_index = None
+        
+        for i, arg in enumerate(positional_args):
+            # Check if this looks like a depth parameter (numeric)
+            try:
+                int(arg)
+                depth_index = i
+                break
+            except ValueError:
+                path_parts.append(arg)
+        
+        # Get path from joined positional arguments or use current directory
+        if path_parts:
+            self._path = " ".join(path_parts)
         else:
             self._path = "."
 
@@ -62,11 +75,14 @@ class Tree(BaseAction):
             self._path = "."
 
         # Get depth from named argument or positional argument
+        if depth_index is not None:
+            default_depth = positional_args[depth_index]
+        else:
+            default_depth = "3"
+        
         depth_str = named_args.get(
             "depth",
-            named_args.get(
-                "d", positional_args[1] if len(positional_args) > 1 else "3"
-            ),
+            named_args.get("d", default_depth),
         )
 
         try:
@@ -81,22 +97,24 @@ class Tree(BaseAction):
             raise ValueError("Depth must be between 1 and 255")
 
         # Get show files flag from named argument or positional argument
+        files_index = depth_index + 1 if depth_index is not None else None
+        default_files = positional_args[files_index] if files_index and files_index < len(positional_args) else "true"
+        
         files_str = named_args.get(
             "files",
-            named_args.get(
-                "f", positional_args[2] if len(positional_args) > 2 else "true"
-            ),
+            named_args.get("f", default_files),
         )
 
         files_lower = files_str.strip().lower()
         self._show_files = files_lower in ["1", "true", "yes"]
 
         # Get Unicode mode flag from named argument or positional argument
+        unicode_index = files_index + 1 if files_index is not None else None
+        default_unicode = positional_args[unicode_index] if unicode_index and unicode_index < len(positional_args) else "true"
+        
         unicode_str = named_args.get(
             "unicode",
-            named_args.get(
-                "u", positional_args[3] if len(positional_args) > 3 else "true"
-            ),
+            named_args.get("u", default_unicode),
         )
 
         unicode_lower = unicode_str.strip().lower()
