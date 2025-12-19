@@ -15,7 +15,7 @@ from ...utils.common import normalize_windows_path
 
 
 @ActionFactory.register("run", "Execute a remote file on the SQL Server")
-class ExecFile(BaseAction):
+class RunExecutable(BaseAction):
     """
     Execute a remote file on the SQL Server filesystem.
 
