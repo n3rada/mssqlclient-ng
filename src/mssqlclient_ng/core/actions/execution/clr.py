@@ -1,13 +1,16 @@
-"""
-CLR execution action for deploying and executing .NET assemblies.
-"""
+# mssqlclient_ng/core/actions/execution/clr.py
 
+# Built-in imports
 import hashlib
 import os
 import urllib.request
-from typing import Optional, List
+from typing import List
+
+# Third-party imports
 from loguru import logger
 
+
+# Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
@@ -293,15 +296,3 @@ class ClrExecution(BaseAction):
         except Exception as e:
             logger.error(f"An error occurred while processing the DLL: {e}")
             return ("", "")
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "DLL URI (local path or HTTP/S URL)",
-            "Function name to execute (default: Main)",
-        ]
