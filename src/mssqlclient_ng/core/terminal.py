@@ -59,8 +59,9 @@ class Terminal:
         """
         Build a rich prompt with server, user, and database information.
 
-        Format: [user@server:database]>
-        With indicators for sysadmin (*) and impersonation (→)
+        Format: [server]/user(mapped_user)@database>
+        Where server is the execution server, user is the system user, and mapped_user is the database user
+        If mapped_user is not available, it's omitted: [server]/user@database>
         """
         server = self.__database_context.server
         user_service = self.__database_context.user_service
@@ -72,11 +73,18 @@ class Terminal:
         database = server.database or "master"
 
         # Get user information
-        mapped_user = user_service.mapped_user or "unknown"
-        system_user = user_service.system_user or "unknown"
+        system_user = user_service.system_user
+        mapped_user = user_service.mapped_user
 
-        # Build the prompt
-        prompt_str = f"[{system_user}({mapped_user})@{hostname}:{database}]> "
+        # Build the prompt: [server]/user(mapped_user)@database> or [server]/user@database>
+        if system_user and mapped_user:
+            prompt_str = f"[{hostname}]/{system_user}({mapped_user})@{database}> "
+        elif system_user:
+            prompt_str = f"[{hostname}]/{system_user}@{database}> "
+        elif mapped_user:
+            prompt_str = f"[{hostname}]/({mapped_user})@{database}> "
+        else:
+            prompt_str = f"[{hostname}]@{database}> "
 
         return prompt_str
 
