@@ -10,7 +10,8 @@ try:
 except PackageNotFoundError:
     # Fallback: read directly from pyproject.toml for development
     try:
-        pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
+        pyproject_path = Path(__file__).parent.parent.parent / "pyproject.toml"
+        print(pyproject_path)
         with open(pyproject_path, "rb") as f:
             pyproject_data = tomllib.load(f)
             __version__ = pyproject_data["project"]["version"] + "-dev"
