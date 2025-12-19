@@ -1,4 +1,4 @@
-# mssqlclient_ng/core/actions/execution/exec_file.py
+# mssqlclient_ng/core/actions/execution/run.py
 
 # Built-in imports
 from typing import Optional, List
