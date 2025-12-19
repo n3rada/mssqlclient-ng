@@ -31,6 +31,9 @@ pip install mssqlclient-ng
 pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
+```bash
+pip install 'git+https://github.com/n3rada/mssqlclient-ng.git'
+```
 
 ## 🧸 Usage
 
