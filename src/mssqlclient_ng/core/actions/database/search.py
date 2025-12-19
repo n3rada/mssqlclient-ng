@@ -231,6 +231,7 @@ class Search(BaseAction):
                 INNER JOIN [{db_name}].sys.columns c ON t.object_id = c.object_id
                 INNER JOIN [{db_name}].sys.types ty ON c.user_type_id = ty.user_type_id
                 WHERE t.is_ms_shipped = 0
+                AND t.name NOT LIKE '#%'
                 AND c.name LIKE '%{escaped_keyword}%'
                 ORDER BY s.name, t.name, c.column_id;
             """
@@ -294,6 +295,7 @@ class Search(BaseAction):
             )
 
         # Query to get all columns in all tables of the specified database
+        # Exclude temporary tables (# prefix) which are session-specific
         metadata_query = f"""
             SELECT
                 s.name AS TABLE_SCHEMA,
@@ -305,7 +307,8 @@ class Search(BaseAction):
             INNER JOIN [{database}].sys.schemas s ON t.schema_id = s.schema_id
             INNER JOIN [{database}].sys.columns c ON t.object_id = c.object_id
             INNER JOIN [{database}].sys.types ty ON c.user_type_id = ty.user_type_id
-            WHERE t.is_ms_shipped = 0 {table_filter}
+            WHERE t.is_ms_shipped = 0
+            AND t.name NOT LIKE '#%' {table_filter}
             ORDER BY s.name, t.name, c.column_id;
         """
 
