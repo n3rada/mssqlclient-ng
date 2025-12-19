@@ -172,18 +172,19 @@ class LinkMap(BaseAction):
                     f"-{impersonated_user}-> {server_name} ({logged_in} [{mapped}])"
                 )
 
-                # Build chain command
+                # Build chain command with proper bracketing for special characters
+                quoted_server = LinkedServers._quote_identifier(server_name)
                 if impersonated_user != "-":
-                    chain_parts.append(f"{server_name}:{impersonated_user}")
+                    chain_parts.append(f"{quoted_server}/{impersonated_user}")
                 else:
-                    chain_parts.append(server_name)
+                    chain_parts.append(quoted_server)
 
             print()
             print(" ".join(formatted_lines))
 
             # Show command to reproduce this chain
             if chain_parts:
-                chain_command = f"-l {','.join(chain_parts)}"
+                chain_command = f"-l {';'.join(chain_parts)}"
                 logger.info(f"To use this chain: {chain_command}")
 
         return self._server_mapping
@@ -351,7 +352,7 @@ class LinkMap(BaseAction):
 
         except Exception as ex:
             logger.error(f"Error exploring {target_server}: {ex}")
-            logger.error("Continuing with next server...")
+            logger.error("Continuing with next server")
 
         finally:
             # Restore execution context
