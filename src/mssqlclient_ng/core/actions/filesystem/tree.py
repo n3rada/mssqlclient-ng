@@ -52,14 +52,14 @@ class Tree(BaseAction):
         """
         named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
-        # Get path from positional argument or throw error
+        # Get path from positional argument or use current directory
         if len(positional_args) >= 1:
             self._path = positional_args[0]
         else:
-            self._path = ""
+            self._path = "."
 
         if not self._path or not self._path.strip():
-            raise ValueError("Tree action requires a directory path as an argument.")
+            self._path = "."
 
         # Get depth from named argument or positional argument
         depth_str = named_args.get(
