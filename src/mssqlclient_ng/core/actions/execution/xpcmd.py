@@ -66,7 +66,7 @@ class XpCmd(BaseAction):
         output_lines: List[str] = []
 
         try:
-            result = database_context.query_service.execute(query, tuple_mode=True, silent=True)
+            result = database_context.query_service.execute(query, tuple_mode=True)
 
             if result:
                 print()
