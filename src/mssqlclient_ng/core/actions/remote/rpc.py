@@ -2,7 +2,7 @@
 
 # Built-in imports
 from enum import Enum
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 # Third party imports
 from loguru import logger
@@ -11,14 +11,14 @@ from loguru import logger
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-from ...utils.formatters import OutputFormatter
+from ...utils.formatters.formatter import OutputFormatter
 
 
 class RpcActionMode(Enum):
     """RPC action mode for enabling/disabling RPC Out."""
 
-    ADD = "add"
-    DEL = "del"
+    ENABLE = "enable"
+    DISABLE = "disable"
 
 
 @ActionFactory.register("rpc", "Enable or disable RPC Out option on a linked server")
@@ -26,10 +26,24 @@ class RemoteProcedureCall(BaseAction):
     """
     Manages the RPC Out option for linked servers.
 
-    Actions:
-    - add: Enable RPC Out on the linked server
-    - del: Disable RPC Out on the linked server
+    Actions (multiple aliases supported):
+    - Enable: add, on, 1, true, enable
+    - Disable: del, off, 0, false, disable
     """
+
+    # Mapping of all accepted aliases to their normalized action
+    ACTION_ALIASES = {
+        "add": RpcActionMode.ENABLE,
+        "on": RpcActionMode.ENABLE,
+        "1": RpcActionMode.ENABLE,
+        "true": RpcActionMode.ENABLE,
+        "enable": RpcActionMode.ENABLE,
+        "del": RpcActionMode.DISABLE,
+        "off": RpcActionMode.DISABLE,
+        "0": RpcActionMode.DISABLE,
+        "false": RpcActionMode.DISABLE,
+        "disable": RpcActionMode.DISABLE,
+    }
 
     def __init__(self):
         super().__init__()
@@ -41,7 +55,8 @@ class RemoteProcedureCall(BaseAction):
         Validates the arguments for the RPC action.
 
         Args:
-            additional_arguments: Action mode (add/del) and linked server name
+            additional_arguments: Action mode (add/on/1/true/enable or del/off/0/false/disable) 
+                                 and linked server name
 
         Raises:
             ValueError: If arguments are invalid.
@@ -49,30 +64,37 @@ class RemoteProcedureCall(BaseAction):
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Remote Procedure Call (RPC) action requires two arguments: "
-                "action ('add' or 'del') and linked server name."
+                "action (add/on/1/true or del/off/0/false) and linked server name."
             )
 
-        args = additional_arguments.strip().split(None, 1)
+        # Parse arguments using base class method for proper quote handling
+        _, positional_args = self._parse_action_arguments(
+            additional_arguments=additional_arguments
+        )
 
-        if len(args) != 2:
+        if len(positional_args) != 2:
             raise ValueError(
                 "RPC action requires exactly two arguments: "
-                "action ('add' or 'del') and linked server name."
+                "action (add/on/1/true or del/off/0/false) and linked server name."
             )
 
-        # Parse action mode
-        action_str = args[0].lower()
-        try:
-            self._action = RpcActionMode(action_str)
-        except ValueError:
-            valid_actions = ", ".join([mode.value for mode in RpcActionMode])
+        # Parse action mode using alias mapping
+        action_str = positional_args[0].lower()
+        
+        if action_str not in self.ACTION_ALIASES:
+            valid_actions = ", ".join(sorted(self.ACTION_ALIASES.keys()))
             raise ValueError(
-                f"Invalid action: {args[0]}. Valid actions are: {valid_actions}."
+                f"Invalid action: '{positional_args[0]}'. Valid actions are: {valid_actions}"
             )
+        
+        self._action = self.ACTION_ALIASES[action_str]
+        self._linked_server_name = positional_args[1]
+        
+        logger.info(
+            f"RPC action: {self._action.value} on linked server '{self._linked_server_name}'"
+        )
 
-        self._linked_server_name = args[1].strip()
-
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict[str, Any]]]:
         """
         Executes the RPC action on the specified linked server.
 
@@ -82,15 +104,19 @@ class RemoteProcedureCall(BaseAction):
         Returns:
             Result of the operation (typically empty for sp_serveroption).
         """
-        rpc_value = "true" if self._action == RpcActionMode.ADD else "false"
+        rpc_value = "true" if self._action == RpcActionMode.ENABLE else "false"
 
         logger.info(
-            f"Executing RPC {self._action.value} on linked server '{self._linked_server_name}'"
+            f"Executing sp_serveroption to {'enable' if self._action == RpcActionMode.ENABLE else 'disable'} "
+            f"RPC Out on '{self._linked_server_name}'"
         )
+
+        # Escape single quotes to prevent SQL injection
+        escaped_server_name = self._linked_server_name.replace("'", "''")
 
         query = f"""
             EXEC sp_serveroption
-                 @server = '{self._linked_server_name}',
+                 @server = '{escaped_server_name}',
                  @optname = 'rpc out',
                  @optvalue = '{rpc_value}';
         """
@@ -102,7 +128,8 @@ class RemoteProcedureCall(BaseAction):
                 print(OutputFormatter.convert_list_of_dicts(result))
 
             logger.success(
-                f"RPC {self._action.value} action executed successfully on '{self._linked_server_name}'"
+                f"RPC Out {'enabled' if self._action == RpcActionMode.ENABLE else 'disabled'} "
+                f"successfully on '{self._linked_server_name}'"
             )
 
             return result
@@ -113,11 +140,14 @@ class RemoteProcedureCall(BaseAction):
             )
             raise
 
-    def get_arguments(self) -> list[str]:
+    def get_arguments(self) -> List[str]:
         """
         Returns the list of expected arguments for this action.
 
         Returns:
             List of argument descriptions.
         """
-        return ["add|del", "linked_server_name"]
+        return [
+            "Action: 'add' to enable RPC Out, 'del' to disable RPC Out",
+            "Linked server name"
+        ]
