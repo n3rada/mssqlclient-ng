@@ -64,7 +64,8 @@ Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the sep
 - **Semicolon (`;`)** - Separates servers in the chain
 - **Forward slash (`/`)** - Specifies user to impersonate ("execute as user")
 - **At sign (`@`)** - Specifies database context
-- **Brackets (`[...]`)** - Protect semicolons in server names (rare)
+- **Brackets (`[...]`)** - Used to protect the server name from being split by our delimiters
+
 
 **Examples:**
 ```shell
@@ -77,8 +78,8 @@ Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the sep
 # Server names can contain hyphens, dots (no brackets needed)
 -l SQL-01;SERVER.001;HOST.DOMAIN.COM
 
-# Brackets only needed if server name contains semicolon
--l [SERVER;PROD];SQL02;SQL03
+# Brackets only needed if server name contains delimiter characters
+-l [SERVER;PROD];SQL02;[SQL03@clients]@clientdb
 ```
 
 > [!NOTE]
