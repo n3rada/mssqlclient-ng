@@ -395,9 +395,7 @@ class QueryService:
             or "ALTER SERVER" in s
             or "SP_CONFIGURE" in s
             or "RECONFIGURE" in s
-            or "XP_" in s
             or "CREATE ENDPOINT" in s
-            or "SYS.SERVER_" in s
         )
 
     def _is_openquery_rowset_failure(self, ex: Exception) -> bool:
