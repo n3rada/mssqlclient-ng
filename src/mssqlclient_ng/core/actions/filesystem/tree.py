@@ -46,17 +46,21 @@ class Tree(BaseAction):
         self._show_files: bool = True
         self._use_unicode: bool = True
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list: Optional[List[str]] = None) -> None:
         """
         Validate arguments for the tree action.
 
         Args:
-            additional_arguments: The argument string to parse
+            additional_arguments: The argument string to parse (deprecated)
+            argument_list: Pre-split list of arguments (preferred)
 
         Raises:
             ValueError: If the path is empty or depth is invalid
         """
-        named_args, positional_args = self._parse_action_arguments(additional_arguments)
+        named_args, positional_args = self._parse_action_arguments(
+            additional_arguments=additional_arguments,
+            argument_list=argument_list
+        )
 
         # Get path from positional argument or use current directory
         if len(positional_args) >= 1:

@@ -16,7 +16,7 @@ class BaseAction(ABC):
     """
 
     @abstractmethod
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list: Optional[List[str]] = None) -> None:
         pass
 
     @abstractmethod
@@ -68,13 +68,14 @@ class BaseAction(ABC):
         return named, positional
 
     def _parse_action_arguments(
-        self, additional_arguments: str
+        self, additional_arguments: str = "", argument_list: Optional[List[str]] = None
     ) -> Tuple[Dict[str, str], List[str]]:
         """
         Parse arguments with Unix-style flags (-l, --limit) and positional arguments.
 
         Args:
-            additional_arguments: The argument string to parse
+            additional_arguments: The argument string to parse (deprecated, use argument_list)
+            argument_list: Pre-split list of arguments (preferred)
 
         Returns:
             Tuple of (named_args, positional_args)
@@ -82,10 +83,13 @@ class BaseAction(ABC):
         named: Dict[str, str] = {}
         positional: List[str] = []
 
-        if not additional_arguments or additional_arguments.strip() == "":
+        # Prefer pre-split list to avoid double-parsing
+        if argument_list is not None:
+            parts = argument_list
+        elif not additional_arguments or additional_arguments.strip() == "":
             return named, positional
-
-        parts = self.split_arguments(additional_arguments)
+        else:
+            parts = self.split_arguments(additional_arguments)
         i = 0
         while i < len(parts):
             part = parts[i].strip()
