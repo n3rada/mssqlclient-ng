@@ -21,7 +21,7 @@ class Monitor(BaseAction):
     Shows session details, command status, wait types, and blocking information.
     """
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         No additional arguments needed for monitoring.
 

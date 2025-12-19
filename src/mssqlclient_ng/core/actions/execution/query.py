@@ -24,7 +24,7 @@ class Query(BaseAction):
         super().__init__()
         self._query: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate that a query is provided.
 

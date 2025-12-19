@@ -36,7 +36,7 @@ class SmbCoerce(BaseAction):
         super().__init__()
         self._unc_path: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate and normalize the UNC path argument.
 

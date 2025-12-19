@@ -36,7 +36,7 @@ class RemoteProcedureCall(BaseAction):
         self._action: Optional[RpcActionMode] = None
         self._linked_server_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates the arguments for the RPC action.
 

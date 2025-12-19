@@ -61,7 +61,7 @@ class Procedures(BaseAction):
                 f"Procedure name must be in 'schema.procedure' format. Got: '{procedure_name}'"
             )
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates the arguments for the procedures action.
 

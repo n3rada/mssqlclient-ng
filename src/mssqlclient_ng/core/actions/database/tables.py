@@ -28,7 +28,7 @@ class Tables(BaseAction):
         super().__init__()
         self._database: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate the database argument.
 

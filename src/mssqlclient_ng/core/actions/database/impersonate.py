@@ -29,7 +29,7 @@ class Impersonation(BaseAction):
     def __init__(self):
         super().__init__()
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments (none required for this action).
 

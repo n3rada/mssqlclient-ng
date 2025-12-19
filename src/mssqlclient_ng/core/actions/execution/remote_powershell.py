@@ -30,7 +30,7 @@ class RemotePowerShell(PowerShell):
         super().__init__()
         self._url: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate that a script URL is provided and properly formatted.
 

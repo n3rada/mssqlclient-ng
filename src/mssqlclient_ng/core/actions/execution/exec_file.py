@@ -30,7 +30,7 @@ class ExecFile(BaseAction):
         self._arguments: str = ""
         self._async_mode: bool = True  # Default to async (non-blocking)
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for the exec action.
 

@@ -30,7 +30,7 @@ class AdMembers(BaseAction):
         self._group_name: Optional[str] = None
         self._use_openquery: bool = False
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate that a group name is provided and check for openquery flag.
 

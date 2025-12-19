@@ -32,7 +32,7 @@ class AdsiManager(BaseAction):
         self._server_name: Optional[str] = None
         self._data_source: str = "localhost"
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for the ADSI manager action.
 

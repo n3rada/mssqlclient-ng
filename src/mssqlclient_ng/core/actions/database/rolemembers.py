@@ -24,7 +24,7 @@ class RoleMembers(BaseAction):
         super().__init__()
         self._role_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates that a role name has been provided.
 

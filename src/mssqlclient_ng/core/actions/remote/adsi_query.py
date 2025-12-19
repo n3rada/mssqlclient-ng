@@ -32,7 +32,7 @@ class AdsiQuery(BaseAction):
         self._using_temp_server: bool = False
         self._domain_fqdn: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for the ADSI query action.
 

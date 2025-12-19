@@ -46,7 +46,7 @@ class Agents(BaseAction):
         self._command: Optional[str] = None
         self._subsystem: SubSystemMode = SubSystemMode.POWERSHELL
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate and parse arguments for the agents action.
 

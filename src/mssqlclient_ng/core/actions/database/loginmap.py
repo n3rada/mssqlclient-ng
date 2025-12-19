@@ -38,7 +38,7 @@ class LoginMap(BaseAction):
         super().__init__()
         self._login_filter: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates the login filter argument.
 

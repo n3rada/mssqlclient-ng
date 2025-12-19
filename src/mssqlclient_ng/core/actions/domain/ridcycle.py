@@ -37,7 +37,7 @@ class RidCycle(BaseAction):
         self._python_output: bool = False
         self._table_output: bool = False
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for RID cycling.
 

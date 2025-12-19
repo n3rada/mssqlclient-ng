@@ -40,7 +40,7 @@ class Trustworthy(BaseAction):
         self._database: Optional[str] = None
         self._exploit_mode: bool = False
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for trustworthy action.
 

@@ -27,7 +27,7 @@ class FileRead(BaseAction):
         super().__init__()
         self._file_path: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate and bind the arguments passed to the FileRead action.
 

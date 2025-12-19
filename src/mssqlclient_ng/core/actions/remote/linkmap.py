@@ -53,7 +53,7 @@ class LinkMap(BaseAction):
         self._impersonation_stack: dict[uuid.UUID, list[str]] = {}
         self._original_log_level = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates the arguments for the linkmap action.
 

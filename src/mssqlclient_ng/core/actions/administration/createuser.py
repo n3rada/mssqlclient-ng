@@ -30,7 +30,7 @@ class CreateUser(BaseAction):
         self._password: str = "$ap3rlip0pe//e"
         self._role: str = "sysadmin"
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate and parse arguments for creating a user.
 

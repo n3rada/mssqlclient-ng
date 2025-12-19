@@ -27,7 +27,7 @@ class PowerShell(XpCmd):
         super().__init__()
         self._script: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate that a PowerShell script is provided.
 

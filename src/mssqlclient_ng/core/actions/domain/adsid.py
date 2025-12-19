@@ -29,7 +29,7 @@ class AdSid(BaseAction):
         """Initialize the AdSid action."""
         super().__init__()
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments (no arguments required).
 

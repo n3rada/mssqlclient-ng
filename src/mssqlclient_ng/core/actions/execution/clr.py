@@ -43,7 +43,7 @@ class ClrExecution(BaseAction):
         self._dll_uri: str = ""
         self._function: str = "Main"
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for CLR execution.
 

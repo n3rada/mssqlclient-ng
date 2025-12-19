@@ -32,7 +32,7 @@ class ObjectLinkingEmbedding(BaseAction):
         super().__init__()
         self._command: str = ""
 
-    def validate_arguments(self, additional_arguments: str) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate that a command is provided.
 
