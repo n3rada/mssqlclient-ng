@@ -52,10 +52,10 @@ class AdSid(BaseAction):
         logger.info("Retrieving current user's SID")
 
         try:
-            # Get the user's SID from sys.server_principals instead of SUSER_SID()
-            # SUSER_SID() can return corrupted data through linked servers
-            # Query the catalog view directly and convert to hex string format
-            query = "SELECT CONVERT(VARCHAR(200), sid, 1) AS SID FROM sys.server_principals WHERE name = SYSTEM_USER;"
+            # Get the user's SID using SUSER_SID()
+            # Convert to VARCHAR with style 1 to get hex string format (0x...)
+            # This ensures the data isn't corrupted when crossing linked server boundaries
+            query = "SELECT CONVERT(VARCHAR(200), SUSER_SID(), 1) AS SID;"
             dt_sid = database_context.query_service.execute_table(query)
 
             logger.trace(f"SUSER_SID() query result: {dt_sid}")
