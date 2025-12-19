@@ -91,7 +91,7 @@ class LinkedServers:
         ]
 
     def add_to_chain(
-        self, new_server: str, impersonation_user: Optional[str] = None
+        self, new_server: str, impersonation_user: Optional[str] = None, database: Optional[str] = None
     ) -> None:
         """
         Add a new server to the linked server chain.
@@ -99,6 +99,7 @@ class LinkedServers:
         Args:
             new_server: The hostname of the new linked server
             impersonation_user: Optional impersonation user
+            database: Optional database context
 
         Raises:
             ValueError: If server name is empty
@@ -109,7 +110,7 @@ class LinkedServers:
             raise ValueError("Server name cannot be null or empty.")
 
         self.server_chain.append(
-            Server(hostname=new_server, impersonation_user=impersonation_user)
+            Server(hostname=new_server, impersonation_user=impersonation_user, database=database)
         )
 
         self._recompute_chain()
@@ -125,44 +126,75 @@ class LinkedServers:
     def get_chain_parts(self) -> List[str]:
         """
         Returns a properly formatted linked server chain parts.
+        Server names are wrapped in brackets if they contain special characters.
 
         Returns:
             List of server strings with optional impersonation and database
-            (e.g., ["SQL02:user@db", "SQL03", "SQL04@analytics"])
+            (e.g., ["[SQL-02]/user@db", "SQL03", "[SQL.04]@analytics"])
         """
         chain_parts = []
 
         for server in self.server_chain:
-            part = server.hostname
+            # Wrap server name in brackets if it contains special characters
+            part = self._quote_identifier(server.hostname)
 
-            # Add user@database or just :user or just @database
+            # Add user@database or just /user or just @database
             if server.impersonation_user and server.database:
-                part += f":{server.impersonation_user}@{server.database}"
+                part += f"/{server.impersonation_user}@{server.database}"
             elif server.impersonation_user:
-                part += f":{server.impersonation_user}"
+                part += f"/{server.impersonation_user}"
             elif server.database:
                 part += f"@{server.database}"
 
             chain_parts.append(part)
 
         return chain_parts
+    
+    @staticmethod
+    def _quote_identifier(name: str) -> str:
+        """
+        Wrap SQL Server identifier in brackets if it contains special characters.
+        Simple alphanumeric names (and underscores) don't need brackets.
+        
+        Args:
+            name: The identifier name
+            
+        Returns:
+            Quoted identifier if special chars present, otherwise unchanged
+        """
+        # Check if name needs quoting (contains anything other than alphanumeric and underscore)
+        if name.replace('_', '').replace('-', '').isalnum() and not name[0].isdigit():
+            # Simple identifier, no brackets needed unless it starts with digit or has hyphen
+            if '-' in name or name[0].isdigit():
+                return f"[{name}]"
+            return name
+        return f"[{name}]"
 
     def get_chain_arguments(self) -> str:
         """
-        Returns a comma-separated string of the chain parts.
+        Returns a semicolon-separated string of the chain parts.
 
         Returns:
-            Comma-separated chain string (e.g., "SQL02:user,SQL03,SQL04")
+            Semicolon-separated chain string (e.g., "SQL02:user;SQL03;SQL04")
         """
-        return ",".join(self.get_chain_parts())
+        return ";".join(self.get_chain_parts())
 
     @staticmethod
     def _parse_server_chain(chain_input: str) -> List[Server]:
         """
-        Parse a comma-separated list of servers into a list of Server objects.
+        Parse a semicolon-separated list of servers into a list of Server objects.
+        Handles bracketed SQL Server identifiers correctly.
+        
+        Server names with colons need brackets: [SERVER:001]
+        Linked servers don't have ports, so colons in brackets are part of the name.
+        
+        Syntax:
+        - Colon (:) = port separator (main host only: host:port)
+        - Forward slash (/) = impersonation ("execute as user")
+        - Semicolon (;) = separator between servers in a chain
 
         Args:
-            chain_input: Comma-separated list (e.g., "SQL27:user01,SQL53:user02")
+            chain_input: Semicolon-separated list (e.g., "[SQL-27]/user01;[SQL.53]/user02")
 
         Returns:
             List of Server objects
@@ -173,10 +205,35 @@ class LinkedServers:
         if not chain_input or not chain_input.strip():
             raise ValueError("Server list cannot be null or empty.")
 
-        return [
-            Server.parse_server(server_string.strip())
-            for server_string in chain_input.split(",")
-        ]
+        servers = []
+        current = chain_input.strip()
+        
+        while current:
+            # Find the next semicolon, accounting for bracketed names
+            in_brackets = False
+            semicolon_pos = -1
+            
+            for i, char in enumerate(current):
+                if char == '[':
+                    in_brackets = True
+                elif char == ']':
+                    in_brackets = False
+                elif char == ';' and not in_brackets:
+                    semicolon_pos = i
+                    break
+            
+            if semicolon_pos == -1:
+                # Last server in chain
+                servers.append(Server.parse_server(current.strip()))
+                break
+            else:
+                # Extract this server and continue
+                server_string = current[:semicolon_pos].strip()
+                if server_string:
+                    servers.append(Server.parse_server(server_string))
+                current = current[semicolon_pos + 1:].strip()
+        
+        return servers
 
     def build_select_openquery_chain(self, query: str) -> str:
         """

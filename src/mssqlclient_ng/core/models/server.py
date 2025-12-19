@@ -20,6 +20,11 @@ class Server:
         mapped_user: The mapped user for the connection
         system_user: The system user for the connection
         is_azure_sql: Whether this is an Azure SQL Database instance
+    
+    Syntax: server:port/user@database
+    - : = port separator (standard host:port)
+    - / = impersonation ("execute as user")
+    - @ = database context
     """
 
     def __init__(
@@ -121,98 +126,113 @@ class Server:
         cls, server_input: str, port: int = 1433, database: Optional[str] = None
     ) -> "Server":
         """
-        Parses a server string in the format "server[,port][:user][@database]".
+        Parses a server string in the format "[server][:port][/user][@database]".
 
+        Server names can be SQL Server identifiers with brackets for special characters.
         Order is completely flexible - components can appear in any order after the hostname.
-        The hostname is always the part before any delimiter (,, :, @).
+        The hostname is always the part before any delimiter (:, /, @).
 
         Format supports any combination in any order:
-        - server (required) - hostname or IP
-        - ,port (optional) - port number
-        - :user (optional) - user to impersonate
+        - [server] or server (required) - hostname or IP, optionally bracketed for special chars
+        - :port (optional) - port number (only if parsing_port=True)
+        - /user (optional) - user to impersonate ("execute as user")
         - @database (optional) - database context
 
         Args:
             server_input: Server string. Examples:
-                         "SQL01", "SQL01,1434", "SQL01:sa", "SQL01@mydb",
-                         "SQL01,1434:sa@mydb", "SQL01:sa@mydb,1434", "SQL01@mydb,1434:sa"
+                         "SQL01", "[SQL-01]", "SQL01:1434", "[SQL-01]/sa", "SQL01@mydb",
+                         "[my.server.com]:1434/sa@mydb", "[SQL-01]/sa@mydb:1434"
             port: Default port if not specified in server_input (default: 1433)
-            database: Default database if not specified in server_input (default: "master")
+            database: Default database if not specified in server_input (default: None)
 
         Returns:
-            A Server instance
+            A Server instance with clean hostname (brackets removed)
 
         Raises:
             ValueError: If the server input format is invalid
 
         Examples:
             >>> server = Server.parse_server("SQL01")
-            >>> server.hostname, server.port, server.database
-            ('SQL01', 1433, 'master')
-            >>> server = Server.parse_server("SQL01,1434")
-            >>> server.port
-            1434
-            >>> server = Server.parse_server("SQL01:webapp01")
-            >>> server.impersonation_user
-            'webapp01'
-            >>> server = Server.parse_server("SQL01@myapp")
-            >>> server.database
-            'myapp'
-            >>> server = Server.parse_server("SQL01,1434:webapp01@myapp")
+            >>> server.hostname, server.port
+            ('SQL01', 1433)
+            >>> server = Server.parse_server("[SQL-01]")
+            >>> server.hostname
+            'SQL-01'
+            >>> server = Server.parse_server("[SQL-01]:1434/sa@mydb")
             >>> (server.hostname, server.port, server.impersonation_user, server.database)
-            ('SQL01', 1434, 'webapp01', 'myapp')
-            >>> server = Server.parse_server("SQL01:webapp01@myapp,1434")
-            >>> (server.port, server.impersonation_user, server.database)
-            (1434, 'webapp01', 'myapp')
+            ('SQL-01', 1434, 'sa', 'mydb')
+            >>> server = Server.parse_server("[SERVER:001]")
+            >>> server.hostname
+            'SERVER:001'
         """
         if not server_input or not server_input.strip():
             raise ValueError("Server input cannot be null or empty.")
 
         remaining = server_input.strip()
-
-        # Find the first delimiter
-        delimiters = {
-            ",": remaining.find(","),
-            ":": remaining.find(":"),
-            "@": remaining.find("@"),
-        }
-        valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
-
-        if not valid_delimiters:
-            # No delimiters, just hostname
-            return cls(
-                hostname=remaining,
-                port=port,
-                database=database,
-                impersonation_user=None,
-            )
-
-        # Find first delimiter
-        first_delimiter_pos = min(valid_delimiters.values())
-        first_delimiter = next(
-            k for k, v in valid_delimiters.items() if v == first_delimiter_pos
-        )
-
-        # Extract hostname
-        hostname = remaining[:first_delimiter_pos]
+        
+        # Check if server name is bracketed (SQL identifier)
+        hostname = None
+        if remaining.startswith("["):
+            # Find matching closing bracket
+            close_bracket = remaining.find("]")
+            if close_bracket == -1:
+                raise ValueError("Unclosed bracket in server name")
+            
+            # Extract hostname without brackets
+            hostname = remaining[1:close_bracket]
+            if not hostname:
+                raise ValueError("Server hostname cannot be empty")
+            
+            # Move past the bracketed name
+            remaining = remaining[close_bracket + 1:]
+        else:
+            # Find the first delimiter to extract hostname
+            delimiters = {
+                ":": remaining.find(":"),
+                "/": remaining.find("/"),
+                "@": remaining.find("@"),
+            }
+            
+            valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
+            
+            if not valid_delimiters:
+                # No delimiters, entire string is hostname
+                return cls(
+                    hostname=remaining,
+                    port=port,
+                    database=database,
+                    impersonation_user=None,
+                )
+            
+            # Find first delimiter
+            first_delimiter_pos = min(valid_delimiters.values())
+            hostname = remaining[:first_delimiter_pos]
+            remaining = remaining[first_delimiter_pos:]
+        
         if not hostname or not hostname.strip():
             raise ValueError("Server hostname cannot be empty")
-
-        remaining = remaining[first_delimiter_pos + 1 :]
 
         # Initialize with defaults
         parsed_port = port
         parsed_database = database
         impersonation_user = None
+        
+        # Parse remaining components
+        first_delimiter = None
+        if remaining:
+            first_delimiter = remaining[0] if remaining else None
+            if first_delimiter in {":", "/", "@"}:
+                remaining = remaining[1:]  # Skip the delimiter
 
         # Parse all components
         while remaining:
             # Find next delimiter
             delimiters = {
-                ",": remaining.find(","),
                 ":": remaining.find(":"),
+                "/": remaining.find("/"),
                 "@": remaining.find("@"),
             }
+            
             valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
 
             if not valid_delimiters:
@@ -228,15 +248,15 @@ class Server:
             component = remaining[:next_delimiter_pos]
 
             if not component or not component.strip():
-                if first_delimiter == ",":
-                    raise ValueError("Port cannot be empty after ,")
-                elif first_delimiter == ":":
-                    raise ValueError("Impersonation user cannot be empty after :")
+                if first_delimiter == ":":
+                    raise ValueError("Port cannot be empty after :")
+                elif first_delimiter == "/":
+                    raise ValueError("Impersonation user cannot be empty after /")
                 else:
                     raise ValueError("Database cannot be empty after @")
 
             # Determine what component this is based on the delimiter that preceded it
-            if first_delimiter == ",":
+            if first_delimiter == ":":
                 # This is a port
                 try:
                     parsed_port = int(component)
@@ -250,7 +270,7 @@ class Server:
                             f"Invalid port number: {component}. Port must be between 1 and 65535."
                         )
                     raise
-            elif first_delimiter == ":":
+            elif first_delimiter == "/":
                 # This is an impersonation user
                 impersonation_user = component
             elif first_delimiter == "@":
