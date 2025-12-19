@@ -71,9 +71,8 @@ class XpCmd(BaseAction):
             if result:
                 print()
                 for row in result:
-                    # Skip NULL/empty rows entirely
-                    if row and row[0] is not None:
-                        output = row[0]
+                    output = row.pop(0).strip()
+                    if output and output.upper() != "NULL":
                         print(output)
                         output_lines.append(output)
 
@@ -107,4 +106,3 @@ class XpCmd(BaseAction):
             List of argument descriptions
         """
         return ["Operating system command to execute via xp_cmdshell"]
-
