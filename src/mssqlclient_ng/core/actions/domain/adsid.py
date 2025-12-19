@@ -62,6 +62,8 @@ class AdSid(BaseAction):
             query = f"SELECT SUSER_SID('{escaped_user}');"
             dt_sid = database_context.query_service.execute_table(query)
 
+            logger.trace(f"SUSER_SID() query result: {dt_sid}")
+
             if not dt_sid or dt_sid[0].get("") is None:
                 logger.error("Could not obtain user SID via SUSER_SID().")
                 return None
