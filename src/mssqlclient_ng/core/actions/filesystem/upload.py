@@ -46,14 +46,25 @@ class Upload(BaseAction):
         Raises:
             ValueError: If arguments are invalid or file doesn't exist
         """
-        parts = self.split_arguments(additional_arguments)
+        parser = self.create_argument_parser(
+            description="Upload a local file to the SQL Server filesystem"
+        )
+        
+        parser.add_argument(
+            "local_path",
+            help="Local file path to upload (must exist)"
+        )
+        
+        parser.add_argument(
+            "remote_path",
+            nargs="?",
+            default=None,
+            help="Remote destination path (defaults to C:\\Windows\\Tasks\\<filename>)"
+        )
 
-        if len(parts) < 1 or len(parts) > 2:
-            raise ValueError(
-                "Upload action requires one or two arguments: <local_path> [remote_path]"
-            )
+        positional_args, _ = self.parse_arguments(parser, additional_arguments)
 
-        local_path_str = parts[0].strip()
+        local_path_str = positional_args[0]
 
         # Validate local file exists using pathlib
         # expanduser() handles ~ expansion, resolve() makes it absolute
@@ -66,12 +77,12 @@ class Upload(BaseAction):
             raise ValueError(f"Path is not a file: {self._local_path}")
 
         # If no remote path specified, use world-writable directory
-        if len(parts) == 1:
+        if len(positional_args) == 1 or positional_args[1] is None:
             # C:\Windows\Tasks is writable by everyone and commonly used
             self._remote_path = f"C:\\\\Windows\\\\Tasks\\\\{self._local_path.name}"
             logger.info(f"No remote path specified, using default: {self._remote_path}")
         else:
-            self._remote_path = normalize_windows_path(parts[1].strip())
+            self._remote_path = normalize_windows_path(positional_args[1])
 
             if not self._remote_path:
                 raise ValueError("Remote path cannot be empty")
