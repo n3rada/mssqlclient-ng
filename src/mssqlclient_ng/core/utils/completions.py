@@ -7,7 +7,6 @@ from prompt_toolkit.document import Document
 # Local library imports
 from ..actions.factory import ActionFactory
 
-
 # SQL keywords and built-in functions for autocompletion
 SQL_KEYWORDS = [
     "SELECT",
@@ -309,6 +308,21 @@ class ActionCompleter(Completer):
         self.builtins = {
             "exit": "Exit the terminal",
             "debug": "Toggle debug mode on/off",
+            "link": "Set linked server chain (e.g. SQL02/user;SQL03@db)",
+            "unlink": "Remove last server from chain",
+            "unlink-all": "Clear entire linked server chain",
+            "add-link": "Add server to chain (e.g. SQL03/user@db)",
+            "impersonate": "Impersonate a login on current connection (EXECUTE AS)",
+            "revert": "Revert impersonation on current connection (REVERT)",
+        }
+
+        # Aliases mapping to canonical command names
+        self.aliases = {
+            "imp": "impersonate",
+            "rev": "revert",
+            "ul": "unlink",
+            "ula": "unlink-all",
+            "al": "add-link",
         }
 
     def get_completions(self, document: Document, complete_event):
@@ -344,11 +358,27 @@ class ActionCompleter(Completer):
 
                     yield Completion(completion_text, 0, display_meta=help_text)
 
+            # Also suggest action aliases
+            for alias, canonical in ActionFactory.list_aliases().items():
+                if alias.startswith(command_part.lower()):
+                    completion_text = alias[len(command_part) :]
+                    yield Completion(
+                        completion_text, 0, display_meta=f"→ {canonical}"
+                    )
+
             # Also suggest built-in commands
             for builtin_name, builtin_desc in self.builtins.items():
                 if builtin_name.startswith(command_part.lower()):
                     completion_text = builtin_name[len(command_part) :]
                     yield Completion(completion_text, 0, display_meta=builtin_desc)
+
+            # Also suggest built-in command aliases
+            for alias, canonical in self.aliases.items():
+                if alias.startswith(command_part.lower()):
+                    completion_text = alias[len(command_part) :]
+                    yield Completion(
+                        completion_text, 0, display_meta=f"→ !{canonical}"
+                    )
 
 
 class SQLBuiltinCompleter(Completer):

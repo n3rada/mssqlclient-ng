@@ -1,4 +1,4 @@
-# mssqlclient_ng/core/actions/administration/monitor.py
+# mssqlclient_ng/core/actions/administration/requests.py
 
 # Built-in imports
 from typing import Optional
@@ -6,43 +6,27 @@ from typing import Optional
 # Third party imports
 from loguru import logger
 
-# Local imports
+# Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("monitor", "Monitor currently running SQL commands")
-class Monitor(BaseAction):
+@ActionFactory.register("requests", "Display currently executing SQL requests")
+class Requests(BaseAction):
     """
-    Displays currently running SQL commands on the SQL Server instance.
-
+    Retrieves currently executing SQL requests on the SQL Server instance.
     Shows session details, command status, wait types, and blocking information.
     """
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        """
-        No additional arguments needed for monitoring.
-
-        Args:
-            additional_arguments: Ignored.
-        """
         pass
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
-        """
-        Executes the monitoring query to show running commands.
+        logger.info("Currently executing SQL requests")
 
-        Args:
-            database_context: The DatabaseContext instance to execute the query.
-
-        Returns:
-            List of currently running SQL commands or None if empty.
-        """
-        logger.info("Currently running SQL commands")
-
-        current_commands_query = """
+        query = """
             SELECT
                 r.session_id AS SessionID,
                 r.request_id AS RequestID,
@@ -64,20 +48,14 @@ class Monitor(BaseAction):
             ORDER BY r.start_time DESC;
         """
 
-        results = database_context.query_service.execute_table(current_commands_query)
+        results = database_context.query_service.execute_table(query)
 
         if results:
             print(OutputFormatter.convert_list_of_dicts(results))
         else:
-            logger.info("No other active SQL commands running")
+            logger.info("No other active SQL requests running")
 
         return results
 
     def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            Empty list as no arguments are required.
-        """
         return []

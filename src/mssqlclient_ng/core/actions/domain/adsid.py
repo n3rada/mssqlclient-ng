@@ -16,7 +16,7 @@ from ...utils.common import sid_bytes_to_string
 
 
 @ActionFactory.register(
-    "adsid",
+    "ad-sid",
     "Retrieves the current user's SID using SUSER_SID() function",
 )
 class AdSid(BaseAction):
@@ -66,7 +66,7 @@ class AdSid(BaseAction):
 
             # Extract the SID from the query result (first column value)
             raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
-            
+
             if raw_sid_obj is None or raw_sid_obj == "NULL":
                 logger.error("SUSER_SID() returned NULL.")
                 return None
@@ -81,7 +81,7 @@ class AdSid(BaseAction):
                     hex_str = raw_sid_obj
                     if hex_str.startswith('0x') or hex_str.startswith('0X'):
                         hex_str = hex_str[2:]
-                    
+
                     # Convert to ASCII bytes format that sid_bytes_to_string expects
                     hex_bytes = hex_str.encode('ascii')
                     ad_sid_string = sid_bytes_to_string(hex_bytes)

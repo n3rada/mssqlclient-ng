@@ -25,7 +25,9 @@ class ProcedureMode(Enum):
 
 
 @ActionFactory.register(
-    "procedures", "List, execute, read, search stored procedures or create from file"
+    "procedures",
+    "List, execute, read, search stored procedures or create from file",
+    aliases=["procs", "sprocs"],
 )
 class Procedures(BaseAction):
     """

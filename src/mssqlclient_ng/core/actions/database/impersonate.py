@@ -15,7 +15,9 @@ from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
-    "impersonate", "Check which SQL logins can be impersonated by current user"
+    "impersonate",
+    "Check which SQL logins can be impersonated by current user",
+    aliases=["imp"],
 )
 class Impersonation(BaseAction):
     """
@@ -58,7 +60,9 @@ class Impersonation(BaseAction):
             query = """
             SELECT name, type_desc, create_date, modify_date
             FROM sys.server_principals
-            WHERE type_desc IN ('SQL_LOGIN', 'WINDOWS_LOGIN') AND name NOT LIKE '##%'
+            WHERE type_desc IN ('SQL_LOGIN', 'WINDOWS_LOGIN')
+              AND name NOT LIKE '##%'
+              AND name != SYSTEM_USER
             ORDER BY create_date DESC;
             """
 
@@ -90,37 +94,26 @@ class Impersonation(BaseAction):
                 logger.info("Checking impersonation permissions individually")
                 enriched_users = []
 
-                # Get current user to skip checking self
-                current_user = database_context.user_service.mapped_user
-
                 for user in result_rows:
                     username = user["name"]
 
-                    # Skip checking impersonation for the current user
-                    if username.lower() == current_user.lower():
-                        enriched_user = {
-                            "Impersonation": "Self",
-                            "Login": username,
-                            "Type": user["type_desc"],
-                            "Created Date": user["create_date"],
-                            "Modified Date": user["modify_date"],
-                        }
-                    else:
-                        can_impersonate = database_context.user_service.can_impersonate(
-                            username
-                        )
+                    can_impersonate = database_context.user_service.can_impersonate(
+                        username
+                    )
 
-                        enriched_user = {
-                            "Impersonation": "Yes" if can_impersonate else "No",
-                            "Login": username,
-                            "Type": user["type_desc"],
-                            "Created Date": user["create_date"],
-                            "Modified Date": user["modify_date"],
-                        }
+                    enriched_user = {
+                        "Impersonation": "Yes" if can_impersonate else "No",
+                        "Login": username,
+                        "Type": user["type_desc"],
+                        "Created Date": user["create_date"],
+                        "Modified Date": user["modify_date"],
+                    }
                     enriched_users.append(enriched_user)
 
             # Display results
             print(OutputFormatter.convert_list_of_dicts(enriched_users))
+
+            logger.info("Use !impersonate <login> to impersonate a user")
 
             return enriched_users
 

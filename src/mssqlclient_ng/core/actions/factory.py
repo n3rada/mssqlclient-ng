@@ -19,23 +19,30 @@ class ActionFactory:
     # Action registry: maps action names to (class, description)
     _registry: Dict[str, Tuple[Type[BaseAction], str]] = {}
 
+    # Alias registry: maps alias -> canonical action name
+    _aliases: Dict[str, str] = {}
+
     @classmethod
-    def register(cls, name: str, description: str):
+    def register(cls, name: str, description: str, aliases: List[str] = None):
         """
         Decorator to register an action class with the factory.
 
         Usage:
-            @ActionFactory.register("whoami", "Display current user context")
+            @ActionFactory.register("whoami", "Display current user context", aliases=["id"])
             class Whoami(BaseAction):
                 ...
 
         Args:
             name: The action name (command)
             description: Human-readable description of the action
+            aliases: Optional list of alternative names for this action
         """
 
         def decorator(action_class: Type[BaseAction]):
             cls._registry[name.lower()] = (action_class, description)
+            if aliases:
+                for alias in aliases:
+                    cls._aliases[alias.lower()] = name.lower()
             return action_class
 
         return decorator
@@ -56,15 +63,18 @@ class ActionFactory:
 
     @classmethod
     def get_action(cls, action_type: str) -> BaseAction | None:
-        """_summary_
+        """Get an action instance by name or alias.
 
         Args:
-            action_type (str): _description_
+            action_type: The action name or alias
 
         Returns:
-            BaseAction | None: _description_
+            An instance of the action, or None if not found
         """
         action_key = action_type.lower()
+
+        # Resolve alias
+        action_key = cls._aliases.get(action_key, action_key)
 
         if action_key not in cls._registry:
             return None
@@ -99,15 +109,15 @@ class ActionFactory:
     @classmethod
     def get_action_type(cls, action_name: str) -> Optional[Type[BaseAction]]:
         """
-        Get the class type of an action by its name.
+        Get the class type of an action by its name or alias.
 
         Args:
-            action_name: The action name
+            action_name: The action name or alias
 
         Returns:
             The action class type, or None if not found
         """
-        action_key = action_name.lower()
+        action_key = cls._aliases.get(action_name.lower(), action_name.lower())
         if action_key in cls._registry:
             return cls._registry[action_key][0]
         return None
@@ -115,15 +125,15 @@ class ActionFactory:
     @classmethod
     def get_action_description(cls, action_name: str) -> Optional[str]:
         """
-        Get the description of an action by its name.
+        Get the description of an action by its name or alias.
 
         Args:
-            action_name: The action name
+            action_name: The action name or alias
 
         Returns:
             The action description, or None if not found
         """
-        action_key = action_name.lower()
+        action_key = cls._aliases.get(action_name.lower(), action_name.lower())
         if action_key in cls._registry:
             return cls._registry[action_key][1]
         return None
@@ -141,15 +151,26 @@ class ActionFactory:
     @classmethod
     def action_exists(cls, action_name: str) -> bool:
         """
-        Check if an action is registered.
+        Check if an action is registered (by name or alias).
 
         Args:
-            action_name: The action name
+            action_name: The action name or alias
 
         Returns:
             True if action exists, False otherwise
         """
-        return action_name.lower() in cls._registry
+        key = action_name.lower()
+        return key in cls._registry or key in cls._aliases
+
+    @classmethod
+    def list_aliases(cls) -> Dict[str, str]:
+        """
+        Get all registered action aliases.
+
+        Returns:
+            Dict mapping alias -> canonical action name
+        """
+        return dict(cls._aliases)
 
     @classmethod
     def clear_registry(cls) -> None:
@@ -171,18 +192,18 @@ class ActionFactory:
 
         # Get description from factory
         description = cls.get_action_description(action_name)
-        
+
         print()
         print(f"Action: {action_name}")
         print(f"Description: {description}")
-        
+
         # Get docstring if available
         if action.__class__.__doc__:
             doc = action.__class__.__doc__.strip()
             if doc and doc != description:
                 print()
                 print(doc)
-        
+
         # Get arguments if available
         if hasattr(action, "get_arguments"):
             arguments = action.get_arguments()
@@ -191,5 +212,5 @@ class ActionFactory:
                 print("Arguments:")
                 for i, arg in enumerate(arguments, 1):
                     print(f"  {i}. {arg}")
-        
+
         print()

@@ -16,16 +16,22 @@ from ...utils.common import normalize_windows_path
 @ActionFactory.register(
     "read",
     "Read file content from the target server using OPENROWSET",
+    aliases=["cat"],
 )
 class FileRead(BaseAction):
     """
     Reads file content from the target SQL Server using OPENROWSET BULK.
     Requires ADMINISTER BULK OPERATIONS or ADMINISTER DATABASE BULK OPERATIONS permission.
+
+    Flags:
+      --base64 / -b   Return file content as a Base64-encoded string instead of plain text.
+                      Useful for binary files or files with characters that break the console.
     """
 
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
+        self._base64: bool = False
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -46,11 +52,15 @@ class FileRead(BaseAction):
 
         if not self._file_path:
             raise ValueError(
-                "File path is required. Example: fileread C:\\\\temp\\\\data.txt"
+                "File path is required. Example: read C:\\\\temp\\\\data.txt"
             )
 
         # Normalize Windows path to handle single backslashes
         self._file_path = normalize_windows_path(self._file_path)
+
+        # Base64 flag
+        if "base64" in named_args or "b" in named_args:
+            self._base64 = True
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
@@ -65,20 +75,27 @@ class FileRead(BaseAction):
         logger.info(f"Reading file: {self._file_path}")
 
         try:
-            # Escape single quotes in file path for SQL
             escaped_path = self._file_path.replace("'", "''")
 
-            # Use OPENROWSET BULK to read file content
-            query = (
-                f"SELECT A FROM OPENROWSET(BULK '{escaped_path}', SINGLE_CLOB) AS R(A);"
-            )
-
-            file_content = database_context.query_service.execute_scalar(query)
+            if self._base64:
+                # Return raw bytes encoded as Base64 (works for any file type)
+                query = f"""
+SELECT CAST('' AS XML).value(
+    'xs:base64Binary(sql:column("B"))', 'VARCHAR(MAX)'
+) AS B64
+FROM (
+    SELECT A AS B
+    FROM OPENROWSET(BULK '{escaped_path}', SINGLE_BLOB) AS R(A)
+) AS T;"""
+                file_content = database_context.query_service.execute_scalar(query)
+            else:
+                # SINGLE_NCLOB handles both ANSI and Unicode text files
+                query = f"SELECT A FROM OPENROWSET(BULK '{escaped_path}', SINGLE_NCLOB) AS R(A);"
+                file_content = database_context.query_service.execute_scalar(query)
 
             if file_content is None:
                 return None
 
-            # Convert to string if needed
             file_content_str = str(file_content) if file_content else ""
 
             print(file_content_str)
@@ -96,4 +113,4 @@ class FileRead(BaseAction):
         Returns:
             List of argument descriptions
         """
-        return ["file_path"]
+        return ["<file_path>", "[-b|--base64]"]

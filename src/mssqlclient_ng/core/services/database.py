@@ -28,16 +28,18 @@ class DatabaseContext:
             raise Exception("Failed to handle impersonation.")
 
     def _handle_impersonation(self):
-        impersonate_target = self._server.impersonation_user
+        targets = self._server.impersonation_users
 
-        if impersonate_target:
-            if self._user_service.can_impersonate(impersonate_target):
-                if self._user_service.impersonate_user(impersonate_target):
-                    logger.info(f"Successfully impersonated user: {impersonate_target}")
-                    return True
+        for target in targets:
+            if self._user_service.can_impersonate(target):
+                if self._user_service.impersonate_user(target):
+                    logger.info(f"Successfully impersonated user: {target}")
                 else:
-                    logger.error(f"Failed to impersonate user: {impersonate_target}")
+                    logger.error(f"Failed to impersonate user: {target}")
                     return False
+            else:
+                logger.error(f"Cannot impersonate user: {target}")
+                return False
         return True
 
     @property

@@ -3,15 +3,19 @@
 from .smb_coerce import SmbCoerce
 from .links import Links
 from .rpc import RemoteProcedureCall
-from .adsi_query import AdsiQuery
-from .adsi_manager import AdsiManager
+from .data_access import DataAccess
 from .linkmap import LinkMap
+from .external_sources import ExternalSources
+from .external_credentials import ExternalCredentials
+from .external_tables import ExternalTables
 
 __all__ = [
     "SmbCoerce",
     "Links",
     "RemoteProcedureCall",
-    "AdsiQuery",
-    "AdsiManager",
+    "DataAccess",
     "LinkMap",
+    "ExternalSources",
+    "ExternalCredentials",
+    "ExternalTables",
 ]

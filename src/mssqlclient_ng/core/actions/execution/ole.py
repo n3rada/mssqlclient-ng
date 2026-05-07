@@ -3,7 +3,7 @@
 # Built-in imports
 from typing import List
 
-# Third-party imports   
+# Third-party imports
 from loguru import logger
 
 # Local imports
@@ -14,7 +14,9 @@ from ...utils import common
 
 
 @ActionFactory.register(
-    "ole", "Execute operating system commands via OLE Automation Procedures"
+    "ole",
+    "Execute operating system commands via OLE Automation Procedures",
+    aliases=["oamethod"],
 )
 class ObjectLinkingEmbedding(BaseAction):
     """

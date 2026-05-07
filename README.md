@@ -37,7 +37,23 @@ pipx install mssqlclient-ng
 pip install mssqlclient-ng
 ```
 
-## 🧸 Usage
+### With [uv](https://docs.astral.sh/uv/)
+
+The project uses `uv_build` as its build backend, so `uv` is the recommended way to run it from source:
+
+```bash
+# Install uv if not already installed
+pip install uv
+
+# Clone and run directly
+git clone https://github.com/n3rada/mssqlclient-ng.git
+cd mssqlclient-ng
+uv run mssqlclient-ng <host> [options]
+```
+
+`uv sync` is called automatically on first run, resolving and installing all dependencies (including impacket from GitHub) into an isolated virtual environment. Subsequent runs are instant.
+
+
 
 ```shell
 mssqlclient-ng <host> [options]

@@ -19,8 +19,9 @@ BATCH_SIZE = 1000
 
 
 @ActionFactory.register(
-    "ridcycle",
+    "ad-users",
     "Enumerate domain accounts by cycling through RIDs",
+    aliases=["rid-brute"],
 )
 class RidCycle(BaseAction):
     """

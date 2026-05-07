@@ -13,7 +13,9 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
 
-@ActionFactory.register("pwsh", "Execute PowerShell scripts via xp_cmdshell")
+@ActionFactory.register(
+    "powershell", "Execute PowerShell scripts via xp_cmdshell", aliases=["pwsh"]
+)
 class PowerShell(XpCmd):
     """
     Execute PowerShell scripts on the SQL Server using xp_cmdshell.

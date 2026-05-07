@@ -12,7 +12,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
 
-@ActionFactory.register("xpcmd", "Execute operating system commands via xp_cmdshell")
+@ActionFactory.register("exec", "Execute operating system commands via xp_cmdshell")
 class XpCmd(BaseAction):
     """
     Execute operating system commands on the SQL Server using xp_cmdshell.

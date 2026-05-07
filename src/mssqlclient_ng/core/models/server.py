@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/models/server.py
 
 # Built-in imports
-from typing import Optional
+from typing import List, Optional
 
 # Third party imports
 from loguru import logger
@@ -9,21 +9,21 @@ from loguru import logger
 
 class Server:
     """
-    Represents a SQL Server with optional impersonation user.
+    Represents a SQL Server with optional cascading impersonation.
 
     Attributes:
         hostname: The hostname or IP address of the server
         version: The full version string of the server (e.g., "15.00.2000")
         port: The SQL Server port (default: 1433)
-        database: The database to connect to (default: "master")
-        impersonation_user: The user to impersonate on this server (optional)
+        database: The database to connect to (default: None, uses login default)
+        impersonation_users: List of users for cascading EXECUTE AS
         mapped_user: The mapped user for the connection
         system_user: The system user for the connection
         is_azure_sql: Whether this is an Azure SQL Database instance
-    
+
     Syntax: server:port/user@database
     - : = port separator (standard host:port)
-    - / = impersonation ("execute as user")
+    - / = impersonation ("execute as user"), use /user1/user2 for cascading EXECUTE AS
     - @ = database context
     """
 
@@ -32,7 +32,7 @@ class Server:
         hostname: str,
         port: int = 1433,
         database: Optional[str] = None,
-        impersonation_user: Optional[str] = None,
+        impersonation_users: Optional[List[str]] = None,
     ):
         """
         Initialize a Server instance.
@@ -41,7 +41,7 @@ class Server:
             hostname: The hostname or IP address of the server
             port: The SQL Server port (default: 1433)
             database: The database to connect to (default: None, will use server default)
-            impersonation_user: The user to impersonate on this server (optional)
+            impersonation_users: List of users to cascade EXECUTE AS on this server
 
         Raises:
             ValueError: If hostname is empty or port is invalid
@@ -57,7 +57,10 @@ class Server:
         self.port = port or 1433
         self.database = database.strip() if database else None
 
-        self.impersonation_user = impersonation_user if impersonation_user else ""
+        # Initialize cascading impersonation users (like MSSQLand's string[] ImpersonationUsers)
+        self._impersonation_users: List[str] = []
+        if impersonation_users is not None:
+            self._impersonation_users = [u for u in impersonation_users if u]
         self.mapped_user = ""
         self.system_user = ""
         self.is_azure_sql = False
@@ -121,6 +124,15 @@ class Server:
         except (ValueError, IndexError):
             return 0
 
+    @property
+    def impersonation_users(self) -> List[str]:
+        """List of impersonation users for cascading EXECUTE AS (like MSSQLand ImpersonationUsers)."""
+        return self._impersonation_users
+
+    @impersonation_users.setter
+    def impersonation_users(self, value: List[str]) -> None:
+        self._impersonation_users = [u for u in value if u] if value else []
+
     @classmethod
     def parse_server(
         cls, server_input: str, port: int = 1433, database: Optional[str] = None
@@ -159,7 +171,7 @@ class Server:
             >>> server.hostname
             'SQL-01'
             >>> server = Server.parse_server("[SQL-01]:1434/sa@mydb")
-            >>> (server.hostname, server.port, server.impersonation_user, server.database)
+            >>> (server.hostname, server.port, server.impersonation_users[0], server.database)
             ('SQL-01', 1434, 'sa', 'mydb')
             >>> server = Server.parse_server("[SERVER:001]")
             >>> server.hostname
@@ -169,7 +181,7 @@ class Server:
             raise ValueError("Server input cannot be null or empty.")
 
         remaining = server_input.strip()
-        
+
         # Check if server name is bracketed (SQL identifier)
         hostname = None
         if remaining.startswith("["):
@@ -177,12 +189,12 @@ class Server:
             close_bracket = remaining.find("]")
             if close_bracket == -1:
                 raise ValueError("Unclosed bracket in server name")
-            
+
             # Extract hostname without brackets
             hostname = remaining[1:close_bracket]
             if not hostname:
                 raise ValueError("Server hostname cannot be empty")
-            
+
             # Move past the bracketed name
             remaining = remaining[close_bracket + 1:]
         else:
@@ -192,31 +204,30 @@ class Server:
                 "/": remaining.find("/"),
                 "@": remaining.find("@"),
             }
-            
+
             valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
-            
+
             if not valid_delimiters:
                 # No delimiters, entire string is hostname
                 return cls(
                     hostname=remaining,
                     port=port,
                     database=database,
-                    impersonation_user=None,
                 )
-            
+
             # Find first delimiter
             first_delimiter_pos = min(valid_delimiters.values())
             hostname = remaining[:first_delimiter_pos]
             remaining = remaining[first_delimiter_pos:]
-        
+
         if not hostname or not hostname.strip():
             raise ValueError("Server hostname cannot be empty")
 
         # Initialize with defaults
         parsed_port = port
         parsed_database = database
-        impersonation_user = None
-        
+        impersonation_users: List[str] = []
+
         # Parse remaining components
         first_delimiter = None
         if remaining:
@@ -232,7 +243,7 @@ class Server:
                 "/": remaining.find("/"),
                 "@": remaining.find("@"),
             }
-            
+
             valid_delimiters = {k: v for k, v in delimiters.items() if v >= 0}
 
             if not valid_delimiters:
@@ -271,8 +282,8 @@ class Server:
                         )
                     raise
             elif first_delimiter == "/":
-                # This is an impersonation user
-                impersonation_user = component
+                # This is an impersonation user (supports cascading: /user1/user2)
+                impersonation_users.append(component)
             elif first_delimiter == "@":
                 # This is a database
                 parsed_database = component
@@ -287,14 +298,14 @@ class Server:
             hostname=hostname.strip(),
             port=parsed_port,
             database=parsed_database,
-            impersonation_user=impersonation_user,
+            impersonation_users=impersonation_users if impersonation_users else None,
         )
 
     def __str__(self) -> str:
         """String representation of the server."""
         base = f"{self.hostname}:{self.port}/{self.database}"
-        if self.impersonation_user:
-            base += f" (impersonating: {self.impersonation_user})"
+        if self._impersonation_users:
+            base += f" (impersonating: {'/'.join(self._impersonation_users)})"
         return base
 
     def __repr__(self) -> str:

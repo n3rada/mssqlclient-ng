@@ -12,7 +12,9 @@ from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("sessions", "List active SQL Server sessions")
+@ActionFactory.register(
+    "sessions", "List active SQL Server sessions", aliases=["who"]
+)
 class Sessions(BaseAction):
     """
     Display active SQL Server sessions with connection information.

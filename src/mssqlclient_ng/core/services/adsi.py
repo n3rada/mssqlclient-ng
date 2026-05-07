@@ -29,27 +29,37 @@ class AdsiService:
         self.function_name = f"f_{common.generate_random_string(8)}"
         self.library_path = f"l_{common.generate_random_string(8)}"
 
-    def list_adsi_servers(self) -> Optional[List[str]]:
+    def list_adsi_servers(self) -> Optional[List[Dict[str, Any]]]:
         """
-        List all ADSI linked servers.
+        Returns full information about all ADSI linked servers.
 
         Returns:
-            A list of ADSI server names, or None if none found
+            A list of dicts with server info, or None if none found
         """
         try:
-            query = "SELECT srvname FROM master..sysservers WHERE srvproduct = 'ADSI'"
-            result = self._database_context.query_service.execute_table(query)
-
-            if not result:
-                return None
-
-            # Extract server names from the result
-            server_names = [row.get("srvname") for row in result if row.get("srvname")]
-            return server_names if server_names else None
+            query = (
+                "SELECT srvname, datasource, dataaccess, rpc, rpcout, "
+                "connecttimeout, querytimeout, schemadate "
+                "FROM master.dbo.sysservers WHERE providername = 'ADsDSOObject'"
+            )
+            result = self._database_context.query_service.execute(query)
+            return result if result else None
 
         except Exception as e:
             logger.error(f"Error while listing ADSI servers: {e}")
             return None
+
+    def get_adsi_server_names(self) -> List[str]:
+        """
+        Returns the names of all ADSI linked servers.
+
+        Returns:
+            A list of ADSI server names
+        """
+        servers = self.list_adsi_servers()
+        if not servers:
+            return []
+        return [row.get("srvname") for row in servers if row.get("srvname")]
 
     def adsi_server_exists(self, server_name: str) -> bool:
         """
@@ -61,11 +71,8 @@ class AdsiService:
         Returns:
             True if the server exists and is an ADSI provider; otherwise False
         """
-        adsi_servers = self.list_adsi_servers()
-        if adsi_servers is None:
-            return False
-
-        return any(srv.lower() == server_name.lower() for srv in adsi_servers)
+        names = self.get_adsi_server_names()
+        return any(srv.lower() == server_name.lower() for srv in names)
 
     def check_linked_server(self, linked_server_name: str) -> bool:
         """
@@ -94,7 +101,7 @@ class AdsiService:
                 if srv_name and srv_name.lower() == linked_server_name.lower():
                     if (
                         srv_provider_name
-                        and srv_provider_name.lower() == "adsdsdobject"
+                        and srv_provider_name.lower() == "adsdsoobject"
                     ):
                         # Linked server exists and is properly configured
                         return True
@@ -102,7 +109,7 @@ class AdsiService:
                         # Linked server exists but has an incorrect provider
                         logger.error(
                             f"Linked server '{linked_server_name}' exists, but the provider is "
-                            f"'{srv_provider_name}' instead of 'ADSDSOObject'"
+                            f"'{srv_provider_name}' instead of 'ADsDSOObject'"
                         )
                         return False
 
@@ -118,7 +125,7 @@ class AdsiService:
         self, server_name: str, data_source: str = "localhost"
     ) -> bool:
         """
-        Create an ADSI-linked server.
+        Create an ADSI-linked server with proper configuration.
 
         Args:
             server_name: The name of the linked server to create
@@ -131,12 +138,28 @@ class AdsiService:
             EXEC sp_addlinkedserver
                 @server = '{server_name}',
                 @srvproduct = 'ADSI',
-                @provider = 'ADSDSOObject',
+                @provider = 'ADsDSOObject',
                 @datasrc = '{data_source}';
         """
 
         try:
             self._database_context.query_service.execute_non_processing(query)
+
+            # Enable AllowInProcess for ADsDSOObject — required for OPENQUERY execution
+            self._database_context.query_service.execute_non_processing(
+                "EXEC master.dbo.sp_MSset_oledb_prop N'ADsDSOObject', N'AllowInProcess', 1"
+            )
+
+            # Use the SQL Server service account's Windows identity for LDAP binds
+            self._database_context.query_service.execute_non_processing(
+                f"EXEC sp_addlinkedsrvlogin @rmtsrvname = '{server_name}', @useself = N'true'"
+            )
+
+            # Enable data access — required before OPENQUERY will work
+            self._database_context.query_service.execute_non_processing(
+                f"EXEC sp_serveroption @server = '{server_name}', @optname = 'data access', @optvalue = 'true'"
+            )
+
             return True
         except Exception as e:
             logger.error(f"Error while creating linked server: {e}")
@@ -152,6 +175,68 @@ class AdsiService:
         self._database_context.query_service.execute_non_processing(
             f"EXEC sp_dropserver @server = '{server_name}';"
         )
+
+    def execute_raw_ldap_query(
+        self, ldap_query: str, server_name: str
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Execute a raw LDAP query (ADsDSOObject SQL dialect) via OPENQUERY.
+        Handles single-quote escaping for the one-hop OPENQUERY wrapper.
+
+        Args:
+            ldap_query: Full LDAP query, e.g. "SELECT cn FROM 'LDAP://DC=x,DC=y' WHERE objectClass='user'"
+            server_name: ADSI linked server name
+
+        Returns:
+            Query results or None
+        """
+        escaped_query = ldap_query.replace("'", "''")
+        sql = f"SELECT * FROM OPENQUERY([{server_name}], '{escaped_query}')"
+        try:
+            return self._database_context.query_service.execute(sql)
+        except Exception as e:
+            logger.warning(f"{e}")
+            return None
+
+    def open_query(
+        self,
+        ldap_path: str,
+        ldap_filter: str,
+        attributes: str = "*",
+        server_name: Optional[str] = None,
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Execute an LDAP query via OPENQUERY against an ADSI linked server.
+
+        Args:
+            ldap_path: LDAP path, e.g. "LDAP://DOMAIN"
+            ldap_filter: LDAP filter, e.g. "objectClass='user'"
+            attributes: Columns to SELECT (default: "*")
+            server_name: ADSI linked server name. If None, first available is used.
+
+        Returns:
+            Query results or None
+        """
+        if server_name is None:
+            adsi_servers = self.get_adsi_server_names()
+            if not adsi_servers:
+                logger.warning("No ADSI linked servers found in sys.servers.")
+                return None
+            server_name = adsi_servers[0]
+
+        logger.info(f"Using ADSI linked server: {server_name}")
+
+        query = (
+            f"SELECT * FROM OPENQUERY([{server_name}], "
+            f"'SELECT {attributes} FROM ''<{ldap_path}>'' WHERE {ldap_filter}');"
+        )
+
+        try:
+            result = self._database_context.query_service.execute(query)
+            return result if result else None
+        except Exception as e:
+            logger.warning(f"{e}")
+            return None
 
     async def listen_for_request(self) -> Optional[List[Dict[str, Any]]]:
         """

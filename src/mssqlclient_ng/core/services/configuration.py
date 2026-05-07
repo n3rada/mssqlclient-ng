@@ -455,3 +455,49 @@ class ConfigurationService:
         except Exception as e:
             logger.error(f"Error enabling advanced options: {e}")
             return False
+
+    def get_configuration_status(self, option_name: str) -> int:
+        """
+        Gets the current status of a configuration option without logging.
+
+        Args:
+            option_name: The name of the configuration option
+
+        Returns:
+            1 if enabled, 0 if disabled, -1 if not found or error
+        """
+        try:
+            result = self._query_service.execute_scalar(
+                f"SELECT CAST(value_in_use AS INT) FROM sys.configurations WHERE name = '{option_name}';"
+            )
+            return int(result) if result is not None else -1
+        except Exception:
+            return -1
+
+    def set_server_option(self, server_name: str, option_name: str, option_value: str) -> bool:
+        """
+        Sets a server option using sp_serveroption.
+        This is a generic method for configuring linked server options.
+
+        Args:
+            server_name: The name of the linked server
+            option_name: The option name (e.g., 'data access', 'rpc out', 'collation compatible')
+            option_value: The option value ('true' or 'false')
+
+        Returns:
+            True if the option was successfully set; otherwise False
+        """
+        logger.debug(f"Setting '{option_name}' to '{option_value}' on server '{server_name}'")
+        try:
+            query = (
+                f"EXEC master..sp_serveroption "
+                f"@server = '{server_name}', "
+                f"@optname = '{option_name}', "
+                f"@optvalue = '{option_value}';"
+            )
+            self._query_service.execute_non_processing(query)
+            logger.success(f"Successfully set '{option_name}' to '{option_value}' on '{server_name}'")
+            return True
+        except Exception as e:
+            logger.error(f"Error setting '{option_name}' on server '{server_name}': {e}")
+            return False

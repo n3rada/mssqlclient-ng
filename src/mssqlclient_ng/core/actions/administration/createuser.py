@@ -13,7 +13,7 @@ from ...services.database import DatabaseContext
 
 
 @ActionFactory.register(
-    "createuser", "Create a new SQL Server login with server role privileges"
+    "user-add", "Create a new SQL Server login with server role privileges"
 )
 class CreateUser(BaseAction):
     """
@@ -112,7 +112,7 @@ class CreateUser(BaseAction):
                 raise RuntimeError("create_login_failed")
 
             logger.success(f"SQL login '{self._username}' created successfully")
-            
+
         except Exception as ex:
             msg = str(ex).lower()
             # If login already exists, update password instead
@@ -139,7 +139,7 @@ class CreateUser(BaseAction):
                         "You may not have sufficient privileges to create logins or assign server roles"
                     )
                 return False
-            
+
         logger.success(f"Password set to: '{self._password}'")
 
         # Now add the login to the server role

@@ -103,7 +103,7 @@ def build_parser() -> argparse.ArgumentParser:
         "-l",
         "--links",
         type=str,
-        help="Comma-separated list of linked servers to chain (e.g., 'SQL02:user,SQL03,SQL04:admin')",
+        help="Semicolon-separated linked server chain (e.g., 'SQL02/user;SQL03;SQL04/admin@db'). Use /user1/user2 for cascading impersonation.",
     )
 
     group_relay = parser.add_argument_group("NTLM Relay")
@@ -277,7 +277,7 @@ def main() -> int:
 
     # Determine output stream
     log_stream = args.std if hasattr(args, 'std') else "err"
-    
+
     # Check if file logging should be disabled
     no_log_file = args.no_log_file if hasattr(args, 'no_log_file') else False
 
@@ -294,22 +294,23 @@ def main() -> int:
     if args.action and isinstance(args.action, list) and len(args.action) > 0:
         action_name = args.action[0]
         argument_list = args.action[1:]
-        
+
         # Check if --help or -h is in the arguments
         if "--help" in argument_list or "-h" in argument_list:
             # Display help without connecting
             if not ActionFactory.action_exists(action_name):
                 logger.error(f"Unknown action: {action_name}")
                 return 1
-            
+
             ActionFactory.display_action_help(action_name)
             return 0
 
     try:
         server_instance = server.Server.parse_server(server_input=args.host)
-        # For initial connection, default to master if no database specified
-        if server_instance.database is None:
-            server_instance.database = "master"
+        # Apply -db/--database override if provided
+        if args.database:
+            server_instance.database = args.database
+        # If still no database, leave as None so SQL Server uses the login's default database
     except ValueError as e:
         logger.error(f"Invalid host format: {e}")
         return 1
@@ -346,6 +347,16 @@ def main() -> int:
         domain = args.domain if args.domain else ""
         username = args.username if args.username else ""
         password = args.password if args.password else ""
+
+        # Auto-split DOMAIN\user or DOMAIN/user when -d was not provided
+        if username and not domain:
+            if "\\" in username:
+                domain, username = username.split("\\", 1)
+            elif "/" in username and not username.startswith("/"):
+                domain, username = username.split("/", 1)
+
+        logger.debug(f"Parsed credentials — domain: {domain!r}, username: {username!r}, password set: {bool(password)}, hashes: {args.hashes!r}, windows_auth: {args.windows_auth}, kerberos: {args.kerberos}")
+        logger.debug(f"Target — host arg: {args.host!r}, server hostname: {server_instance.hostname!r}, port: {server_instance.port}, dc_ip: {args.dc_ip!r}, target_ip: {getattr(args, 'target_ip', None)!r}")
 
         # Prompt for password if username provided but no password/hashes/aesKey
         if (
@@ -422,11 +433,11 @@ def main() -> int:
 
             if effective_user and not effective_user.lower() == user_name.lower():
                 logger.info(f"Effective database user: {effective_user}")
-                if (
-                    source_principal
-                    and not source_principal.lower() == system_user.lower()
-                ):
-                    logger.info(f"Access granted via: {source_principal}")
+            if (
+                source_principal
+                and source_principal.lower() != system_user.lower()
+            ):
+                logger.info(f"Domain user is mapped via Domain Group '{source_principal}'")
 
         # If linked servers are provided, set them up
         if args.links:

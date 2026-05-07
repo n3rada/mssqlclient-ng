@@ -11,7 +11,9 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("whoami", "Display current user identity and permissions")
+@ActionFactory.register(
+    "whoami", "Display current user identity and permissions", aliases=["id", "groups"]
+)
 class Whoami(BaseAction):
     """
     Displays detailed information about the current user.

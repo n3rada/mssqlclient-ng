@@ -11,8 +11,8 @@ Run with: python3 -m unittest tests.test_server_parsing
 """
 
 import unittest
-from src.mssqlclient_ng.core.models.server import Server
-from src.mssqlclient_ng.core.models.linked_servers import LinkedServers
+from mssqlclient_ng.core.models.server import Server
+from mssqlclient_ng.core.models.linked_servers import LinkedServers
 
 
 class TestServerParsing(unittest.TestCase):
@@ -23,7 +23,7 @@ class TestServerParsing(unittest.TestCase):
         server = Server.parse_server("SQL01")
         self.assertEqual(server.hostname, "SQL01")
         self.assertEqual(server.port, 1433)
-        self.assertEqual(server.impersonation_user, "")
+        self.assertEqual(server.impersonation_users, [])
         self.assertIsNone(server.database)
 
     def test_hostname_with_port(self):
@@ -36,7 +36,7 @@ class TestServerParsing(unittest.TestCase):
         """Test parsing hostname with impersonation user."""
         server = Server.parse_server("SQL01/admin")
         self.assertEqual(server.hostname, "SQL01")
-        self.assertEqual(server.impersonation_user, "admin")
+        self.assertEqual(server.impersonation_users[0], "admin")
 
     def test_hostname_with_database(self):
         """Test parsing hostname with database context."""
@@ -49,7 +49,7 @@ class TestServerParsing(unittest.TestCase):
         server = Server.parse_server("SQL01:1434/admin@mydb")
         self.assertEqual(server.hostname, "SQL01")
         self.assertEqual(server.port, 1434)
-        self.assertEqual(server.impersonation_user, "admin")
+        self.assertEqual(server.impersonation_users[0], "admin")
         self.assertEqual(server.database, "mydb")
 
     def test_flexible_order_user_db_port(self):
@@ -57,7 +57,7 @@ class TestServerParsing(unittest.TestCase):
         server = Server.parse_server("SQL01/admin@mydb:1434")
         self.assertEqual(server.hostname, "SQL01")
         self.assertEqual(server.port, 1434)
-        self.assertEqual(server.impersonation_user, "admin")
+        self.assertEqual(server.impersonation_users[0], "admin")
         self.assertEqual(server.database, "mydb")
 
     def test_flexible_order_db_port_user(self):
@@ -65,7 +65,7 @@ class TestServerParsing(unittest.TestCase):
         server = Server.parse_server("SQL01@mydb:1434/admin")
         self.assertEqual(server.hostname, "SQL01")
         self.assertEqual(server.port, 1434)
-        self.assertEqual(server.impersonation_user, "admin")
+        self.assertEqual(server.impersonation_users[0], "admin")
         self.assertEqual(server.database, "mydb")
 
 
@@ -101,7 +101,7 @@ class TestBracketedServerNames(unittest.TestCase):
         server = Server.parse_server("[SERVER:001]:1434/admin@mydb")
         self.assertEqual(server.hostname, "SERVER:001")
         self.assertEqual(server.port, 1434)
-        self.assertEqual(server.impersonation_user, "admin")
+        self.assertEqual(server.impersonation_users[0], "admin")
         self.assertEqual(server.database, "mydb")
 
     def test_bracketed_with_dots(self):
@@ -164,7 +164,7 @@ class TestEdgeCases(unittest.TestCase):
         """Test parsing empty user is treated as no impersonation."""
         result = Server.parse_server("SQL01/")
         self.assertEqual(result.hostname, "SQL01")
-        self.assertEqual(result.impersonation_user, "")  # Empty string, not None
+        self.assertEqual(result.impersonation_users, [])
 
     def test_empty_database(self):
         """Test parsing empty database uses default (None)."""
@@ -188,8 +188,8 @@ class TestLinkedServerChains(unittest.TestCase):
         """Test parsing chain with impersonation users."""
         chain = LinkedServers("SQL01/user1;SQL02/user2")
         self.assertEqual(len(chain.server_chain), 2)
-        self.assertEqual(chain.server_chain[0].impersonation_user, "user1")
-        self.assertEqual(chain.server_chain[1].impersonation_user, "user2")
+        self.assertEqual(chain.server_chain[0].impersonation_users[0], "user1")
+        self.assertEqual(chain.server_chain[1].impersonation_users[0], "user2")
 
     def test_chain_with_databases(self):
         """Test parsing chain with database contexts."""
@@ -202,8 +202,8 @@ class TestLinkedServerChains(unittest.TestCase):
         """Test parsing chain with mixed components."""
         chain = LinkedServers("SQL01/admin;SQL02;SQL03@analytics")
         self.assertEqual(len(chain.server_chain), 3)
-        self.assertEqual(chain.server_chain[0].impersonation_user, "admin")
-        self.assertEqual(chain.server_chain[1].impersonation_user, "")
+        self.assertEqual(chain.server_chain[0].impersonation_users[0], "admin")
+        self.assertEqual(chain.server_chain[1].impersonation_users, [])
         self.assertEqual(chain.server_chain[2].database, "analytics")
 
     def test_chain_with_colons_in_names(self):
@@ -225,10 +225,10 @@ class TestLinkedServerChains(unittest.TestCase):
         chain = LinkedServers("[SQL-01]/admin@master;[SERVER:001]/webapp@appdb;SQL03")
         self.assertEqual(len(chain.server_chain), 3)
         self.assertEqual(chain.server_chain[0].hostname, "SQL-01")
-        self.assertEqual(chain.server_chain[0].impersonation_user, "admin")
+        self.assertEqual(chain.server_chain[0].impersonation_users[0], "admin")
         self.assertEqual(chain.server_chain[0].database, "master")
         self.assertEqual(chain.server_chain[1].hostname, "SERVER:001")
-        self.assertEqual(chain.server_chain[1].impersonation_user, "webapp")
+        self.assertEqual(chain.server_chain[1].impersonation_users[0], "webapp")
         self.assertEqual(chain.server_chain[1].database, "appdb")
         self.assertEqual(chain.server_chain[2].hostname, "SQL03")
 
@@ -256,10 +256,10 @@ class TestLinkedServerChains(unittest.TestCase):
     def test_add_to_chain(self):
         """Test adding server to existing chain."""
         chain = LinkedServers("SQL01")
-        chain.add_to_chain("SQL-02", "webapp", "testdb")
+        chain.add_to_chain("SQL-02", impersonation_users=["webapp"], database="testdb")
         self.assertEqual(len(chain.server_chain), 2)
         self.assertEqual(chain.server_chain[1].hostname, "SQL-02")
-        self.assertEqual(chain.server_chain[1].impersonation_user, "webapp")
+        self.assertEqual(chain.server_chain[1].impersonation_users[0], "webapp")
         self.assertEqual(chain.server_chain[1].database, "testdb")
 
     def test_clear_chain(self):
@@ -305,7 +305,7 @@ class TestBracketProtection(unittest.TestCase):
         """Test that slash after closing bracket is user delimiter."""
         server = Server.parse_server("[SERVER/TEST]/admin")
         self.assertEqual(server.hostname, "SERVER/TEST")
-        self.assertEqual(server.impersonation_user, "admin")
+        self.assertEqual(server.impersonation_users[0], "admin")
 
     def test_at_after_bracket_is_database(self):
         """Test that at sign after closing bracket is database delimiter."""
@@ -333,7 +333,7 @@ class TestRealWorldScenarios(unittest.TestCase):
         server = Server.parse_server("sql.prod.company.com:1434/sa@master")
         self.assertEqual(server.hostname, "sql.prod.company.com")
         self.assertEqual(server.port, 1434)
-        self.assertEqual(server.impersonation_user, "sa")
+        self.assertEqual(server.impersonation_users[0], "sa")
         self.assertEqual(server.database, "master")
 
     def test_ip_address(self):
@@ -354,7 +354,7 @@ class TestRealWorldScenarios(unittest.TestCase):
         chain = LinkedServers(chain_input)
         self.assertEqual(len(chain.server_chain), 3)
         self.assertEqual(chain.server_chain[0].hostname, "SQLPROD01")
-        self.assertEqual(chain.server_chain[0].impersonation_user, "svc_account")
+        self.assertEqual(chain.server_chain[0].impersonation_users[0], "svc_account")
         self.assertEqual(chain.server_chain[0].database, "master")
 
     def test_azure_sql_style(self):

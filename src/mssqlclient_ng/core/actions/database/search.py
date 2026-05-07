@@ -14,7 +14,9 @@ from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(
-    "search", "Search for keywords in column names and data across databases"
+    "search",
+    "Search for keywords in column names and data across databases",
+    aliases=["find"],
 )
 class Search(BaseAction):
     """

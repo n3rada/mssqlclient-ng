@@ -53,12 +53,13 @@ class QueryService:
         """
         Set the linked servers configuration.
         Updates the execution server to the last server in the chain.
+        Queries @@SERVERNAME and @@VERSION from the linked server to resolve
+        the real hostname (vs alias) and detect Azure SQL.
         """
         self._linked_servers = value if value is not None else LinkedServers()
 
         if not self._linked_servers.is_empty:
-            self.execution_server = self._linked_servers.server_names[-1]
-            logger.debug(f"Execution server set to: {self.execution_server}")
+            self._compute_execution_server()
         else:
             self.execution_server = self._get_server_name()
             self.execution_database = self.get_current_database()
@@ -107,13 +108,16 @@ class QueryService:
 
         return "Unknown"
 
-    def execute(self, query: str, tuple_mode: bool = False) -> List[Dict[str, Any]]:
+    def execute(
+        self, query: str, tuple_mode: bool = False, silent: bool = False
+    ) -> List[Dict[str, Any]]:
         """
         Execute a SQL query and return results as rows.
 
         Args:
             query: The SQL query to execute
             tuple_mode: If True, return rows as tuples instead of dicts
+            silent: If True, suppress impacket error output
 
         Returns:
             List of rows (dicts or tuples based on tuple_mode)
@@ -123,52 +127,60 @@ class QueryService:
             SQLErrorException: If query execution fails
         """
         return self._execute_with_handling(
-            query, tuple_mode=tuple_mode, return_rows=True
+            query, tuple_mode=tuple_mode, return_rows=True, silent=silent
         )
 
-    def execute_non_processing(self, query: str) -> int:
+    def execute_non_processing(self, query: str, silent: bool = False) -> int:
         """
         Execute a SQL query without returning results (INSERT, UPDATE, DELETE, etc.).
 
         Args:
             query: The SQL query to execute
+            silent: If True, suppress impacket error output and re-raise exceptions
 
         Returns:
             Number of affected rows, or -1 on error
+
+        Raises:
+            SQLErrorException: If query fails and silent=True (caller must handle)
         """
         try:
             result = self._execute_with_handling(
-                query, tuple_mode=False, return_rows=False
+                query, tuple_mode=False, return_rows=False, silent=silent
             )
             return result if result is not None else -1
         except Exception as error:
+            if silent:
+                raise
             logger.error(error)
             return -1
 
-    def execute_table(self, query: str) -> List[Dict[str, Any]]:
+    def execute_table(self, query: str, silent: bool = False) -> List[Dict[str, Any]]:
         """
         Execute a SQL query and return the results as a list of dictionaries.
 
         Args:
             query: The SQL query to execute.
+            silent: If True, suppress impacket error output
 
         Returns:
             List of row dictionaries, one per result row.
         """
-        rows = self.execute(query, tuple_mode=False)
+        rows = self.execute(query, tuple_mode=False, silent=silent)
         return rows if rows else []
 
-    def execute_scalar(self, query: str) -> Optional[Any]:
+    def execute_scalar(self, query: str, silent: bool = False) -> Optional[Any]:
         """
         Execute a SQL query and return a single scalar value (first column of first row).
 
         Args:
             query: The SQL query to execute
+            silent: If True, suppress impacket error output
 
         Returns:
             The scalar value, or None if no rows returned
         """
-        rows = self.execute(query, tuple_mode=False)
+        rows = self.execute(query, tuple_mode=False, silent=silent)
 
         if rows and len(rows) > 0:
             # Get first column value of first row
@@ -188,6 +200,7 @@ class QueryService:
         return_rows: bool = True,
         timeout: int = 120,
         retry_count: int = 0,
+        silent: bool = False,
     ) -> Any:
         """
         Shared execution logic with error handling and retry mechanism.
@@ -198,6 +211,7 @@ class QueryService:
             return_rows: If True, return row data; otherwise return affected count
             timeout: Timeout in seconds for query execution
             retry_count: Current retry attempt (for exponential backoff)
+            silent: If True, suppress impacket error output (for internal queries)
 
         Returns:
             Query results or affected row count
@@ -228,7 +242,13 @@ class QueryService:
             self.mssql_instance.batch(final_query, tuplemode=tuple_mode)
 
             # Print replies to capture any errors
-            self.mssql_instance.printReplies()
+            if silent:
+                # Suppress error output for internal operations
+                self.mssql_instance.printReplies(
+                    error_logger=lambda _: None, info_logger=lambda _: None
+                )
+            else:
+                self.mssql_instance.printReplies()
 
             # Check for errors
             if self.mssql_instance.lastError:
@@ -246,15 +266,35 @@ class QueryService:
             error_message = str(e)
             logger.debug(f"Query execution returned an error: {error_message}")
 
-            # Handle RPC configuration error
+            # Check for impersonation failure first (before OPENQUERY checks)
+            if self._is_impersonation_failure(error_message):
+                raise
+
+            # Check for linked server connection failure (unrecoverable)
+            if self._is_linked_server_connection_failure(error_message):
+                raise
+
+            # Handle RPC configuration error — per-server tracking
             if "not configured for RPC" in error_message:
-                logger.warning(
-                    "The targeted server is not configured for Remote Procedure Call (RPC)"
-                )
-                logger.warning("Trying again with OPENQUERY")
-                self._linked_servers.use_remote_procedure_call = False
+                failed_server = self._extract_non_rpc_server(error_message)
+                if failed_server:
+                    self._linked_servers.mark_server_as_non_rpc(failed_server)
+                    if self._linked_servers.all_servers_non_rpc:
+                        logger.warning(
+                            "All linked servers lack RPC. Falling back to OPENQUERY."
+                        )
+                        self._linked_servers.use_remote_procedure_call = False
+                    else:
+                        logger.warning(
+                            f"Server '{failed_server}' lacks RPC. Using hybrid chain."
+                        )
+                else:
+                    logger.warning(
+                        "Could not identify non-RPC server. Falling back to OPENQUERY."
+                    )
+                    self._linked_servers.use_remote_procedure_call = False
                 return self._execute_with_handling(
-                    query, tuple_mode, return_rows, timeout, retry_count + 1
+                    query, tuple_mode, return_rows, timeout, retry_count + 1, silent
                 )
 
             # Handle metadata errors
@@ -273,6 +313,7 @@ class QueryService:
                     return_rows,
                     timeout,
                     retry_count + 1,
+                    silent,
                 )
 
             # Handle database prefix not supported on remote server
@@ -295,6 +336,7 @@ class QueryService:
                     return_rows,
                     timeout,
                     retry_count + 1,
+                    silent,
                 )
 
             raise
@@ -309,7 +351,7 @@ class QueryService:
                     f"Query timed out after {timeout} seconds. Retrying with {new_timeout} seconds (attempt {retry_count + 1}/{self.MAX_RETRIES})"
                 )
                 return self._execute_with_handling(
-                    query, tuple_mode, return_rows, new_timeout, retry_count + 1
+                    query, tuple_mode, return_rows, new_timeout, retry_count + 1, silent
                 )
 
             # If OPENQUERY is in use and we hit a metadata/no-rowset error,
@@ -321,7 +363,7 @@ class QueryService:
                 logger.debug("OPENQUERY returned no rowset. Wrapping query.")
                 wrapped = self._wrap_for_openquery(query)
                 return self._execute_with_handling(
-                    wrapped, tuple_mode, return_rows, timeout, retry_count + 1
+                    wrapped, tuple_mode, return_rows, timeout, retry_count + 1, silent
                 )
 
             # Some stored procedures (like OLE Automation) may raise exceptions
@@ -367,7 +409,13 @@ class QueryService:
                     "This query requires RPC and cannot be executed via OPENQUERY."
                 )
 
-            if self._linked_servers.use_remote_procedure_call:
+            if (
+                self._linked_servers.use_remote_procedure_call
+                and self._linked_servers.has_non_rpc_servers
+            ):
+                # Hybrid: mix RPC and OPENQUERY per-hop
+                final_query = self._linked_servers.build_hybrid_chain(query)
+            elif self._linked_servers.use_remote_procedure_call:
                 final_query = self._linked_servers.build_remote_procedure_call_chain(
                     query
                 )
@@ -382,7 +430,7 @@ class QueryService:
         """
         Determines if a SQL statement requires RPC execution because it modifies
         server-level state. These commands cannot be executed over OPENQUERY.
-        
+
         Note: This checks for actual DDL/configuration commands, not system view queries.
         Queries like "SELECT * FROM sys.servers" should NOT trigger this.
         """
@@ -390,7 +438,7 @@ class QueryService:
             return False
 
         s = sql.upper().strip()
-        
+
         # Remove common query prefixes to avoid false positives
         # (e.g., "SELECT * FROM sys.servers" contains "servers" but isn't DDL)
         if s.startswith("SELECT ") or s.startswith("WITH "):
@@ -399,7 +447,7 @@ class QueryService:
         # Check for server-level DDL and configuration commands
         rpc_commands = [
             "CREATE LOGIN",
-            "ALTER LOGIN", 
+            "ALTER LOGIN",
             "DROP LOGIN",
             "ALTER SERVER CONFIGURATION",
             "ALTER SERVER ROLE",
@@ -418,12 +466,12 @@ class QueryService:
             "SP_DROPLINKEDSRVLOGIN",
             "SP_DROPSERVER",
         ]
-        
+
         for cmd in rpc_commands:
             if cmd in s:
                 logger.trace(f"Query requires RPC: matched '{cmd}' in SQL statement")
                 return True
-        
+
         return False
 
     def _is_openquery_rowset_failure(self, ex: Exception) -> bool:
@@ -566,3 +614,98 @@ class QueryService:
                     self.execution_database = None
                     logger.debug(f"Database detection failed: {ex}")
         # If no linked servers, execution_database is already set from get_current_database()
+
+    def _compute_execution_server(self) -> None:
+        """
+        Queries @@SERVERNAME and @@VERSION through the linked server chain to resolve
+        the real hostname (which may differ from the alias) and detect Azure SQL.
+        Sets self.execution_server, self.linked_server_alias, and caches Azure detection.
+        """
+        alias = self._linked_servers.server_names[-1]
+        self.linked_server_alias = alias
+        self.execution_server = alias
+
+        try:
+            result = self.execute_scalar("SELECT @@SERVERNAME")
+            if result:
+                real_name = (
+                    str(result).split("\\")[0] if "\\" in str(result) else str(result)
+                )
+                if real_name.lower() != alias.lower():
+                    logger.info(
+                        f"Linked server alias '{alias}' resolves to actual server '{real_name}'"
+                    )
+                self.execution_server = real_name
+                logger.debug(f"Execution server set to: {self.execution_server}")
+        except Exception as e:
+            logger.debug(f"Could not resolve @@SERVERNAME through chain: {e}")
+
+        # Detect version and Azure status
+        try:
+            version = self.execute_scalar("SELECT @@VERSION")
+            if version and isinstance(version, str):
+                self._full_version_string = version
+                is_azure = "microsoft sql azure" in version.lower()
+                is_mi = "managed instance" in version.lower()
+                self._is_azure_sql_cache[self.execution_server] = is_azure and not is_mi
+                if is_azure and not is_mi:
+                    logger.info(
+                        f"Detected Azure SQL Database on linked server '{alias}'"
+                    )
+        except Exception as e:
+            logger.debug(f"Could not retrieve @@VERSION through chain: {e}")
+
+    @staticmethod
+    def _extract_non_rpc_server(error_message: str) -> Optional[str]:
+        """
+        Extract the server name from an RPC error message.
+        SQL Server returns: "Server 'X' is not configured for RPC."
+
+        Args:
+            error_message: The SQL error message
+
+        Returns:
+            The server name, or None if it couldn't be parsed
+        """
+        import re
+
+        match = re.search(
+            r"Server '([^']+)' is not configured for RPC", error_message, re.IGNORECASE
+        )
+        if match:
+            return match.group(1)
+        # Alternate pattern: "server_name is not configured for RPC"
+        match = re.search(
+            r"(\S+) is not configured for RPC", error_message, re.IGNORECASE
+        )
+        if match:
+            return match.group(1)
+        return None
+
+    @staticmethod
+    def _is_impersonation_failure(error_message: str) -> bool:
+        """
+        Checks if an error is an impersonation failure.
+        These should not be retried or wrapped.
+        """
+        m = error_message.lower()
+        return (
+            "cannot execute as" in m or "execute as failed" in m or "impersonate" in m
+        )
+
+    @staticmethod
+    def _is_linked_server_connection_failure(error_message: str) -> bool:
+        """
+        Checks if an error indicates a linked server is unreachable.
+        These are unrecoverable and should not be retried.
+        """
+        m = error_message.lower()
+        indicators = [
+            "ole db provider",
+            "named pipes provider",
+            "tcp provider",
+            "login failed for linked server",
+            "cannot obtain the schema rowset",
+            "could not establish a connection",
+        ]
+        return any(ind in m for ind in indicators)

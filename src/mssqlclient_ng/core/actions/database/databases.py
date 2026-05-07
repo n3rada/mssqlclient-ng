@@ -50,67 +50,46 @@ class Databases(BaseAction):
             List of database dictionaries with combined information
         """
         try:
-            # Query for all databases
-            all_databases = database_context.query_service.execute_table(
-                "SELECT dbid, name, crdate, filename FROM master.dbo.sysdatabases ORDER BY crdate DESC;"
-            )
+            # Use the richer sys.databases catalog view (SQL Server 2005+)
+            query = """
+SELECT
+    d.database_id AS [ID],
+    d.name AS [Name],
+    SUSER_SNAME(d.owner_sid) AS [Owner],
+    CAST(HAS_DBACCESS(d.name) AS BIT) AS [Accessible],
+    d.is_trustworthy_on AS [Trustworthy],
+    d.state_desc AS [State],
+    d.user_access_desc AS [Access],
+    d.is_read_only AS [ReadOnly],
+    d.recovery_model_desc AS [Recovery Model],
+    d.create_date AS [Created],
+    mf.physical_name AS [MDF Path]
+FROM sys.databases d
+LEFT JOIN sys.master_files mf
+    ON d.database_id = mf.database_id AND mf.file_id = 1
+ORDER BY HAS_DBACCESS(d.name) DESC, d.name ASC;"""
+
+            all_databases = database_context.query_service.execute_table(query)
 
             if not all_databases:
                 logger.warning("No databases found")
                 return None
 
-            # Query for accessible databases
-            accessible_databases = database_context.query_service.execute_table(
-                "SELECT name FROM sys.databases WHERE HAS_DBACCESS(name) = 1;"
-            )
-
-            # Query for trustworthy databases and owner information
-            database_info = database_context.query_service.execute_table(
-                """SELECT
-                    d.name,
-                    d.is_trustworthy_on,
-                    SUSER_SNAME(d.owner_sid) AS owner_name
-                FROM sys.databases d;"""
-            )
-
-            # Create sets for quick lookup
-            accessible_set = (
-                {row["name"] for row in accessible_databases}
-                if accessible_databases
-                else set()
-            )
-
-            # Create dict for trustworthy and owner info
-            info_dict = {}
-            if database_info:
-                for row in database_info:
-                    info_dict[row["name"]] = {
-                        "trustworthy": row["is_trustworthy_on"],
-                        "owner": row["owner_name"],
-                    }
-
-            # Add accessibility, trustworthy, and owner columns to each database
-            enriched_databases = []
+            # For each accessible database, check if the current user is db_owner
             for db in all_databases:
-                db_name = db["name"]
+                db["db_owner"] = False
+                if db.get("Accessible"):
+                    db_name = db["Name"]
+                    try:
+                        owner_check = database_context.query_service.execute_scalar(
+                            f"USE [{db_name}]; SELECT CAST(IS_MEMBER('db_owner') AS BIT);"
+                        )
+                        db["db_owner"] = bool(owner_check)
+                    except Exception:
+                        pass
 
-                # Create enriched database entry with reordered columns
-                enriched_db = {
-                    "dbid": db["dbid"],
-                    "name": db_name,
-                    "Accessible": db_name in accessible_set,
-                    "Trustworthy": info_dict.get(db_name, {}).get("trustworthy", False),
-                    "Owner": info_dict.get(db_name, {}).get("owner", ""),
-                    "crdate": db["crdate"],
-                    "filename": db["filename"],
-                }
-
-                enriched_databases.append(enriched_db)
-
-            # Display the table
-            print(OutputFormatter.convert_list_of_dicts(enriched_databases))
-
-            return enriched_databases
+            print(OutputFormatter.convert_list_of_dicts(all_databases))
+            return all_databases
 
         except Exception as e:
             logger.error(f"Failed to retrieve database information: {e}")

@@ -74,7 +74,9 @@ PROCEDURE_DESCRIPTIONS = {
 
 
 @ActionFactory.register(
-    "xprocs", "Enumerate extended stored procedures available on SQL Server"
+    "xprocs",
+    "Enumerate extended stored procedures available on SQL Server",
+    aliases=["extendedprocs", "sysprocs"],
 )
 class ExtendedProcs(BaseAction):
     """

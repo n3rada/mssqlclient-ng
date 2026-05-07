@@ -2,14 +2,20 @@
 
 from .ridcycle import RidCycle
 from .addomain import DomainSid
-from .adgroups import AdGroups
-from .admembers import AdMembers
 from .adsid import AdSid
+from .adsi_add import AdsiAdd
+from .adsi_del import AdsiDel
+from .adsi_query import AdsiQuery
+from .adsi_creds import AdsiCredentialExtractor
+from .adsi_redirect import AdsiRedirect
 
 __all__ = [
     "RidCycle",
     "DomainSid",
-    "AdGroups",
-    "AdMembers",
     "AdSid",
+    "AdsiAdd",
+    "AdsiDel",
+    "AdsiQuery",
+    "AdsiCredentialExtractor",
+    "AdsiRedirect",
 ]

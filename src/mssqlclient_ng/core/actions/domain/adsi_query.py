@@ -1,4 +1,4 @@
-# mssqlclient_ng/core/actions/remote/adsi_query.py
+# mssqlclient_ng/core/actions/domain/adsi_query.py
 
 # Built-in imports
 from typing import Optional, List
@@ -16,7 +16,9 @@ from ..factory import ActionFactory
 
 
 @ActionFactory.register(
-    "adsi-query", "Perform LDAP queries against ADSI linked servers"
+    "adsi-query",
+    "Perform LDAP queries against ADSI linked servers",
+    aliases=["ldap"],
 )
 class AdsiQuery(BaseAction):
     """

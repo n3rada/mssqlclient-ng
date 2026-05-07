@@ -6,9 +6,10 @@ Database actions for SQL Server database management.
 from ..database.authtoken import AuthToken
 from ..database.databases import Databases
 from ..database.xprocs import ExtendedProcs
+from ..database.hashes import Hashes
 from ..database.impersonate import Impersonation
+from ..database.impersonation_map import ImpersonationMap
 from ..database.info import Info
-from ..database.loginmap import LoginMap
 from ..database.oledb_providers import OleDbProviders
 from ..database.permissions import Permissions
 from ..database.procedures import Procedures
@@ -24,9 +25,10 @@ __all__ = [
     "AuthToken",
     "Databases",
     "ExtendedProcs",
+    "Hashes",
     "Impersonation",
+    "ImpersonationMap",
     "Info",
-    "LoginMap",
     "OleDbProviders",
     "Permissions",
     "Procedures",

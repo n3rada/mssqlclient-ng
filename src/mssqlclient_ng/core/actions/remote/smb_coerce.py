@@ -14,8 +14,9 @@ from ...services.database import DatabaseContext
 
 
 @ActionFactory.register(
-    "smbcoerce",
-    "Force SMB authentication to a specified UNC path to capture time-limited Net-NTLMv2 challenge/response.",
+    "unc",
+    "Force SMB authentication to a specified UNC path to capture Net-NTLMv2 challenge/response",
+    aliases=["coerce", "smb", "ntlm"],
 )
 class SmbCoerce(BaseAction):
     """

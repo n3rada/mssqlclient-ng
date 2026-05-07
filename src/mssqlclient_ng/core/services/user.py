@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/services/user.py
 
 # Built-in imports
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 # Third party imports
 from loguru import logger
@@ -29,6 +29,9 @@ class UserService:
 
         # Cache domain user status for each execution server
         self._is_domain_user_cache: dict[str, bool] = {}
+
+        # Cache server-level permission checks, keyed by "hostname:permission"
+        self._permission_cache: dict[str, bool] = {}
 
         # Private user information
         self._mapped_user: Optional[str] = None
@@ -112,6 +115,11 @@ class UserService:
         if execution_server in self._admin_status_cache:
             return self._admin_status_cache[execution_server]
 
+        # Quick check: sa login is always sysadmin
+        if self._system_user and self._system_user.lower() == "sa":
+            self._admin_status_cache[execution_server] = True
+            return True
+
         # Compute and cache the result
         admin_status = self.is_member_of_role("sysadmin")
         self._admin_status_cache[execution_server] = admin_status
@@ -130,12 +138,95 @@ class UserService:
         """
         try:
             result = self._query_service.execute_scalar(
-                f"SELECT IS_SRVROLEMEMBER('{role}');"
+                f"SELECT IS_SRVROLEMEMBER('{role}');", silent=True
             )
             return int(result) == 1 if result is not None else False
         except Exception as e:
-            logger.warning(f"Error checking role membership for role {role}: {e}")
+            logger.debug(f"Error checking role membership for role {role}: {e}")
             return False
+
+    def has_permission(self, permission: str) -> bool:
+        """
+        Checks whether the current login holds a specific server-level permission.
+        Results are cached per execution server to avoid redundant round-trips.
+
+        Args:
+            permission: Server-level permission name (e.g. "CONTROL SERVER", "ALTER ANY LOGIN")
+
+        Returns:
+            True if the current login has the permission; otherwise False
+        """
+        cache_key = f"{self._query_service.execution_server}:{permission}"
+        if cache_key in self._permission_cache:
+            return self._permission_cache[cache_key]
+
+        result = False
+        try:
+            safe_perm = permission.replace("'", "''")
+            val = self._query_service.execute_scalar(
+                f"SELECT HAS_PERMS_BY_NAME(NULL, NULL, '{safe_perm}')"
+            )
+            result = int(val) == 1 if val is not None else False
+        except Exception as e:
+            logger.warning(f"Error checking permission '{permission}': {e}")
+
+        self._permission_cache[cache_key] = result
+        return result
+
+    @staticmethod
+    def is_system_account(login: str) -> bool:
+        """
+        Returns True if the login is a Windows system account (NT AUTHORITY\\, NT SERVICE\\, etc.).
+        These accounts add no unique linked server mapping information.
+
+        Args:
+            login: The login name to check
+
+        Returns:
+            True if it's a system account; otherwise False
+        """
+        if not login:
+            return False
+        upper = login.upper()
+        return upper.startswith("NT ") or upper.startswith("NT\\")
+
+    def get_server_roles(self) -> Tuple[List[str], List[str]]:
+        """
+        Returns the current user's server role memberships split into fixed and custom roles.
+        Excludes the public role and internal placeholder roles (##...##).
+        Also populates the admin-status cache as a side effect.
+
+        Returns:
+            Tuple of (fixed_roles, custom_roles)
+        """
+        query = """
+SELECT name, is_fixed_role
+FROM sys.server_principals
+WHERE type = 'R'
+  AND name != 'public'
+  AND name NOT LIKE '##%##'
+  AND ISNULL(IS_SRVROLEMEMBER(name), 0) = 1
+ORDER BY is_fixed_role DESC, name;"""
+
+        fixed_roles: List[str] = []
+        custom_roles: List[str] = []
+        try:
+            rows = self._query_service.execute_table(query, silent=True)
+            for row in rows:
+                name = str(row.get("name", ""))
+                is_fixed = row.get("is_fixed_role")
+                if is_fixed and (is_fixed == 1 or str(is_fixed).lower() == "true"):
+                    fixed_roles.append(name)
+                else:
+                    custom_roles.append(name)
+
+            # Side effect: cache sysadmin status
+            is_sysadmin = any(r.lower() == "sysadmin" for r in fixed_roles)
+            self._admin_status_cache[self._query_service.execution_server] = is_sysadmin
+        except Exception:
+            pass
+
+        return (fixed_roles, custom_roles)
 
     def _check_if_domain_user(self) -> bool:
         r"""
@@ -158,53 +249,6 @@ class UserService:
         # Username has domain format - it's a Windows user
         return True
 
-    def _get_effective_user_and_source(self) -> Tuple[str, str]:
-        r"""
-        Gets the effective database user and the source principal (AD group or login) that granted access.
-        This handles cases where access is granted through AD group membership
-        rather than direct login mapping (e.g., DOMAIN\User -> AD Group -> Database User).
-        This uses the token from integrated Windows authentication.
-        https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-login-token-transact-sql
-
-        Returns:
-            Tuple of (EffectiveUser, SourcePrincipal)
-        """
-        try:
-            # If there's a direct mapping (MappedUser != SystemUser), use it
-            if (
-                self._mapped_user
-                and self._system_user
-                and self._mapped_user.lower() != self._system_user.lower()
-            ):
-                return (self._mapped_user, self._system_user)
-
-            # Query user_token to find effective database user and login_token for source
-            sql = """
-SELECT TOP 1
-    dp.name AS effective_user,
-    lt.name AS source_principal
-FROM sys.user_token ut
-JOIN sys.database_principals dp ON dp.sid = ut.sid
-LEFT JOIN sys.login_token lt ON lt.sid = ut.sid
-WHERE ut.name <> 'public'
-AND ut.type NOT IN ('ROLE', 'SERVER ROLE')
-AND dp.principal_id > 0
-ORDER BY dp.principal_id;"""
-
-            rows = self._query_service.execute_table(sql)
-
-            if not rows or len(rows) == 0:
-                return (self._mapped_user or "Unknown", self._system_user or "Unknown")
-
-            row = rows[0]
-            effective = row.get("effective_user") or self._mapped_user or "Unknown"
-            source = row.get("source_principal") or effective
-
-            return (str(effective), str(source))
-        except Exception as ex:
-            logger.warning(f"Error determining effective user and source: {ex}")
-            return (self._mapped_user or "Unknown", self._system_user or "Unknown")
-
     def get_info(self) -> Tuple[str, str]:
         """
         Retrieve information about the current user.
@@ -214,26 +258,19 @@ ORDER BY dp.principal_id;"""
         """
         query = "SELECT USER_NAME() AS U, SYSTEM_USER AS S;"
 
-        name = "Unknown"
-        logged_in_user_name = "Unknown"
+        name = ""
+        logged_in_user_name = ""
 
-        try:
-            rows = self._query_service.execute(query, tuple_mode=False)
+        rows = self._query_service.execute(query, tuple_mode=False, silent=True)
 
-            if rows and len(rows) > 0:
-                row = rows[0]
-                name = (
-                    str(row.get("U", "Unknown"))
-                    if row.get("U") is not None
-                    else "Unknown"
-                )
-                logged_in_user_name = (
-                    str(row.get("S", "Unknown"))
-                    if row.get("S") is not None
-                    else "Unknown"
-                )
-        except Exception as e:
-            logger.warning(f"Error retrieving user info: {e}")
+        if rows and len(rows) > 0:
+            row = rows[0]
+            u = row.get("U")
+            s = row.get("S")
+            if u is not None:
+                name = str(u)
+            if s is not None:
+                logged_in_user_name = str(s)
 
         # Use property setters
         self.mapped_user = name
@@ -254,41 +291,28 @@ ORDER BY dp.principal_id;"""
         https://learn.microsoft.com/en-us/sql/relational-databases/system-catalog-views/sys-login-token-transact-sql
         """
         try:
-            # If there's a direct mapping (MappedUser != SystemUser), use it
-            if (
-                self._mapped_user
-                and self._system_user
-                and self._mapped_user.lower() != self._system_user.lower()
-            ):
-                self.effective_user = self._mapped_user
+            self.effective_user = self._mapped_user
+
+            # Check if SYSTEM_USER has a direct Windows login (type 'U') in sys.server_principals.
+            # This is a single indexed lookup — cheap for the common case.
+            login_type = self._query_service.execute_scalar(
+                "SELECT type FROM sys.server_principals WHERE name = SYSTEM_USER;"
+            )
+
+            if login_type and str(login_type) == "U":
                 self.source_principal = self._system_user
                 return
 
-            # Query user_token to find effective database user and login_token for source
-            sql = """
-SELECT TOP 1
-    dp.name AS effective_user,
-    lt.name AS source_principal
-FROM sys.user_token ut
-JOIN sys.database_principals dp ON dp.sid = ut.sid
-LEFT JOIN sys.login_token lt ON lt.sid = ut.sid
-WHERE ut.name <> 'public'
-AND ut.type NOT IN ('ROLE', 'SERVER ROLE')
-AND dp.principal_id > 0
-ORDER BY dp.principal_id;"""
+            # No direct login — access granted via an AD group.
+            # Find the group in sys.login_token joined to sys.server_principals.
+            group = self._query_service.execute_scalar("""
+SELECT TOP 1 sp.name
+FROM sys.login_token lt
+INNER JOIN sys.server_principals sp ON sp.sid = lt.sid
+WHERE lt.type = 'WINDOWS GROUP' AND sp.type = 'G'
+ORDER BY sp.principal_id;""")
 
-            rows = self._query_service.execute_table(sql)
-
-            if not rows or len(rows) == 0:
-                self.effective_user = self._mapped_user or "Unknown"
-                self.source_principal = self._system_user or "Unknown"
-                return
-
-            row = rows[0]
-            self.effective_user = (
-                row.get("effective_user") or self._mapped_user or "Unknown"
-            )
-            self.source_principal = row.get("source_principal") or self.effective_user
+            self.source_principal = str(group) if group else self._system_user
         except Exception as ex:
             logger.warning(f"Error determining effective user and source: {ex}")
             self.effective_user = self._mapped_user or "Unknown"
@@ -359,6 +383,9 @@ ORDER BY dp.principal_id;"""
     def impersonate_user(self, user: str) -> bool:
         """
         Impersonate a specified user on the current connection.
+        For direct connections: issues EXECUTE AS LOGIN that persists in the session.
+        For linked servers: updates the impersonation arrays prepended to every query
+        (EXECUTE AS doesn't persist across separate EXEC() AT calls).
 
         Args:
             user: The login to impersonate
@@ -366,37 +393,115 @@ ORDER BY dp.principal_id;"""
         Returns:
             True if impersonation was successful; otherwise False
         """
-        query = f"EXECUTE AS LOGIN = '{user}';"
+        # For linked servers, push to the impersonation chain (like C#'s PushLinkedImpersonation)
+        if not self._query_service.linked_servers.is_empty:
+            self._push_linked_impersonation(user)
+            self._admin_status_cache.clear()
+            return True
+
+        safe_user = user.replace("'", "''")
+        query = f"EXECUTE AS LOGIN = N'{safe_user}';"
 
         try:
-            self._query_service.execute_non_processing(query)
+            self._query_service.execute_non_processing(query, silent=True)
+            self._admin_status_cache.clear()
             logger.info(f"Impersonated user {user} for current connection")
             return True
         except Exception as e:
+            error_msg = str(e)
+            # Handle error 916: cannot access database after impersonation attempt
+            if "is not able to access the database" in error_msg:
+                logger.debug(
+                    f"Switching to master before impersonating '{user}' (current DB inaccessible)"
+                )
+                try:
+                    self._query_service.execute_non_processing(
+                        "USE master;", silent=True
+                    )
+                    self._query_service.execute_non_processing(query, silent=True)
+                    self._admin_status_cache.clear()
+                    logger.info(
+                        f"Impersonated user {user} for current connection (via master)"
+                    )
+                    return True
+                except Exception as retry_ex:
+                    logger.error(f"Failed to impersonate user {user}: {retry_ex}")
+                    return False
             logger.error(f"Failed to impersonate user {user}: {e}")
             return False
 
     def revert_impersonation(self) -> bool:
         """
         Revert any active impersonation and restore the original login.
+        For direct connections: issues a REVERT command.
+        For linked servers: pops the last login from the impersonation arrays.
 
         Returns:
             True if revert was successful; otherwise False
         """
+        # For linked servers, pop from the impersonation chain (like C#'s PopLinkedImpersonation)
+        if not self._query_service.linked_servers.is_empty:
+            self._pop_linked_impersonation()
+            self._admin_status_cache.clear()
+            return True
+
         query = "REVERT;"
 
         try:
             self._query_service.execute_non_processing(query)
+            self._admin_status_cache.clear()
             logger.info("Reverted impersonation, restored original login.")
             return True
         except Exception as e:
             logger.error(f"Failed to revert impersonation: {e}")
             return False
 
+    def _push_linked_impersonation(self, login: str) -> None:
+        """
+        Pushes a login onto the linked server impersonation chain (last server in the chain).
+        This modifies the LinkedServers model so that subsequent queries include EXECUTE AS.
+        """
+        chain = self._query_service.linked_servers.server_chain
+        if not chain:
+            return
+        last_server = chain[-1]
+        last_server.impersonation_users = list(last_server.impersonation_users) + [
+            login
+        ]
+        self._query_service.linked_servers._recompute_chain()
+        logger.debug(
+            f"Linked impersonation chain: {' -> '.join(last_server.impersonation_users)}"
+        )
+
+    def _pop_linked_impersonation(self) -> None:
+        """
+        Pops the last login from the linked server impersonation chain (last server in the chain).
+        """
+        chain = self._query_service.linked_servers.server_chain
+        if not chain:
+            return
+        last_server = chain[-1]
+        users = list(last_server.impersonation_users)
+        if users:
+            users.pop()
+        last_server.impersonation_users = users
+        self._query_service.linked_servers._recompute_chain()
+        logger.debug(f"Linked impersonation reverted to: {users if users else 'none'}")
+
     def clear_admin_cache(self) -> None:
         """Clear the admin status cache for all servers."""
         self._admin_status_cache.clear()
         logger.debug("Admin status cache cleared")
+
+    def clear_caches(self) -> None:
+        """
+        Clear all cached admin, domain user, and permission status.
+        Call this when the execution context changes (e.g., after modifying the linked server chain).
+        """
+        self._admin_status_cache.clear()
+        self._is_domain_user_cache.clear()
+        self._permission_cache.clear()
+        logger.debug("All user service caches cleared")
 
     def clear_admin_cache_for_server(self, server: str) -> None:
         """

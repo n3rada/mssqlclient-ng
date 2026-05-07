@@ -15,7 +15,7 @@ from ...utils import common
 
 
 @ActionFactory.register(
-    "domsid", "Retrieve the domain SID using SUSER_SID and DEFAULT_DOMAIN"
+    "ad-domain", "Retrieve the domain SID using SUSER_SID and DEFAULT_DOMAIN"
 )
 class DomainSid(BaseAction):
     """

@@ -125,7 +125,7 @@ class AuthenticationService:
                 return False
 
             logger.success(f"Successfully authenticated to {self.server.hostname}")
-            logger.info(f"Database: {self._database}")
+            logger.info(f"Database: {self._database or 'default'}")
 
             # Update server version from connection
             if hasattr(self.mssql_instance, "mssql_version"):

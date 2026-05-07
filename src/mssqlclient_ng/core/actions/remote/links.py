@@ -13,7 +13,9 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("links", "Enumerate linked SQL servers and configurations")
+@ActionFactory.register(
+    "links", "Enumerate linked SQL servers and configurations", aliases=["linkedservers"]
+)
 class Links(BaseAction):
     """
     Enumerate linked SQL servers and their configurations.
@@ -58,8 +60,10 @@ class Links(BaseAction):
                 return None
 
             logger.success(f"Found {len(result_rows)} linked server(s)")
-            
+
             print(OutputFormatter.convert_list_of_dicts(result_rows))
+
+            logger.info("Use !link <server> to connect through a linked server")
 
             return result_rows
 

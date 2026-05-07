@@ -43,7 +43,7 @@ class LinkedServers:
                     hostname=server.hostname,
                     port=server.port,
                     database=server.database,
-                    impersonation_user=server.impersonation_user,
+                    impersonation_users=list(server.impersonation_users),
                 )
                 for server in chain_input.server_chain
             ]
@@ -58,10 +58,38 @@ class LinkedServers:
         # Remote Procedure Call (RPC) usage flag
         self.use_remote_procedure_call: bool = True
 
+        # Per-server RPC tracking: set of server names known to lack RPC
+        self._non_rpc_servers: set = set()
+
     @property
     def is_empty(self) -> bool:
         """Returns True if the linked server chain is empty."""
         return len(self.server_chain) == 0
+
+    @property
+    def has_non_rpc_servers(self) -> bool:
+        """Returns True if any servers in the chain are known to lack RPC."""
+        return len(self._non_rpc_servers) > 0
+
+    @property
+    def all_servers_non_rpc(self) -> bool:
+        """Returns True if ALL servers in the chain lack RPC."""
+        if not self._non_rpc_servers or not self._server_names:
+            return False
+        return all(
+            name.lower() in {s.lower() for s in self._non_rpc_servers}
+            for name in self._server_names
+        )
+
+    def mark_server_as_non_rpc(self, server_name: str) -> None:
+        """
+        Mark a specific server as not supporting RPC.
+
+        Args:
+            server_name: The hostname of the server that doesn't support RPC
+        """
+        self._non_rpc_servers.add(server_name.lower())
+        logger.debug(f"Marked server '{server_name}' as non-RPC")
 
     @property
     def server_names(self) -> List[str]:
@@ -75,10 +103,9 @@ class LinkedServers:
             server.hostname for server in self.server_chain
         ]
 
-        # Extract impersonation users
-        self._computable_impersonation_names: List[str] = [
-            server.impersonation_user if server.impersonation_user else ""
-            for server in self.server_chain
+        # Extract impersonation users (List[List[str]] for cascading EXECUTE AS support)
+        self._computable_impersonation_names: List[List[str]] = [
+            list(server.impersonation_users) for server in self.server_chain
         ]
 
         # Extract database contexts
@@ -92,14 +119,17 @@ class LinkedServers:
         ]
 
     def add_to_chain(
-        self, new_server: str, impersonation_user: Optional[str] = None, database: Optional[str] = None
+        self,
+        new_server: str,
+        impersonation_users: Optional[List[str]] = None,
+        database: Optional[str] = None,
     ) -> None:
         """
         Add a new server to the linked server chain.
 
         Args:
             new_server: The hostname of the new linked server
-            impersonation_user: Optional impersonation user
+            impersonation_users: Optional list of cascading impersonation users
             database: Optional database context
 
         Raises:
@@ -110,11 +140,24 @@ class LinkedServers:
         if not new_server or not new_server.strip():
             raise ValueError("Server name cannot be null or empty.")
 
+        users = impersonation_users if impersonation_users is not None else []
         self.server_chain.append(
-            Server(hostname=new_server, impersonation_user=impersonation_user, database=database)
+            Server(hostname=new_server, impersonation_users=users, database=database)
         )
 
         self._recompute_chain()
+
+    def remove_last_from_chain(self) -> None:
+        """
+        Remove the last server from the linked server chain.
+        Used during recursive exploration to pop the current server after processing.
+        """
+        if self.server_chain:
+            removed = self.server_chain.pop()
+            logger.debug(
+                f"Removed server {removed.hostname} from the linked server chain."
+            )
+            self._recompute_chain()
 
     def clear(self) -> None:
         """
@@ -140,10 +183,12 @@ class LinkedServers:
             part = bracket_identifier(server.hostname)
 
             # Add user@database or just /user or just @database
-            if server.impersonation_user and server.database:
-                part += f"/{server.impersonation_user}@{server.database}"
-            elif server.impersonation_user:
-                part += f"/{server.impersonation_user}"
+            if server.impersonation_users and server.database:
+                part += (
+                    "/" + "/".join(server.impersonation_users) + "@" + server.database
+                )
+            elif server.impersonation_users:
+                part += "/" + "/".join(server.impersonation_users)
             elif server.database:
                 part += f"@{server.database}"
 
@@ -165,10 +210,10 @@ class LinkedServers:
         """
         Parse a semicolon-separated list of servers into a list of Server objects.
         Handles bracketed SQL Server identifiers correctly.
-        
+
         Server names with colons need brackets: [SERVER:001]
         Linked servers don't have ports, so colons in brackets are part of the name.
-        
+
         Syntax:
         - Colon (:) = port separator (main host only: host:port)
         - Forward slash (/) = impersonation ("execute as user")
@@ -188,21 +233,21 @@ class LinkedServers:
 
         servers = []
         current = chain_input.strip()
-        
+
         while current:
             # Find the next semicolon, accounting for bracketed names
             in_brackets = False
             semicolon_pos = -1
-            
+
             for i, char in enumerate(current):
-                if char == '[':
+                if char == "[":
                     in_brackets = True
-                elif char == ']':
+                elif char == "]":
                     in_brackets = False
-                elif char == ';' and not in_brackets:
+                elif char == ";" and not in_brackets:
                     semicolon_pos = i
                     break
-            
+
             if semicolon_pos == -1:
                 # Last server in chain
                 servers.append(Server.parse_server(current.strip()))
@@ -212,8 +257,8 @@ class LinkedServers:
                 server_string = current[:semicolon_pos].strip()
                 if server_string:
                     servers.append(Server.parse_server(server_string))
-                current = current[semicolon_pos + 1:].strip()
-        
+                current = current[semicolon_pos + 1 :].strip()
+
         return servers
 
     def build_select_openquery_chain(self, query: str) -> str:
@@ -242,7 +287,7 @@ class LinkedServers:
         linked_servers: List[str],
         query: str,
         ticks_counter: int = 0,
-        linked_impersonation: Optional[List[str]] = None,
+        linked_impersonation: Optional[List[List[str]]] = None,
         linked_databases: Optional[List[str]] = None,
     ) -> str:
         """
@@ -268,10 +313,10 @@ class LinkedServers:
 
         current_query = query
 
-        # Prepare the impersonation login, if any
-        login = None
+        # Prepare the impersonation login list, if any
+        login_list: List[str] = []
         if linked_impersonation and len(linked_impersonation) > 0:
-            login = linked_impersonation[0]
+            login_list = linked_impersonation[0]
             linked_impersonation = linked_impersonation[1:]
 
         # Prepare the database context, if any
@@ -286,7 +331,7 @@ class LinkedServers:
         if len(linked_servers) == 1:
             base_query = []
 
-            if login:
+            for login in login_list:
                 base_query.append(f"EXECUTE AS LOGIN = '{login}';")
 
             if database:
@@ -306,8 +351,8 @@ class LinkedServers:
 
         # We are now inside the query, on the linked server
 
-        # Add impersonation if applicable
-        if login:
+        # Add impersonation if applicable (cascading EXECUTE AS for each user)
+        for login in login_list:
             impersonation_ticks = "'" * (1 << (ticks_counter + 1))
             impersonation_query = f"EXECUTE AS LOGIN = '{login}';"
             result.append(impersonation_query.replace("'", impersonation_ticks))
@@ -358,7 +403,7 @@ class LinkedServers:
     def _build_remote_procedure_call_recursive(
         linked_servers: List[str],
         query: str,
-        linked_impersonation: Optional[List[str]] = None,
+        linked_impersonation: Optional[List[List[str]]] = None,
         linked_databases: Optional[List[str]] = None,
     ) -> str:
         """
@@ -388,10 +433,10 @@ class LinkedServers:
             server = linked_servers[i]
             query_builder = []
 
-            # Add impersonation if applicable
+            # Add impersonation if applicable (cascading EXECUTE AS)
             if linked_impersonation and len(linked_impersonation) > 0:
-                login = linked_impersonation[i - 1]
-                if login:
+                login_list = linked_impersonation[i - 1]
+                for login in login_list:
                     query_builder.append(f"EXECUTE AS LOGIN = '{login}'; ")
 
             if linked_databases and len(linked_databases) > 0:
@@ -408,6 +453,77 @@ class LinkedServers:
 
         return current_query
 
+    def build_hybrid_chain(self, query: str) -> str:
+        """
+        Construct a hybrid chain mixing EXEC AT (RPC) and OPENQUERY per-hop.
+        Each hop uses RPC unless that server has been marked as non-RPC.
+
+        Iterates from innermost server to outermost (like the RPC builder) but
+        decides per-hop whether to use EXEC AT or OPENQUERY.
+
+        Args:
+            query: The SQL query to execute at the final server
+
+        Returns:
+            Nested hybrid statement string
+        """
+        linked_servers = self._computable_server_names
+        linked_impersonation = self._computable_impersonation_names
+        linked_databases = self._computable_database_names
+
+        current_query = query
+
+        # Start from the end of the array and skip the first element ("0")
+        for i in range(len(linked_servers) - 1, 0, -1):
+            server = linked_servers[i]
+            is_rpc = server.lower() not in {s.lower() for s in self._non_rpc_servers}
+
+            if is_rpc:
+                # EXEC AT path (same as full RPC builder per-hop)
+                query_builder = []
+
+                if linked_impersonation and i - 1 < len(linked_impersonation):
+                    login_list = linked_impersonation[i - 1]
+                    for login in login_list:
+                        query_builder.append(f"EXECUTE AS LOGIN = '{login}'; ")
+
+                if linked_databases and i - 1 < len(linked_databases):
+                    database = linked_databases[i - 1]
+                    if database and database != "master":
+                        query_builder.append(f"USE [{database}]; ")
+
+                query_builder.append(current_query.rstrip(";"))
+                query_builder.append(";")
+
+                escaped_query = "".join(query_builder).replace("'", "''")
+                current_query = f"EXEC ('{escaped_query}') AT [{server}]"
+            else:
+                # OPENQUERY path — impersonation not supported on OPENQUERY hops
+                if linked_impersonation and i - 1 < len(linked_impersonation):
+                    login_list = linked_impersonation[i - 1]
+                    if login_list:
+                        logger.warning(
+                            f"Impersonation skipped on OPENQUERY hop [{server}] "
+                            f"(users: {login_list})"
+                        )
+
+                query_builder = []
+
+                if linked_databases and i - 1 < len(linked_databases):
+                    database = linked_databases[i - 1]
+                    if database and database != "master":
+                        query_builder.append(f"USE [{database}]; ")
+
+                query_builder.append(current_query.rstrip(";"))
+                query_builder.append(";")
+
+                escaped_inner = "".join(query_builder).replace("'", "''")
+                current_query = (
+                    f"SELECT * FROM OPENQUERY([{server}], '{escaped_inner}')"
+                )
+
+        return current_query
+
     def copy(self) -> "LinkedServers":
         """
         Create a deep copy of the LinkedServers instance.
@@ -418,7 +534,7 @@ class LinkedServers:
         copied_servers = [
             Server(
                 hostname=server.hostname,
-                impersonation_user=server.impersonation_user,
+                impersonation_users=list(server.impersonation_users),
                 port=server.port,
                 database=server.database,
             )
@@ -427,6 +543,7 @@ class LinkedServers:
 
         new_instance = LinkedServers(copied_servers)
         new_instance.use_remote_procedure_call = self.use_remote_procedure_call
+        new_instance._non_rpc_servers = set(self._non_rpc_servers)
         return new_instance
 
     def __str__(self) -> str:
