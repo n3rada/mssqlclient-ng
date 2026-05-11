@@ -266,7 +266,9 @@ class Terminal:
         )
 
         logger.info(
-            f"Type SQL directly or use '{prefix}<action> [args]' to run an action. "
+            f"Type SQL directly or use '{prefix}<action> [args]' to run an action."
+        )
+        logger.info(
             f"'{prefix}help' lists all actions, '{prefix}<action> --help' shows usage."
         )
 
