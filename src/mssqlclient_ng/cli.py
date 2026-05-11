@@ -198,7 +198,7 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         required=False,
         default=False,
-        help="Enable persistent command history (stored in temporary folder).",
+        help="Enable persistent command history (stored in $XDG_STATE_HOME/mssqlclient_ng/).",
     )
 
     advanced_group.add_argument(
