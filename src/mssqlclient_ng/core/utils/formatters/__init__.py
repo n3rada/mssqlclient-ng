@@ -7,12 +7,14 @@ from typing import Any, Dict, List, Optional, Sequence
 from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
+from .grid import GridFormatter
 from .formatter import OutputFormatter
 
 __all__ = [
     "IOutputFormatter",
     "MarkdownFormatter",
     "CsvFormatter",
+    "GridFormatter",
     "OutputFormatter",
     "normalize_value",
     "dict_to_markdown_table",

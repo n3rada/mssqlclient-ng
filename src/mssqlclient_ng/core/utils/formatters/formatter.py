@@ -10,6 +10,7 @@ from loguru import logger
 from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
+from .grid import GridFormatter
 
 
 class OutputFormatter:
@@ -44,6 +45,8 @@ class OutputFormatter:
             cls._current_formatter = MarkdownFormatter()
         elif format_lower == "csv":
             cls._current_formatter = CsvFormatter()
+        elif format_lower in ("grid", "box", "table"):
+            cls._current_formatter = GridFormatter()
         else:
             available = ", ".join(cls.get_available_formats())
             raise ValueError(
@@ -55,7 +58,7 @@ class OutputFormatter:
     @classmethod
     def get_available_formats(cls) -> List[str]:
         """Gets a list of available format names."""
-        return ["markdown", "csv"]
+        return ["markdown", "csv", "grid"]
 
     @classmethod
     def convert_dict(

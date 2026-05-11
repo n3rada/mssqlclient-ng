@@ -176,8 +176,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--output-format",
         type=str,
         default="markdown",
-        choices=["markdown", "md", "csv"],
-        help="Output format for data display (default: markdown). Options: markdown/md, csv.",
+        choices=["markdown", "md", "csv", "grid", "box", "table"],
+        help="Output format for data display (default: markdown). Options: markdown/md, csv, grid/box/table.",
     )
 
     advanced_group = parser.add_argument_group(

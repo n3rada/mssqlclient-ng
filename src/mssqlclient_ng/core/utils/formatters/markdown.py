@@ -46,7 +46,8 @@ class MarkdownFormatter(IOutputFormatter):
             len(column_one_header), max((len(k) for k in data.keys()), default=0)
         )
         col2_width = max(
-            len(column_two_header), max((len(str(v)) for v in data.values()), default=0)
+            len(column_two_header),
+            max((len(str(v)) for v in data.values()), default=0),
         )
 
         # Header
