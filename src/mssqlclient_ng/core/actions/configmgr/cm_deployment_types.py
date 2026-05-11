@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-dts", "Enumerate ConfigMgr deployment types")
+@ActionFactory.register(
+    "cm-dts",
+    "Enumerate ConfigMgr deployment types",
+    aliases=["cm-deploymenttypes"],
+)
 class CMDeploymentTypes(CMBaseAction):
     """
     Display an overview of all ConfigMgr deployment types with searchable technical details.

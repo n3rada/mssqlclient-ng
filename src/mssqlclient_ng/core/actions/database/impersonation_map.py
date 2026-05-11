@@ -33,7 +33,7 @@ def _is_system_account(login: str) -> bool:
 @ActionFactory.register(
     "impersonation-map",
     "Recursively map all transitive impersonation chains reachable from the current login",
-    aliases=["impmap", "impchains"],
+    aliases=["impersonate-chains", "impmap", "impchains"],
 )
 class ImpersonationMap(BaseAction):
     """

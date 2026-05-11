@@ -30,7 +30,9 @@ class ExternalTables(BaseAction):
     With SELECT permission you can query data from those external systems.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         pass
 
     def execute(
@@ -84,15 +86,48 @@ class ExternalTables(BaseAction):
             ff_id = row.get("file_format_id")
             ff_name = ff_dict.get(int(ff_id), "") if ff_id is not None else ""
 
+            # Resolve schema_id to schema name
+            schema_id = row.get("schema_id")
+            schema_name = "dbo"
+            if schema_id is not None:
+                try:
+                    schema_result = database_context.query_service.execute_table(
+                        f"SELECT SCHEMA_NAME({int(schema_id)}) AS s;"
+                    )
+                    if schema_result and schema_result[0].get("s"):
+                        schema_name = schema_result[0]["s"]
+                except Exception:
+                    pass
+
+            # Reject type mapping
+            reject_type_raw = row.get("reject_type")
+            reject_type = ""
+            if reject_type_raw is not None:
+                try:
+                    rt = int(reject_type_raw)
+                    reject_type = {0: "VALUE", 1: "PERCENTAGE"}.get(rt, str(rt))
+                except (ValueError, TypeError):
+                    reject_type = str(reject_type_raw)
+
+            reject_value = str(row.get("reject_value", "") or "")
+            if reject_type_raw is not None and int(reject_type_raw) == 1:
+                sample = row.get("reject_sample_value")
+                if sample is not None:
+                    reject_value += f" (sample: {sample})"
+
             display.append(
                 {
+                    "Schema": schema_name,
                     "Table Name": row.get("name", ""),
-                    "Schema": row.get("schema_id", ""),
                     "Data Source": ds_info.get("name", ""),
-                    "Location": ds_info.get("location", ""),
+                    "Data Source Location": ds_info.get("location", ""),
                     "File Format": ff_name,
-                    "Distribution": row.get("distribution_policy_desc", ""),
-                    "Created": row.get("create_date", ""),
+                    "Table Location": row.get("location", ""),
+                    "Reject Type": reject_type,
+                    "Reject Value": reject_value,
+                    "Distribution": row.get(
+                        "distribution_desc", row.get("distribution_policy_desc", "")
+                    ),
                 }
             )
 

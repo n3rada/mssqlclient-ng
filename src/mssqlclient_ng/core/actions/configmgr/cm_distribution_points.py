@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-dps", "Enumerate ConfigMgr distribution points")
+@ActionFactory.register(
+    "cm-dps",
+    "Enumerate ConfigMgr distribution points",
+    aliases=["cm-distribution-points"],
+)
 class CMDistributionPoints(CMBaseAction):
     """
     Enumerate ConfigMgr distribution points with content library paths and network shares.

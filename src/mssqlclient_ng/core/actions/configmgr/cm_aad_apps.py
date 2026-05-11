@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-aadapps", "Enumerate Azure AD applications in ConfigMgr")
+@ActionFactory.register(
+    "cm-aadapps",
+    "Enumerate Azure AD applications in ConfigMgr",
+    aliases=["cm-aad-apps", "cm-aad"],
+)
 class CMAadApps(CMBaseAction):
     """
     Enumerate Azure AD application registrations stored in ConfigMgr for CMG and co-management.

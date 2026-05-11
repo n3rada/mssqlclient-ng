@@ -11,26 +11,34 @@ from ..base import BaseAction
 from ...utils.formatters import OutputFormatter
 
 
-# We do not register this action automatically to avoid it appearing in help
+# Not registered via ActionFactory - Query is invoked directly by the shell
+# when no action prefix is matched (any raw SQL input).
 class Query(BaseAction):
     """
     Execute a T-SQL query against the SQL Server.
 
     Supports both queries that return result sets (SELECT) and
     non-query commands (INSERT, UPDATE, DELETE, etc.).
-    """
 
+    Usage:
+        query SELECT @@SERVERNAME
+        query --all SELECT DB_NAME()
+        sql SELECT name FROM sys.databases
+    """
 
     def __init__(self):
         super().__init__()
         self._query: Optional[str] = None
+        self._execute_all: bool = False
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate that a query is provided.
 
         Args:
-            additional_arguments: The SQL query to execute
+            additional_arguments: The SQL query to execute, optionally prefixed with --all
 
         Raises:
             ValueError: If no query is provided
@@ -40,7 +48,16 @@ class Query(BaseAction):
                 "Query action requires a valid SQL query as an additional argument."
             )
 
-        self._query = additional_arguments.strip()
+        args = additional_arguments.strip()
+
+        # Check for --all flag
+        if args.startswith("--all ") or args.startswith("--all\t"):
+            self._execute_all = True
+            args = args[6:].strip()
+        elif args == "--all":
+            raise ValueError("--all requires a SQL query to execute.")
+
+        self._query = args
 
     def execute(self, database_context=None) -> Optional[List[Dict[str, Any]]]:
         """
@@ -60,6 +77,9 @@ class Query(BaseAction):
         execution_server = query_service.execution_server
 
         logger.info(f"Executing T-SQL query against {execution_server}: {self._query}")
+
+        if self._execute_all:
+            return self._execute_across_all_databases(database_context)
 
         try:
             # Detect if it's a non-query command
@@ -156,6 +176,64 @@ class Query(BaseAction):
                 return True
 
         return False
+
+    def _execute_across_all_databases(
+        self, database_context
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Execute the query across all accessible databases.
+
+        Args:
+            database_context: The database context
+
+        Returns:
+            Combined result rows from all databases
+        """
+        logger.info(
+            f"Executing across ALL accessible databases on "
+            f"{database_context.query_service.execution_server}"
+        )
+
+        # Get list of accessible databases
+        databases = database_context.query_service.execute_table(
+            "SELECT name FROM master.sys.databases WHERE HAS_DBACCESS(name) = 1 AND state = 0 ORDER BY name"
+        )
+
+        if not databases:
+            logger.warning("No accessible databases found")
+            return None
+
+        db_names = [db["name"] for db in databases]
+        logger.info(
+            f"Found {len(db_names)} accessible database(s): {', '.join(db_names)}"
+        )
+
+        combined_results = []
+        total_rows = 0
+
+        for db_name in db_names:
+            logger.info(f"Querying: {db_name}")
+            try:
+                db_query = f"USE [{db_name}]; {self._query}"
+                db_results = database_context.query_service.execute_table(db_query)
+
+                if db_results:
+                    for row in db_results:
+                        combined_row = {"Database": db_name}
+                        combined_row.update(row)
+                        combined_results.append(combined_row)
+                    total_rows += len(db_results)
+            except Exception as ex:
+                logger.warning(f"Error on {db_name}: {ex}")
+                continue
+
+        logger.success(f"Total rows from all databases: {total_rows}")
+
+        if combined_results:
+            print()
+            print(OutputFormatter.convert_list_of_dicts(combined_results))
+
+        return combined_results
 
     def get_arguments(self) -> List[str]:
         """

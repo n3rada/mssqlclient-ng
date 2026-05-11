@@ -31,12 +31,18 @@ class Hashes(BaseAction):
     Not available on Azure SQL Database.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         pass
 
     def execute(
         self, database_context: DatabaseContext
     ) -> Optional[List[Dict[str, Any]]]:
+        if database_context.query_service.is_azure_sql:
+            logger.warning("Azure SQL Database does not expose password hashes")
+            return None
+
         logger.info("Extracting SQL Server login password hashes")
 
         query = """

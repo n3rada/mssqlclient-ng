@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-dt", "Display detailed info about a specific deployment type")
+@ActionFactory.register(
+    "cm-dt",
+    "Display detailed info about a specific deployment type",
+    aliases=["cm-deploymenttype"],
+)
 class CMDeploymentType(CMBaseAction):
     """
     Display detailed information about a specific ConfigMgr deployment type (by CI_ID).

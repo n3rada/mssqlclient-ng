@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-apps", "Enumerate ConfigMgr applications with deployment types")
+@ActionFactory.register(
+    "cm-apps",
+    "Enumerate ConfigMgr applications with deployment types",
+    aliases=["cm-applications"],
+)
 class CMApplications(CMBaseAction):
     """
     Enumerate ConfigMgr applications with deployment types, installation commands, and detection methods.

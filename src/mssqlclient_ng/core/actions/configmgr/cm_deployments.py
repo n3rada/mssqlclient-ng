@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-deployments", "Enumerate ConfigMgr deployments")
+@ActionFactory.register(
+    "cm-deployments",
+    "Enumerate ConfigMgr deployments",
+    aliases=["cm-assignments"],
+)
 class CMDeployments(CMBaseAction):
     """
     Enumerate ConfigMgr deployments showing what content is being pushed to which collections.

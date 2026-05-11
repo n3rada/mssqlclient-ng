@@ -26,8 +26,9 @@ class Roles(BaseAction):
     For server-level logins and instance-wide privileges, use the 'users' action instead.
     """
 
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validates the arguments for the roles action.
 
@@ -77,7 +78,8 @@ class Roles(BaseAction):
             server_members_query = """
                 SELECT
                     r.name AS role_name,
-                    m.name AS member_name
+                    m.name AS member_name,
+                    m.type_desc AS member_type
                 FROM sys.server_principals r
                 INNER JOIN sys.server_role_members srm ON r.principal_id = srm.role_principal_id
                 INNER JOIN sys.server_principals m ON srm.member_principal_id = m.principal_id
@@ -94,10 +96,11 @@ class Roles(BaseAction):
             for member_row in server_members:
                 role_name = member_row["role_name"]
                 member_name = member_row["member_name"]
+                member_type = member_row.get("member_type", "")
 
                 if role_name not in server_members_dict:
                     server_members_dict[role_name] = []
-                server_members_dict[role_name].append(member_name)
+                server_members_dict[role_name].append(f"{member_name} ({member_type})")
 
             # Map members to server roles
             for role_row in all_server_roles:
@@ -108,6 +111,14 @@ class Roles(BaseAction):
                 else:
                     role_row["Members"] = ""
 
+            # Get current user's server roles for IsMember annotation
+            fixed_user_roles, custom_user_roles = (
+                database_context.user_service.get_server_roles()
+            )
+            user_server_roles = set(
+                r.lower() for r in fixed_user_roles + custom_user_roles
+            )
+
             # Separate fixed and custom server roles
             fixed_server_roles = [
                 role for role in all_server_roles if role["IsFixedRole"]
@@ -116,13 +127,13 @@ class Roles(BaseAction):
                 role for role in all_server_roles if not role["IsFixedRole"]
             ]
 
-            # Display Fixed Server Roles
+            # Display Fixed Server Roles (with IsMember)
             if fixed_server_roles:
                 logger.success(f"Fixed Server Roles ({len(fixed_server_roles)} roles)")
-                # Filter to only show relevant columns
                 filtered_fixed = [
                     {
                         "RoleName": role["RoleName"],
+                        "IsMember": role["RoleName"].lower() in user_server_roles,
                         "RoleType": role["RoleType"],
                         "CreateDate": role["CreateDate"],
                         "ModifyDate": role["ModifyDate"],
@@ -132,15 +143,15 @@ class Roles(BaseAction):
                 ]
                 print(OutputFormatter.convert_list_of_dicts(filtered_fixed))
 
-            # Display Custom Server Roles
+            # Display Custom Server Roles (with IsMember)
             if custom_server_roles:
                 logger.success(
                     f"Custom Server Roles ({len(custom_server_roles)} roles)"
                 )
-                # Filter to only show relevant columns
                 filtered_custom = [
                     {
                         "RoleName": role["RoleName"],
+                        "IsMember": role["RoleName"].lower() in user_server_roles,
                         "RoleType": role["RoleType"],
                         "CreateDate": role["CreateDate"],
                         "ModifyDate": role["ModifyDate"],
@@ -175,26 +186,38 @@ class Roles(BaseAction):
         all_members_query = """
             SELECT
                 r.name AS role_name,
-                m.name AS member_name
+                m.name AS member_name,
+                m.type_desc AS member_type,
+                sp.name AS mapped_login
             FROM sys.database_principals r
             INNER JOIN sys.database_role_members rm ON r.principal_id = rm.role_principal_id
             INNER JOIN sys.database_principals m ON rm.member_principal_id = m.principal_id
+            LEFT JOIN sys.server_principals sp ON m.sid = sp.sid
             WHERE r.type = 'R'
             ORDER BY r.name, m.name;
         """
 
         all_members = database_context.query_service.execute_table(all_members_query)
 
-        # Build a dictionary for O(1) lookup: key = role_name, value = list of member names
+        # Build a dictionary for O(1) lookup: key = role_name, value = list of member descriptions
         members_dict = {}
 
         for member_row in all_members:
             role_name = member_row["role_name"]
             member_name = member_row["member_name"]
+            member_type = member_row.get("member_type", "")
+            mapped_login = member_row.get("mapped_login")
+
+            if mapped_login and mapped_login != member_name:
+                description = f"{member_name} ({member_type} -> {mapped_login})"
+            elif mapped_login:
+                description = f"{member_name} ({member_type})"
+            else:
+                description = f"{member_name} ({member_type}, no login)"
 
             if role_name not in members_dict:
                 members_dict[role_name] = []
-            members_dict[role_name].append(member_name)
+            members_dict[role_name].append(description)
 
         # Map members to roles
         for role_row in all_roles:

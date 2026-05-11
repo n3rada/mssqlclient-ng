@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-deployment", "Display details of a specific ConfigMgr deployment")
+@ActionFactory.register(
+    "cm-deployment",
+    "Display details of a specific ConfigMgr deployment",
+    aliases=["cm-assignment"],
+)
 class CMDeployment(CMBaseAction):
     """
     Display detailed information about a specific ConfigMgr deployment/assignment.

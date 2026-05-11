@@ -17,7 +17,7 @@ from ...services.database import DatabaseContext
     "Display directory tree structure in Linux tree-style format",
 )
 class Tree(BaseAction):
-    """
+    r"""
     Display directory tree structure using xp_dirtree.
 
     This action uses the undocumented but widely-used xp_dirtree extended procedure
@@ -30,15 +30,14 @@ class Tree(BaseAction):
     - │   for vertical lines continuing to subdirectories
     - Indentation to show hierarchy levels
 
-    Use --unicode:false or -u:false flag to fall back to ASCII characters (|, \\, |) for legacy terminals
-    
+    Use --unicode:false or -u:false flag to fall back to ASCII characters (|, \, |) for legacy terminals
+
     Note: Paths containing spaces must be enclosed in quotes.
     Examples:
         tree "C:\Program Files" 3
         tree "C:\My Documents" --depth 5
         tree C:\Windows 2 --files false
     """
-
 
     def __init__(self):
         super().__init__()
@@ -47,7 +46,9 @@ class Tree(BaseAction):
         self._show_files: bool = True
         self._use_unicode: bool = True
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate arguments for the tree action.
 
@@ -59,8 +60,7 @@ class Tree(BaseAction):
             ValueError: If the path is empty or depth is invalid
         """
         named_args, positional_args = self._parse_action_arguments(
-            additional_arguments=additional_arguments,
-            argument_list=argument_list
+            additional_arguments=additional_arguments, argument_list=argument_list
         )
 
         # Get path from positional argument or use current directory
@@ -85,7 +85,7 @@ class Tree(BaseAction):
         except ValueError:
             logger.warning(
                 f"Invalid depth value '{depth_str}', using default depth of 3. "
-                f"If your path contains spaces, enclose it in quotes (e.g., \"C:\\Program Files\")"
+                f'If your path contains spaces, enclose it in quotes (e.g., "C:\\Program Files")'
             )
             self._depth = 3
 

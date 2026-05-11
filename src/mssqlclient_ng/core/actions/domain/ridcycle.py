@@ -13,8 +13,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-
-DEFAULT_MAX_RID = 5000
+DEFAULT_MAX_RID = 10000
 BATCH_SIZE = 1000
 
 
@@ -29,7 +28,6 @@ class RidCycle(BaseAction):
     Enumerates domain objects (users and groups), not group membership.
     """
 
-
     def __init__(self):
         super().__init__()
         self._max_rid: int = DEFAULT_MAX_RID
@@ -37,7 +35,9 @@ class RidCycle(BaseAction):
         self._python_output: bool = False
         self._table_output: bool = False
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate arguments for RID cycling.
 

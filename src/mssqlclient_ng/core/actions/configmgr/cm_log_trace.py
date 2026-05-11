@@ -14,7 +14,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-trace", "Trace a deployment type GUID to assignments and collections")
+@ActionFactory.register(
+    "cm-trace",
+    "Trace a deployment type GUID to assignments and collections",
+    aliases=["cm-find-assignments", "cm-log-trace"],
+)
 class CMLogTrace(CMBaseAction):
     """
     Trace a deployment type GUID from ConfigMgr client logs back to its assignments,

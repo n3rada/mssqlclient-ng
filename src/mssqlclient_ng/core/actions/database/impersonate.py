@@ -16,7 +16,7 @@ from ...utils.formatters import OutputFormatter
 @ActionFactory.register(
     "impersonate",
     "Check which SQL logins can be impersonated by current user",
-    aliases=["imp"],
+    aliases=["impersonation", "imp"],
 )
 class Impersonation(BaseAction):
     """
@@ -55,14 +55,19 @@ class Impersonation(BaseAction):
         logger.info("Starting impersonation check")
 
         try:
-            # Query to obtain all SQL logins and Windows principals
+            # Query to obtain all SQL logins and Windows principals with impersonation check
             query = """
-            SELECT name, type_desc, create_date, modify_date
-            FROM sys.server_principals
-            WHERE type_desc IN ('SQL_LOGIN', 'WINDOWS_LOGIN')
-              AND name NOT LIKE '##%'
-              AND name != SYSTEM_USER
-            ORDER BY create_date DESC;
+            SELECT
+                sp.name,
+                sp.type_desc,
+                sp.create_date,
+                sp.modify_date,
+                HAS_PERMS_BY_NAME(sp.name, 'LOGIN', 'IMPERSONATE') AS can_impersonate
+            FROM sys.server_principals sp
+            WHERE sp.type_desc IN ('SQL_LOGIN', 'WINDOWS_LOGIN', 'WINDOWS_GROUP')
+              AND sp.name NOT LIKE '##%'
+              AND sp.name != SYSTEM_USER
+            ORDER BY can_impersonate DESC, sp.create_date DESC;
             """
 
             result_rows = database_context.query_service.execute_table(query)
@@ -78,11 +83,10 @@ class Impersonation(BaseAction):
                 logger.success(
                     "Current user is 'sysadmin'; it can impersonate any login"
                 )
-                # All logins can be impersonated by sysadmin
+                # Impersonation column is redundant when sysadmin
                 enriched_users = []
                 for user in result_rows:
                     enriched_user = {
-                        "Impersonation": "Yes",
                         "Login": user["name"],
                         "Type": user["type_desc"],
                         "Created Date": user["create_date"],
@@ -90,19 +94,14 @@ class Impersonation(BaseAction):
                     }
                     enriched_users.append(enriched_user)
             else:
-                logger.info("Checking impersonation permissions individually")
                 enriched_users = []
 
                 for user in result_rows:
-                    username = user["name"]
-
-                    can_impersonate = database_context.user_service.can_impersonate(
-                        username
-                    )
+                    can_impersonate = int(user.get("can_impersonate", 0)) == 1
 
                     enriched_user = {
                         "Impersonation": "Yes" if can_impersonate else "No",
-                        "Login": username,
+                        "Login": user["name"],
                         "Type": user["type_desc"],
                         "Created Date": user["create_date"],
                         "Modified Date": user["modify_date"],

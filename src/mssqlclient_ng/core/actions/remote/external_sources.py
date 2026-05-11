@@ -30,7 +30,9 @@ class ExternalSources(BaseAction):
     are designed for cloud storage integration and distributed architectures.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         pass
 
     def execute(
@@ -60,9 +62,10 @@ class ExternalSources(BaseAction):
                     "Name": row.get("name", ""),
                     "Type": row.get("type_desc", ""),
                     "Location": row.get("location", ""),
-                    "Database": row.get("database_name", ""),
+                    "Database Name": row.get("database_name", ""),
                     "Credential": cred_str,
                     "Connection Options": row.get("connection_options", ""),
+                    "Pushdown": row.get("pushdown", ""),
                 }
             )
 

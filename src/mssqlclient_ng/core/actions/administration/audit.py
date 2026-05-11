@@ -13,7 +13,11 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("audit", "Enumerate SQL Server audit configuration")
+@ActionFactory.register(
+    "audit",
+    "Enumerate SQL Server audit configuration",
+    aliases=["audits", "audit-status"],
+)
 class Audit(BaseAction):
     """
     Enumerate SQL Server audit objects and their event specifications.

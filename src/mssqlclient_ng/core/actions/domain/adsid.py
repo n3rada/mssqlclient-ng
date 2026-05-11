@@ -6,7 +6,6 @@ from typing import Optional, Dict
 # Third-party imports
 from loguru import logger
 
-
 # Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
@@ -25,8 +24,9 @@ class AdSid(BaseAction):
     Also extracts domain SID and RID if the user is a domain account.
     """
 
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate arguments (no arguments required).
 
@@ -76,11 +76,11 @@ class AdSid(BaseAction):
                 try:
                     # Remove '0x' prefix and convert to hex bytes for sid_bytes_to_string
                     hex_str = raw_sid_obj
-                    if hex_str.startswith('0x') or hex_str.startswith('0X'):
+                    if hex_str.startswith("0x") or hex_str.startswith("0X"):
                         hex_str = hex_str[2:]
 
                     # Convert to ASCII bytes format that sid_bytes_to_string expects
-                    hex_bytes = hex_str.encode('ascii')
+                    hex_bytes = hex_str.encode("ascii")
                     ad_sid_string = sid_bytes_to_string(hex_bytes)
                 except Exception as e:
                     logger.error(f"Failed to parse SID from hex string: {e}")
@@ -96,7 +96,9 @@ class AdSid(BaseAction):
                     logger.debug(f"Raw SID bytes (hex): {raw_sid_obj.hex()}")
                     return None
             else:
-                logger.error(f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}")
+                logger.error(
+                    f"Unexpected SID format from SUSER_SID() result: {type(raw_sid_obj)}"
+                )
                 return None
 
             if not ad_sid_string:
@@ -109,6 +111,15 @@ class AdSid(BaseAction):
                 "User SID": ad_sid_string,
             }
 
+            # Add hex SID
+            hex_sid = (
+                raw_sid_obj
+                if isinstance(raw_sid_obj, str) and raw_sid_obj.startswith("0x")
+                else None
+            )
+            if hex_sid:
+                result["User Hex SID"] = hex_sid
+
             # Extract domain SID and RID if it's a domain account
             # Domain SIDs have format: S-1-5-21-<domain>-<rid>
             # The domain portion consists of three sub-authorities before the RID
@@ -119,6 +130,15 @@ class AdSid(BaseAction):
                     ad_domain = "-".join(parts[:-1])
                     rid = parts[-1]
                     result["Domain SID"] = ad_domain
+
+                    # Compute domain hex SID and hex RID from the full hex SID
+                    if hex_sid:
+                        hex_clean = hex_sid[2:] if hex_sid.startswith("0x") else hex_sid
+                        # Domain SID = full SID minus last 8 hex chars (4 bytes = RID)
+                        if len(hex_clean) > 8:
+                            result["Domain Hex SID"] = "0x" + hex_clean[:-8]
+                            result["Hex RID"] = "0x" + hex_clean[-8:]
+
                     result["RID"] = rid
                 else:
                     result["Type"] = "Local or Built-in Account"

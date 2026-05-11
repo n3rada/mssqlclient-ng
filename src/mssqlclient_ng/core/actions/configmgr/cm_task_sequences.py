@@ -13,7 +13,11 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-tasksequences", "Enumerate ConfigMgr task sequences")
+@ActionFactory.register(
+    "cm-tasksequences",
+    "Enumerate ConfigMgr task sequences",
+    aliases=["cm-ts"],
+)
 class CMTaskSequences(CMBaseAction):
     """
     Enumerate ConfigMgr Task Sequences with their properties and referenced content.

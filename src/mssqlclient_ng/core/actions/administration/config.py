@@ -13,7 +13,11 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("config", "Configure SQL Server options or list configurations")
+@ActionFactory.register(
+    "config",
+    "Configure SQL Server options or list configurations",
+    aliases=["settings"],
+)
 class Config(BaseAction):
     """
     Configure SQL Server options using sp_configure or list configurations.
@@ -30,13 +34,14 @@ class Config(BaseAction):
         config xp_cmdshell 0        # Disable xp_cmdshell
     """
 
-
     def __init__(self):
         super().__init__()
         self._option_name: Optional[str] = None
         self._value: int = -1
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate arguments for configuration action.
 
@@ -69,7 +74,28 @@ class Config(BaseAction):
         try:
             self._value = int(value_str)
         except ValueError:
-            raise ValueError(f"Invalid value: {value_str}. Must be a number.")
+            # Support enable/disable text toggles
+            toggle_map = {
+                "enable": 1,
+                "on": 1,
+                "true": 1,
+                "add": 1,
+                "+": 1,
+                "yes": 1,
+                "disable": 0,
+                "off": 0,
+                "false": 0,
+                "del": 0,
+                "-": 0,
+                "no": 0,
+            }
+            lower_val = value_str.lower()
+            if lower_val in toggle_map:
+                self._value = toggle_map[lower_val]
+            else:
+                raise ValueError(
+                    f"Invalid value: {value_str}. Must be a number or enable/disable."
+                )
 
         # Validation
         if self._value < -1:
@@ -141,6 +167,27 @@ class Config(BaseAction):
         results = []
 
         try:
+            # Check if user can modify configurations
+            can_modify = database_context.user_service.is_admin()
+            if not can_modify:
+                try:
+                    perm_result = database_context.query_service.execute_table(
+                        "SELECT HAS_PERMS_BY_NAME(NULL, NULL, 'ALTER SETTINGS') AS HasPerm;"
+                    )
+                    if perm_result and len(perm_result) > 0:
+                        can_modify = int(perm_result[0].get("HasPerm", 0)) == 1
+                except Exception:
+                    pass
+
+            if can_modify:
+                logger.success(
+                    "You have ALTER SETTINGS permission (can modify configurations)"
+                )
+            else:
+                logger.warning(
+                    "You cannot modify configurations (requires sysadmin or ALTER SETTINGS)"
+                )
+
             # Fetch all configurations at once
             query = "SELECT name, value_in_use FROM sys.configurations ORDER BY name;"
             configs_table = database_context.query_service.execute_table(query)
@@ -156,6 +203,9 @@ class Config(BaseAction):
                         "Enabled": "True" if status == 1 else "False",
                     }
                 )
+
+            # Sort: enabled first, then alphabetically
+            results.sort(key=lambda r: (r["Enabled"] != "True", r["Option"]))
         except Exception as ex:
             logger.warning(f"Could not retrieve configuration options: {ex}")
 

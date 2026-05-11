@@ -25,7 +25,9 @@ class Users(BaseAction):
     For database-level role memberships, use the 'roles' action instead.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         No additional arguments needed for user enumeration.
 
@@ -50,21 +52,43 @@ class Users(BaseAction):
                 "Enumerating server-level principals (logins) and their instance-wide server roles"
             )
 
-            server_principals_query = """
-                SELECT
-                    sp.name AS Name,
-                    sp.type_desc AS Type,
-                    sp.is_disabled,
-                    sp.create_date,
-                    sp.modify_date,
-                    STRING_AGG(sr.name, ', ') AS groups
-                FROM master.sys.server_principals sp
-                LEFT JOIN master.sys.server_role_members srm ON sp.principal_id = srm.member_principal_id
-                LEFT JOIN master.sys.server_principals sr ON srm.role_principal_id = sr.principal_id AND sr.type = 'R'
-                WHERE sp.type IN ('G','U','E','S','X') AND sp.name NOT LIKE '##%'
-                GROUP BY sp.name, sp.type_desc, sp.is_disabled, sp.create_date, sp.modify_date
-                ORDER BY sp.modify_date DESC;
-            """
+            if database_context.server.legacy:
+                # SQL Server 2016 and earlier: Use STUFF + FOR XML PATH
+                server_principals_query = """
+                    SELECT
+                        sp.name AS Name,
+                        sp.type_desc AS Type,
+                        sp.is_disabled,
+                        sp.create_date,
+                        sp.modify_date,
+                        STUFF((
+                            SELECT ', ' + sr.name
+                            FROM master.sys.server_role_members srm2
+                            INNER JOIN master.sys.server_principals sr ON srm2.role_principal_id = sr.principal_id AND sr.type = 'R'
+                            WHERE srm2.member_principal_id = sp.principal_id
+                            FOR XML PATH(''), TYPE
+                        ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS groups
+                    FROM master.sys.server_principals sp
+                    WHERE sp.type IN ('G','U','E','S','X') AND sp.name NOT LIKE '##%'
+                    ORDER BY sp.is_disabled ASC, sp.modify_date DESC;
+                """
+            else:
+                # SQL Server 2017+: Use STRING_AGG
+                server_principals_query = """
+                    SELECT
+                        sp.name AS Name,
+                        sp.type_desc AS Type,
+                        sp.is_disabled,
+                        sp.create_date,
+                        sp.modify_date,
+                        STRING_AGG(sr.name, ', ') AS groups
+                    FROM master.sys.server_principals sp
+                    LEFT JOIN master.sys.server_role_members srm ON sp.principal_id = srm.member_principal_id
+                    LEFT JOIN master.sys.server_principals sr ON srm.role_principal_id = sr.principal_id AND sr.type = 'R'
+                    WHERE sp.type IN ('G','U','E','S','X') AND sp.name NOT LIKE '##%'
+                    GROUP BY sp.name, sp.type_desc, sp.is_disabled, sp.create_date, sp.modify_date
+                    ORDER BY sp.is_disabled ASC, sp.modify_date DESC;
+                """
 
             raw_table = database_context.query_service.execute_table(
                 server_principals_query
