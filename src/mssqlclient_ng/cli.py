@@ -149,6 +149,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="IP Address of the target machine. If omitted it will use whatever was specified as target. "
         "This is useful when target is the NetBIOS name and you cannot resolve it",
     )
+    group_conn.add_argument(
+        "--workstation-id",
+        type=str,
+        default="SQLServerCEIP",
+        help="Workstation ID sent in the TDS LOGIN packet (default: SQLServerCEIP).",
+    )
+    group_conn.add_argument(
+        "--app-name",
+        type=str,
+        default="Framework Microsoft SqlClient Da",
+        help="Application name sent in the TDS LOGIN packet (default: 'Framework Microsoft SqlClient Da').",
+    )
+    group_conn.add_argument(
+        "--client-interface-name",
+        type=str,
+        default=".Net SqlClient Data Provider",
+        help="Client interface name sent in the TDS LOGIN packet (default: '.Net SqlClient Data Provider').",
+    )
 
     actions_groups = parser.add_argument_group(
         "Actions", "Actions to perform upon successful connection."
@@ -403,6 +421,9 @@ def main() -> int:
             aes_key=args.aesKey,
             kerberos_auth=use_kerberos,
             kdc_host=kdc_host,
+            workstation_id=args.workstation_id,
+            application_name=args.app_name,
+            client_interface_name=args.client_interface_name,
         )
 
         if not auth_service.connect():
@@ -410,6 +431,7 @@ def main() -> int:
             return 1
 
         try:
+            assert auth_service.mssql_instance is not None
             database_context = DatabaseContext(
                 server=server_instance,
                 mssql_instance=auth_service.mssql_instance,

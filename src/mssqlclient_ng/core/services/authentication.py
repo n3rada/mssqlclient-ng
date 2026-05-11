@@ -29,6 +29,9 @@ class AuthenticationService:
         aes_key: Optional[str] = None,
         kerberos_auth: bool = False,
         kdc_host: Optional[str] = None,
+        workstation_id: str = "SQLServerCEIP",
+        application_name: str = "Framework Microsoft SqlClient Da",
+        client_interface_name: str = ".Net SqlClient Data Provider",
     ):
         """
         Initialize the authentication service.
@@ -44,6 +47,9 @@ class AuthenticationService:
             aes_key: AES key for Kerberos authentication
             kerberos_auth: Whether to use Kerberos authentication
             kdc_host: KDC hostname for Kerberos authentication
+            workstation_id: Workstation ID for the TDS LOGIN packet
+            application_name: Application name for the TDS LOGIN packet
+            client_interface_name: Client interface name for the TDS LOGIN packet
         """
         self.server = server
         self._database: Optional[str] = self.server.database
@@ -59,6 +65,9 @@ class AuthenticationService:
         self._aes_key = aes_key
         self._kerberos_auth = kerberos_auth
         self._kdc_host = kdc_host
+        self._workstation_id = workstation_id
+        self._application_name = application_name
+        self._client_interface_name = client_interface_name
 
     def connect(self) -> bool:
         """
@@ -82,6 +91,9 @@ class AuthenticationService:
                 address=self.server.hostname,
                 port=self.server.port,
                 remoteName=self._remote_name,
+                workstation_id=self._workstation_id,
+                application_name=self._application_name,
+                client_interface_name=self._client_interface_name,
             )
 
             # Establish TCP connection
@@ -131,6 +143,15 @@ class AuthenticationService:
             if hasattr(self.mssql_instance, "mssql_version"):
                 self.server.version = str(self.mssql_instance.mssql_version)
                 logger.info(f"Server version: {self.server.version}")
+
+            # Log connection details (matching MSSQLand's connection info block)
+            ms = self.mssql_instance
+            encrypted = "TLS" if ms.tlsSocket else "None"
+            logger.info(f"Encryption: {encrypted}")
+            logger.info(f"Packet size: {ms.packetSize}")
+            logger.info(f"Client workstation ID: {ms.workstation_id}")
+            logger.info(f"Client application name: {ms.application_name}")
+            logger.info(f"Client interface name: {ms.client_interface_name}")
 
             return True
 
