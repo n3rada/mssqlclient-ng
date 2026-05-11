@@ -41,6 +41,7 @@ class Terminal:
 
     # Aliases for built-in terminal commands
     _BUILTIN_ALIASES = {
+        "h": "help",
         "imp": "impersonate",
         "rev": "revert",
         "ul": "unlink",
@@ -70,6 +71,7 @@ class Terminal:
         # Built-in command dispatch table: command_name -> handler(command_line)
         # Handlers return True to continue the loop, False is unused (all continue).
         self._command_handlers: Dict[str, Callable[[str], None]] = {
+            "help": self._handle_help,
             "debug": self._handle_debug,
             "chain": self._handle_chain,
             "format": self._handle_format,
@@ -335,6 +337,44 @@ class Terminal:
             )
 
     # ── Built-in Command Handlers ───────────────────────────────────────
+
+    def _handle_help(self, command_line: str) -> None:
+        """List actions or show help for a specific one: !help [action|term]"""
+        parts = command_line.split(maxsplit=1)
+        term = parts[1].strip() if len(parts) > 1 else None
+
+        # Exact action name match → delegate to per-action detailed help
+        if term and ActionFactory.action_exists(term):
+            ActionFactory.display_action_help(term)
+            return
+
+        # Build reverse alias map: canonical_name -> [alias, ...]
+        reverse_aliases: Dict[str, List[str]] = {}
+        for alias, canonical in ActionFactory.list_aliases().items():
+            reverse_aliases.setdefault(canonical, []).append(alias)
+
+        all_actions = sorted(ActionFactory.list_actions())
+
+        if term:
+            term_lower = term.lower()
+            all_actions = [
+                n
+                for n in all_actions
+                if term_lower in n
+                or term_lower in (ActionFactory.get_action_description(n) or "").lower()
+            ]
+            if not all_actions:
+                logger.warning(f"No actions matching '{term}'")
+                return
+
+        print()
+        for name in all_actions:
+            desc = ActionFactory.get_action_description(name) or ""
+            aliases = reverse_aliases.get(name, [])
+            alias_str = f" [{', '.join(aliases)}]" if aliases else ""
+            print(f"  {name + alias_str:<35}{desc}")
+        print()
+        logger.info(f"{len(all_actions)} action(s) — use !<action> --help for details")
 
     def _handle_debug(self, command_line: str) -> None:
         """Toggle debug mode."""
