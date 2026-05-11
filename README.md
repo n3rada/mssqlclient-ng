@@ -1,12 +1,11 @@
 # ✈️ mssqlclient-ng
 
-Enhanced version of impacket's `mssqlclient.py`, the Python counterpart to [MSSQLand](https://github.com/n3rada/MSSQLand).
+The Python counterpart to [MSSQLand](https://github.com/n3rada/MSSQLand). `mssqlclient-ng` is built for interacting with [Microsoft SQL Server](https://en.wikipedia.org/wiki/Microsoft_SQL_Server) during your red team activities or any security audit. Designed to run from an external position, it allows you to pave your way across multiple linked servers and impersonate whoever you can along the way, emerging from the last hop with any desired action.
+
 
 <p align="center">
     <img src="./media/example.png" alt="example">
 </p>
-
-mssqlclient-ng is built for interacting with [Microsoft SQL Server](https://en.wikipedia.org/wiki/Microsoft_SQL_Server) database management system (DBMS) during your red team activities or any security audit. Designed to run from an external position (Linux/macOS), it allows you to pave your way across multiple linked servers and impersonate whoever you can along the way, emerging from the last hop with any desired action.
 
 It supports NTLM, Kerberos, and pass-the-hash authentication natively through [Impacket](https://github.com/fortra/impacket)'s TDS implementation, and can handle [NTLM relaying](https://en.wikipedia.org/wiki/NTLM#Security_concerns) 🔄
 
@@ -18,38 +17,55 @@ It supports NTLM, Kerberos, and pass-the-hash authentication natively through [I
 
 ## 📦 Installation
 
-To install `mssqlclient-ng`, you can use `pip`, `pip3` or `pipx`. Either from `pypi` repository or from `GitHub` source. Prefer using [`pipx`](https://pypa.github.io/pipx/), since it installs Python applications in isolated virtual environments.
+Prefer using [`uv`](https://docs.astral.sh/uv/), a fast Python package manager that installs tools in isolated environments. Alternatively, [`pipx`](https://pypa.github.io/pipx/) or `pip` work as well.
 
-### From GitHub
+### With [uv](https://docs.astral.sh/uv/) (recommended)
 
-This is the way to ensure the most up-to-date version available.
+[`uv tool install`](https://docs.astral.sh/uv/guides/tools/#installing-tools) persistently installs the tool and adds it to your `PATH`, similar to `pipx`:
+
+**From [PyPI](https://pypi.org/project/mssqlclient-ng/):**
 
 ```bash
+uv tool install mssqlclient-ng
+```
+
+**From GitHub (latest):**
+
+```bash
+uv tool install git+https://github.com/n3rada/mssqlclient-ng.git
+```
+
+After installation, `mssqlclient-ng` is available directly:
+
+```bash
+mssqlclient-ng --help
+```
+
+To upgrade later:
+
+```bash
+uv tool upgrade mssqlclient-ng
+```
+
+> [!TIP]
+> You can also run `mssqlclient-ng` **without installing** it using [`uvx`](https://docs.astral.sh/uv/guides/tools/#running-tools) (alias for `uv tool run`), which creates a temporary isolated environment on the fly:
+> ```bash
+> uvx mssqlclient-ng --help
+> uvx --from git+https://github.com/n3rada/mssqlclient-ng.git mssqlclient-ng --help
+> ```
+
+### With pipx or pip
+
+```bash
+pipx install mssqlclient-ng
+# or from GitHub
 pipx install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
 ```bash
-pip install 'git+https://github.com/n3rada/mssqlclient-ng.git'
-```
-
-### From [PyPI](https://pypi.org/project/mssqlclient-ng/)
-
-```bash
-pipx install mssqlclient-ng
-```
-
-```bash
 pip install mssqlclient-ng
-```
-
-### With [uv](https://docs.astral.sh/uv/)
-
-The project uses `uv_build` as its build backend, so `uv` is the recommended way to run it from source:
-
-```bash
-git clone https://github.com/n3rada/mssqlclient-ng.git
-cd mssqlclient-ng
-uv run mssqlclient-ng --help
+# or from GitHub
+pip install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
 ## 🧸 Usage
@@ -131,6 +147,69 @@ Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the sep
 
 > [!NOTE]
 > Port specification (`:port`) only applies to the initial host connection. Linked server chains (`-l`) use the linked server names as configured in `sys.servers`, not `hostname:port` combinations.
+
+## 🔍 Discovery
+
+`mssqlclient-ng` does not include built-in discovery like [MSSQLand does](https://github.com/n3rada/MSSQLand#-discovery) because your Linux attack box already has mature tools for this. Here are the common approaches:
+
+### 📡 SQL Browser (UDP 1434)
+
+Query the [SQL Server Browser service](https://learn.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-browser-service) to enumerate instances, ports, and versions on a host:
+
+```bash
+nmap -sU -p 1434 --script ms-sql-info <target>
+```
+
+### 📂 SPN Enumeration (Active Directory)
+
+Find SQL Server instances registered in AD via [Service Principal Names](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/register-a-service-principal-name-for-kerberos-connections):
+
+```bash
+# With Impacket (already installed as a dependency)
+impacket-GetUserSPNs -dc-ip <DC_IP> 'DOMAIN/user:password' -target-domain <domain> | grep MSSQLSvc
+
+# With ldapsearch
+ldapsearch -H ldap://<DC_IP> -b "DC=domain,DC=com" -D "user@domain.com" -W "(servicePrincipalName=MSSQLSvc/*)" servicePrincipalName
+```
+
+### 🔌 Port Scanning
+
+Once a target host is confirmed alive, validate SQL Server presence with TDS protocol handshake (not just TCP SYN):
+
+```bash
+# Common SQL Server ports with TDS validation
+nmap -Pn -sS -p 1433,1434,14333,2433 --script ms-sql-info <target>
+
+# Full scan for instances on non-standard ports (ephemeral range)
+nmap -Pn -sS -p 1024-65535 --script ms-sql-info --open <target>
+```
+
+> [!TIP]
+> Use `-Pn` to skip host discovery (the target is already known alive) and `-sS` for SYN scan to reduce noise. The `ms-sql-info` script performs a TDS pre-login handshake, confirming actual SQL Server instances rather than just open TCP ports.
+
+## 🔄 NTLM Relay
+
+mssqlclient-ng can act as an NTLM relay listener, capturing incoming authentication attempts and relaying them to a SQL Server target:
+
+```shell
+# Start relay listener and wait for an incoming authentication
+mssqlclient-ng <target_sql_server> -r
+
+# With SMB2 support and custom timeout
+mssqlclient-ng <target_sql_server> -r -smb2support -t 120
+```
+
+Once a connection is relayed, you land in the interactive shell authenticated as the relayed user. Pair this with [PetitPotam](https://github.com/topotam/PetitPotam), [PrinterBug](https://github.com/dirkjanm/krbrelayx), or any coercion technique to relay machine accounts to SQL Server.
+
+## ❓ Help
+
+```shell
+# Show all available options
+mssqlclient-ng --help
+
+# Show help for a specific action
+mssqlclient-ng <host> -u sa -p password --action whoami --help
+```
 
 ## 📸 Clean Output for Clean Reports
 

@@ -19,8 +19,8 @@ from .core.terminal import Terminal
 from .core.utils import logbook
 from .core.utils.formatters import OutputFormatter
 
-# Import actions to register them with the factory
-from .core import actions
+# Import actions package to trigger @ActionFactory.register() decorators
+from .core import actions  # noqa: F401
 from .core.actions.factory import ActionFactory
 from .core.actions.execution import query
 

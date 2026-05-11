@@ -208,8 +208,8 @@ class LinkedServers:
     def format_chain_display(
         self,
         initial_host: str,
-        initial_login: str = None,
-        initial_impersonation: list = None,
+        initial_login: Optional[str] = None,
+        initial_impersonation: Optional[List[str]] = None,
     ) -> str:
         """
         Format a human-readable chain display with impersonation context.
@@ -249,7 +249,7 @@ class LinkedServers:
         return result
 
     @staticmethod
-    def _format_connector(impersonation_users: list = None) -> str:
+    def _format_connector(impersonation_users: Optional[List[str]] = None) -> str:
         """Format a connector arrow, optionally with impersonation cascade."""
         if impersonation_users:
             cascade = " → ".join(impersonation_users)
