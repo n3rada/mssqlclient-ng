@@ -573,3 +573,5 @@ def main() -> int:
         # Clean up authentication service if it was created (non-relay mode)
         if auth_service is not None:
             auth_service.disconnect()
+
+    return 1
