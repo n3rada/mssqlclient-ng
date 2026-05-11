@@ -11,7 +11,7 @@ from loguru import logger
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-from ...utils.formatter import OutputFormatter
+from ...utils.formatters import OutputFormatter
 from ...utils.common import sid_bytes_to_string
 
 

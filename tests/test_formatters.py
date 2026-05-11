@@ -7,7 +7,7 @@ import pytest
 from mssqlclient_ng.core.utils.formatters import OutputFormatter
 from mssqlclient_ng.core.utils.formatters.markdown import MarkdownFormatter
 from mssqlclient_ng.core.utils.formatters.csv import CsvFormatter
-from mssqlclient_ng.core.utils.formatter import (
+from mssqlclient_ng.core.utils.formatters import (
     normalize_value,
     dict_to_markdown_table,
     list_to_markdown_table,

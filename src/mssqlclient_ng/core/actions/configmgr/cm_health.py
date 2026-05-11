@@ -10,7 +10,7 @@ from .cm_base import CMBaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
-from ...utils.formatter import OutputFormatter
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("cm-health", "Display ConfigMgr client health diagnostics")

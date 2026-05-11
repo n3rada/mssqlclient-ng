@@ -11,7 +11,7 @@ from ..base import BaseAction
 from ..domain.addomain import DomainSid
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-from ...utils.formatter import OutputFormatter
+from ...utils.formatters import OutputFormatter
 
 
 DEFAULT_MAX_RID = 5000
