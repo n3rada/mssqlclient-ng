@@ -162,15 +162,7 @@ nmap -sU -p 1434 --script ms-sql-info <target>
 
 ### 📂 SPN Enumeration (Active Directory)
 
-Find SQL Server instances registered in AD via [Service Principal Names](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/register-a-service-principal-name-for-kerberos-connections):
-
-```bash
-# With Impacket (already installed as a dependency)
-impacket-GetUserSPNs -dc-ip <DC_IP> 'DOMAIN/user:password' -target-domain <domain> | grep MSSQLSvc
-
-# With ldapsearch
-ldapsearch -H ldap://<DC_IP> -b "DC=domain,DC=com" -D "user@domain.com" -W "(servicePrincipalName=MSSQLSvc/*)" servicePrincipalName
-```
+Find SQL Server instances registered in AD via [Service Principal Names](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/register-a-service-principal-name-for-kerberos-connections) you can use any LDAP search tool.
 
 ### 🔌 Port Scanning
 
