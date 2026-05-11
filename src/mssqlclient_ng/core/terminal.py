@@ -265,6 +265,11 @@ class Terminal:
             style=SQL_STYLE,
         )
 
+        logger.info(
+            f"Type SQL directly or use '{prefix}<action> [args]' to run an action. "
+            f"'{prefix}help' lists all actions, '{prefix}<action> --help' shows usage."
+        )
+
         while True:
             try:
                 user_input = prompt_session.prompt(message=self._prompt())
