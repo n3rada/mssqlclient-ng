@@ -25,11 +25,12 @@ class PowerShell(XpCmd):
     and handles special characters properly.
     """
 
+
     def __init__(self):
         super().__init__()
         self._script: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate that a PowerShell script is provided.
 

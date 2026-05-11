@@ -20,11 +20,12 @@ class CMScripts(CMBaseAction):
     Use 'cm-script <GUID>' to view full details and script content.
     """
 
+
     def __init__(self):
         super().__init__()
         self._name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._name = named.get("name", named.get("n", "")) or self.get_positional_argument(positional, 0, "")
 

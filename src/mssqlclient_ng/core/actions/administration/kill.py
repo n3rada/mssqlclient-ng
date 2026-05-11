@@ -20,11 +20,12 @@ class Kill(BaseAction):
     Can target a specific session ID or use 'all' to kill all active sessions.
     """
 
+
     def __init__(self):
         super().__init__()
         self._target: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validates the kill target argument.
 

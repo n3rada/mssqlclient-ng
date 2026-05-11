@@ -32,11 +32,12 @@ class ObjectLinkingEmbedding(BaseAction):
     wscript.shell COM object for command execution.
     """
 
+
     def __init__(self):
         super().__init__()
         self._command: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate that a command is provided.
 

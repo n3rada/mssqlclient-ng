@@ -24,11 +24,12 @@ class Tables(BaseAction):
     Shows schema, table name, type, row count, and user permissions for each table.
     """
 
+
     def __init__(self):
         super().__init__()
         self._database: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate the database argument.
 

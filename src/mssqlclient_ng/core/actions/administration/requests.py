@@ -20,7 +20,7 @@ class Requests(BaseAction):
     Shows session details, command status, wait types, and blocking information.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         pass
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:

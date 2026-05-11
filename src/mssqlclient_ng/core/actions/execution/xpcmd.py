@@ -21,11 +21,12 @@ class XpCmd(BaseAction):
     provided command, and returns the output line by line.
     """
 
+
     def __init__(self):
         super().__init__()
         self._command: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate that a command is provided.
 

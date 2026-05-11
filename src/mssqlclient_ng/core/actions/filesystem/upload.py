@@ -29,12 +29,13 @@ class Upload(BaseAction):
     2. xp_cmdshell with PowerShell -EncodedCommand (if OLE is disabled)
     """
 
+
     def __init__(self):
         super().__init__()
         self._local_path: Optional[Path] = None
         self._remote_path: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments for the upload action.
 

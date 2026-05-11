@@ -6,7 +6,6 @@ from typing import Optional, List, Dict, Any
 # Third-party imports
 from loguru import logger
 
-
 # Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
@@ -28,15 +27,15 @@ class Impersonation(BaseAction):
     any login.
     """
 
-    def __init__(self):
-        super().__init__()
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list: Optional[List[str]] = None
+    ) -> None:
         """
         Validate arguments (none required for this action).
 
         Args:
             additional_arguments: Not used
+            argument_list: Not used
         """
         # No arguments needed
         pass

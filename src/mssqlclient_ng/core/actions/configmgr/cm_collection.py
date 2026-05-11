@@ -20,12 +20,13 @@ class CMCollection(CMBaseAction):
     Supports lookup by Collection ID or name pattern.
     """
 
+
     def __init__(self):
         super().__init__()
         self._collection_id: str = ""
         self._collection_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._collection_id = self.get_positional_argument(positional, 0, "") or ""
         self._collection_name = named.get("name", named.get("n", ""))

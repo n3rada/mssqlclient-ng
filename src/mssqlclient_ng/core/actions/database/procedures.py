@@ -41,6 +41,7 @@ class Procedures(BaseAction):
     - create <file_path> [database_name]: Creates a stored procedure from a SQL file
     """
 
+
     def __init__(self):
         super().__init__()
         self._mode: ProcedureMode = ProcedureMode.LIST
@@ -65,7 +66,7 @@ class Procedures(BaseAction):
                 f"Procedure name must be in 'schema.procedure' format. Got: '{procedure_name}'"
             )
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validates the arguments for the procedures action.
 

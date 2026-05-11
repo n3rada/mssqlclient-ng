@@ -20,7 +20,7 @@ class CMAccounts(CMBaseAction):
     Client Push accounts, and Task Sequence accounts.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         pass
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:

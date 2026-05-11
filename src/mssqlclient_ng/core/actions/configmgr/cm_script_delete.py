@@ -22,11 +22,12 @@ class CMScriptDelete(CMBaseAction):
     Blocks deletion of built-in CMPivot script.
     """
 
+
     def __init__(self):
         super().__init__()
         self._script_guid: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._script_guid = named.get("guid", named.get("g", "")) or self.get_positional_argument(positional, 0, "")
         if not self._script_guid:

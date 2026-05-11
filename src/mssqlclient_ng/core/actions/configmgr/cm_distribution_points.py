@@ -20,13 +20,14 @@ class CMDistributionPoints(CMBaseAction):
     Distribution points store all deployed content.
     """
 
+
     def __init__(self):
         super().__init__()
         self._server: str = ""
         self._active_only: bool = False
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._server = named.get("server", named.get("s", ""))
         self._active_only = "active" in named or "a" in named

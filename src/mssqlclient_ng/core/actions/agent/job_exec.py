@@ -33,7 +33,9 @@ class JobExec(BaseAction):
         self._wait: bool = False
         self._timeout: int = 30
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Missing command to execute. "
@@ -136,7 +138,9 @@ class JobExec(BaseAction):
             self._cleanup_job(database_context, job_name)
             return False
 
-    def _poll_job_completion(self, database_context: DatabaseContext, job_name: str) -> None:
+    def _poll_job_completion(
+        self, database_context: DatabaseContext, job_name: str
+    ) -> None:
         """Poll sysjobhistory until job completes or timeout is reached."""
         deadline = time.time() + self._timeout
 
@@ -184,4 +188,9 @@ class JobExec(BaseAction):
             pass
 
     def get_arguments(self) -> list:
-        return ["<command>", "[--subsystem CmdExec|PowerShell|TSQL|VBScript]", "[--wait]", "[--timeout N]"]
+        return [
+            "<command>",
+            "[--subsystem CmdExec|PowerShell|TSQL|VBScript]",
+            "[--wait]",
+            "[--timeout N]",
+        ]

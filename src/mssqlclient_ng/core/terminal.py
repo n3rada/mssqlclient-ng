@@ -279,6 +279,11 @@ class Terminal:
 
                     continue
 
+                if command_line == "chain":
+                    # Display full connection chain with impersonation context
+                    self._display_chain()
+                    continue
+
                 if command_line.startswith("format"):
                     # Handle format command: !format <format_name>
                     parts = command_line.split(maxsplit=1)
@@ -577,3 +582,23 @@ class Terminal:
                 action_name, *args = shlex.split(command_line)
 
                 self.execute_action(action_name, args)
+
+    def _display_chain(self) -> None:
+        """Display the full connection chain with impersonation context, MSSQLand style."""
+        linked = self.__database_context.query_service.linked_servers
+
+        if linked.is_empty:
+            # No linked servers — show current context
+            current_system = self.__database_context.server.system_user
+            result = (
+                f"{self.__original_execution_server} ({self.__original_system_user})"
+            )
+            if current_system and current_system != self.__original_system_user:
+                result += f" → impersonating {current_system}"
+            logger.info(f"Context: {result}")
+        else:
+            chain_display = linked.format_chain_display(
+                initial_host=self.__original_execution_server,
+                initial_login=self.__original_system_user,
+            )
+            logger.info(f"Chain: {chain_display}")

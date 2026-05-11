@@ -30,12 +30,13 @@ class DataAccess(BaseAction):
     Disable aliases: del, off, 0, false, disable
     """
 
+
     def __init__(self):
         super().__init__()
         self._enable: bool = True
         self._linked_server_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Data access action requires two arguments: "

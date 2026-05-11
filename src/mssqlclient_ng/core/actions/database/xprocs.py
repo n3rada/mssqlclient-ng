@@ -87,10 +87,8 @@ class ExtendedProcs(BaseAction):
     This action lists all available extended procedures and checks execution permissions.
     """
 
-    def __init__(self):
-        super().__init__()
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments (none required for this action).
 

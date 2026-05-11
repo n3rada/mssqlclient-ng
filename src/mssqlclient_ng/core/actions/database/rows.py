@@ -27,6 +27,7 @@ class Rows(BaseAction):
     - -t/--top: Maximum number of rows to retrieve (default: no limit)
     """
 
+
     def __init__(self):
         super().__init__()
         self._fqtn: str = ""
@@ -35,7 +36,7 @@ class Rows(BaseAction):
         self._table: str = ""
         self._top: int = 0  # 0 = no limit
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validates the table name argument and optional flags.
 

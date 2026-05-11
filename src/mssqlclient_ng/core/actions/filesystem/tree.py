@@ -39,6 +39,7 @@ class Tree(BaseAction):
         tree C:\Windows 2 --files false
     """
 
+
     def __init__(self):
         super().__init__()
         self._path: str = ""
@@ -46,7 +47,7 @@ class Tree(BaseAction):
         self._show_files: bool = True
         self._use_unicode: bool = True
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list: Optional[List[str]] = None) -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments for the tree action.
 

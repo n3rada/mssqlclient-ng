@@ -308,6 +308,7 @@ class ActionCompleter(Completer):
         self.builtins = {
             "exit": "Exit the terminal",
             "debug": "Toggle debug mode on/off",
+            "chain": "Display full connection chain with impersonation context",
             "link": "Set linked server chain (e.g. SQL02/user;SQL03@db)",
             "unlink": "Remove last server from chain",
             "unlink-all": "Clear entire linked server chain",
@@ -362,9 +363,7 @@ class ActionCompleter(Completer):
             for alias, canonical in ActionFactory.list_aliases().items():
                 if alias.startswith(command_part.lower()):
                     completion_text = alias[len(command_part) :]
-                    yield Completion(
-                        completion_text, 0, display_meta=f"→ {canonical}"
-                    )
+                    yield Completion(completion_text, 0, display_meta=f"→ {canonical}")
 
             # Also suggest built-in commands
             for builtin_name, builtin_desc in self.builtins.items():
@@ -376,9 +375,7 @@ class ActionCompleter(Completer):
             for alias, canonical in self.aliases.items():
                 if alias.startswith(command_part.lower()):
                     completion_text = alias[len(command_part) :]
-                    yield Completion(
-                        completion_text, 0, display_meta=f"→ !{canonical}"
-                    )
+                    yield Completion(completion_text, 0, display_meta=f"→ !{canonical}")
 
 
 class SQLBuiltinCompleter(Completer):

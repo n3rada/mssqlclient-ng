@@ -20,6 +20,7 @@ class CMDeploymentTypes(CMBaseAction):
     Shows technology type, install commands, content paths, and detection methods.
     """
 
+
     def __init__(self):
         super().__init__()
         self._technology: str = ""
@@ -28,7 +29,7 @@ class CMDeploymentTypes(CMBaseAction):
         self._application: str = ""
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._technology = named.get("tech", "")
         self._content_path = named.get("content", "")

@@ -27,6 +27,7 @@ class RunExecutable(BaseAction):
     The action verifies the file exists before attempting execution.
     """
 
+
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
@@ -34,7 +35,7 @@ class RunExecutable(BaseAction):
         self._async_mode: bool = True  # Default to async (non-blocking)
         self._capture_output: bool = False  # Force xp_cmdshell for output capture
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments for the run action.
 

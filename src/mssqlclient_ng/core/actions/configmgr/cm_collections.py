@@ -22,6 +22,7 @@ class CMCollections(CMBaseAction):
     Filter by collection ID, name, or type (user/device).
     """
 
+
     def __init__(self):
         super().__init__()
         self._collection_id: str = ""
@@ -30,7 +31,7 @@ class CMCollections(CMBaseAction):
         self._limit: int = 25
         self._with_members: bool = False
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._collection_id = self.get_positional_argument(
             positional, 0, ""

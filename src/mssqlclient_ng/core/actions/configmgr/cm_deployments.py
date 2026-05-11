@@ -20,6 +20,7 @@ class CMDeployments(CMBaseAction):
     Filter by name, collection, type, or intent.
     """
 
+
     def __init__(self):
         super().__init__()
         self._name: str = ""
@@ -28,7 +29,7 @@ class CMDeployments(CMBaseAction):
         self._intent: str = ""
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._name = named.get("name", named.get("n", ""))
         self._collection = named.get("collection", named.get("c", ""))

@@ -205,6 +205,57 @@ class LinkedServers:
         """
         return ";".join(self.get_chain_parts())
 
+    def format_chain_display(
+        self,
+        initial_host: str,
+        initial_login: str = None,
+        initial_impersonation: list = None,
+    ) -> str:
+        """
+        Format a human-readable chain display with impersonation context.
+
+        Mimics MSSQLand's FormatChainDisplay:
+          LAB-SQL01 (operator) ─(sa)─> LAB-SQL02 ──> LAB-SQL03 (as admin)
+
+        Args:
+            initial_host: The initial server hostname
+            initial_login: The login used on the initial server
+            initial_impersonation: Impersonation users on the initial server
+
+        Returns:
+            Formatted chain string
+        """
+        result = initial_host
+        if initial_login:
+            result += f" ({initial_login})"
+
+        # Initial impersonation becomes the connector to the first linked server
+        result += self._format_connector(initial_impersonation)
+
+        for i, server in enumerate(self.server_chain):
+            result += server.hostname
+            is_last = i == len(self.server_chain) - 1
+            users = server.impersonation_users
+
+            if is_last:
+                # Last server: impersonation is the execution context
+                if users:
+                    cascade = " → ".join(users)
+                    result += f" (as {cascade})"
+            else:
+                # Intermediate: impersonation shown in connector
+                result += self._format_connector(users)
+
+        return result
+
+    @staticmethod
+    def _format_connector(impersonation_users: list = None) -> str:
+        """Format a connector arrow, optionally with impersonation cascade."""
+        if impersonation_users:
+            cascade = " → ".join(impersonation_users)
+            return f" ─({cascade})─> "
+        return " ──> "
+
     @staticmethod
     def _parse_server_chain(chain_input: str) -> List[Server]:
         """

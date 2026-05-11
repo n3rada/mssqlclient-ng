@@ -40,12 +40,13 @@ class ClrExecution(BaseAction):
     6. Cleanup (drop procedure, assembly, and hash)
     """
 
+
     def __init__(self):
         super().__init__()
         self._dll_uri: str = ""
         self._function: str = "Main"
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments for CLR execution.
 

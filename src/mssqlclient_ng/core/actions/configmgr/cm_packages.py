@@ -20,6 +20,7 @@ class CMPackages(CMBaseAction):
     Packages are the legacy deployment model.
     """
 
+
     def __init__(self):
         super().__init__()
         self._name: str = ""
@@ -27,7 +28,7 @@ class CMPackages(CMBaseAction):
         self._manufacturer: str = ""
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._name = named.get("name", named.get("n", ""))
         self._source_path = named.get("source", named.get("s", ""))

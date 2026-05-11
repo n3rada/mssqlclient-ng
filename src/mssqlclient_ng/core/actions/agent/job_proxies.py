@@ -30,11 +30,12 @@ class JobProxies(BaseAction):
       3. Proxy -> Login mappings (which logins can use the proxy)
     """
 
+
     def __init__(self):
         super().__init__()
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             return
 

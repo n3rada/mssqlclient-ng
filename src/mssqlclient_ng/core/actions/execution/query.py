@@ -20,11 +20,12 @@ class Query(BaseAction):
     non-query commands (INSERT, UPDATE, DELETE, etc.).
     """
 
+
     def __init__(self):
         super().__init__()
         self._query: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate that a query is provided.
 

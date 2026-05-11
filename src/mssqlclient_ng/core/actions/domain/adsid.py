@@ -25,11 +25,8 @@ class AdSid(BaseAction):
     Also extracts domain SID and RID if the user is a domain account.
     """
 
-    def __init__(self):
-        """Initialize the AdSid action."""
-        super().__init__()
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments (no arguments required).
 

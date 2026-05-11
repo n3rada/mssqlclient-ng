@@ -20,11 +20,12 @@ class RoleMembers(BaseAction):
     processadmin, diskadmin, dbcreator, bulkadmin, public
     """
 
+
     def __init__(self):
         super().__init__()
         self._role_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validates that a role name has been provided.
 

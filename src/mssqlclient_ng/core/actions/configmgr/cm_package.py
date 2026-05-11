@@ -17,11 +17,12 @@ from ...utils.formatter import OutputFormatter
 class CMPackage(CMBaseAction):
     """Display detailed information about a specific ConfigMgr package including its programs."""
 
+
     def __init__(self):
         super().__init__()
         self._package_id: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._package_id = self.get_positional_argument(positional, 0, "")
         if not self._package_id:

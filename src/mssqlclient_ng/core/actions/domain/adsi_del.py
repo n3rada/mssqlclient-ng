@@ -21,11 +21,12 @@ class AdsiDel(BaseAction):
     Deletes an ADSI linked server by name.
     """
 
+
     def __init__(self):
         super().__init__()
         self._server_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Server name is required. Usage: adsi-del <server_name>"

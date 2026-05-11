@@ -20,11 +20,12 @@ class CMScriptStatus(CMBaseAction):
     Shows task state (Pending/Success/Failed), execution time, script output, and errors.
     """
 
+
     def __init__(self):
         super().__init__()
         self._task_id: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._task_id = named.get("taskid", named.get("t", "")) or self.get_positional_argument(positional, 0, "")
         if not self._task_id:

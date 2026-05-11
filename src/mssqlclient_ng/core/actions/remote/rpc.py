@@ -50,12 +50,14 @@ class RemoteProcedureCall(BaseAction):
         self._action: Optional[RpcActionMode] = None
         self._linked_server_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validates the arguments for the RPC action.
 
         Args:
-            additional_arguments: Action mode (add/on/1/true/enable or del/off/0/false/disable) 
+            additional_arguments: Action mode (add/on/1/true/enable or del/off/0/false/disable)
                                  and linked server name
 
         Raises:
@@ -80,21 +82,23 @@ class RemoteProcedureCall(BaseAction):
 
         # Parse action mode using alias mapping
         action_str = positional_args[0].lower()
-        
+
         if action_str not in self.ACTION_ALIASES:
             valid_actions = ", ".join(sorted(self.ACTION_ALIASES.keys()))
             raise ValueError(
                 f"Invalid action: '{positional_args[0]}'. Valid actions are: {valid_actions}"
             )
-        
+
         self._action = self.ACTION_ALIASES[action_str]
         self._linked_server_name = positional_args[1]
-        
+
         logger.info(
             f"RPC action: {self._action.value} on linked server '{self._linked_server_name}'"
         )
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict[str, Any]]]:
+    def execute(
+        self, database_context: DatabaseContext
+    ) -> Optional[List[Dict[str, Any]]]:
         """
         Executes the RPC action on the specified linked server.
 
@@ -146,5 +150,5 @@ class RemoteProcedureCall(BaseAction):
         """
         return [
             "Action: add/on/1/true/enable to enable RPC Out, del/off/0/false/disable to disable",
-            "Linked server name"
+            "Linked server name",
         ]

@@ -26,6 +26,7 @@ class AdsiQuery(BaseAction):
     Allows querying Active Directory objects through SQL Server's OPENQUERY.
     """
 
+
     def __init__(self):
         super().__init__()
         self._adsi_server_name: Optional[str] = None
@@ -34,7 +35,7 @@ class AdsiQuery(BaseAction):
         self._using_temp_server: bool = False
         self._domain_fqdn: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate arguments for the ADSI query action.
 

@@ -20,11 +20,12 @@ class CMAadApps(CMBaseAction):
     Shows AAD tenant IDs, application (client) IDs, and encrypted secret key blobs.
     """
 
+
     def __init__(self):
         super().__init__()
         self._filter: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._filter = named.get("filter", named.get("f", "")) or self.get_positional_argument(positional, 0, "")
 

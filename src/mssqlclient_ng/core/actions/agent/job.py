@@ -27,12 +27,13 @@ class Job(BaseAction):
     Accepts job name or job_id GUID as identifier.
     """
 
+
     def __init__(self):
         super().__init__()
         self._job_identifier: str = ""
         self._history_limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Job name or job_id is required. Example: job 'Full Backup'"

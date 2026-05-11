@@ -26,10 +26,8 @@ class Roles(BaseAction):
     For server-level logins and instance-wide privileges, use the 'users' action instead.
     """
 
-    def __init__(self):
-        super().__init__()
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validates the arguments for the roles action.
 

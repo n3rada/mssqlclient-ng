@@ -51,13 +51,14 @@ class Jobs(BaseAction):
     Use --limit/-l to cap result count (default: 25).
     """
 
+
     def __init__(self):
         super().__init__()
         self._name: str = ""
         self._show_commands: bool = False
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             return
 

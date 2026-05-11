@@ -31,7 +31,7 @@ class Audit(BaseAction):
     Requires VIEW SERVER STATE (held by the public role by default).
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         pass
 
     def execute(

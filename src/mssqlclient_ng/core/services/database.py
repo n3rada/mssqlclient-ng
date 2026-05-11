@@ -24,8 +24,28 @@ class DatabaseContext:
 
         self._server.hostname = self._query_service.execution_server
 
+        # Store pre-impersonation identity (matches MSSQLand: GetInfo() before impersonation)
+        pre_user, pre_system = self._user_service.get_info()
+        self._pre_impersonation_user = pre_user
+        self._pre_impersonation_system = pre_system
+
+        # Compute effective user and source before impersonation changes SYSTEM_USER
+        # (matches MSSQLand: ComputeEffectiveUserAndSource() in constructor before impersonation)
+        if self._user_service.is_domain_user:
+            self._user_service.compute_effective_user_and_source()
+
         if not self._handle_impersonation():
             raise Exception("Failed to handle impersonation.")
+
+    @property
+    def pre_impersonation_user(self) -> str:
+        """The mapped user before impersonation was applied."""
+        return self._pre_impersonation_user
+
+    @property
+    def pre_impersonation_system(self) -> str:
+        """The system user (login) before impersonation was applied."""
+        return self._pre_impersonation_system
 
     def _handle_impersonation(self):
         targets = self._server.impersonation_users
@@ -33,7 +53,7 @@ class DatabaseContext:
         for target in targets:
             if self._user_service.can_impersonate(target):
                 if self._user_service.impersonate_user(target):
-                    logger.info(f"Successfully impersonated user: {target}")
+                    logger.debug(f"Successfully impersonated user: {target}")
                 else:
                     logger.error(f"Failed to impersonate user: {target}")
                     return False

@@ -21,12 +21,13 @@ class AdsiAdd(BaseAction):
     Auto-generates the server name if omitted.
     """
 
+
     def __init__(self):
         super().__init__()
         self._server_name: Optional[str] = None
         self._data_source: str = "adsdatasource"
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             return
 

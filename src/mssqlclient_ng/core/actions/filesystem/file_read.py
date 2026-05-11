@@ -28,12 +28,13 @@ class FileRead(BaseAction):
                       Useful for binary files or files with characters that break the console.
     """
 
+
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
         self._base64: bool = False
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate and bind the arguments passed to the FileRead action.
 

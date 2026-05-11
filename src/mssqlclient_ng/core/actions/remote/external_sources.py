@@ -30,7 +30,7 @@ class ExternalSources(BaseAction):
     are designed for cloud storage integration and distributed architectures.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         pass
 
     def execute(

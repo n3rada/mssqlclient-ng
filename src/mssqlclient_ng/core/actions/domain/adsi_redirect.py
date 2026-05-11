@@ -40,12 +40,13 @@ class AdsiRedirect(BaseAction):
     Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
     """
 
+
     def __init__(self):
         super().__init__()
         self._listener_address: str = ""
         self._target_server: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Listener address is required. "

@@ -30,6 +30,7 @@ class Permissions(BaseAction):
     Schema defaults to the user's default schema if not explicitly specified.
     """
 
+
     def __init__(self):
         super().__init__()
         self._fqtn: str = ""
@@ -37,7 +38,7 @@ class Permissions(BaseAction):
         self._schema: Optional[str] = None  # Let SQL Server use user's default schema
         self._table: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate the arguments for the permissions action.
 

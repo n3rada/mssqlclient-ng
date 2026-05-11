@@ -31,7 +31,7 @@ class Hashes(BaseAction):
     Not available on Azure SQL Database.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         pass
 
     def execute(

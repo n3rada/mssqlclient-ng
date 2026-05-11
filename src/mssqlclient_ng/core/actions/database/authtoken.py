@@ -35,7 +35,7 @@ class AuthToken(BaseAction):
         """
         return []
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate the arguments for the authtoken action.
 

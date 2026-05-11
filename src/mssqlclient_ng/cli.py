@@ -276,12 +276,14 @@ def main() -> int:
         log_level = "INFO"
 
     # Determine output stream
-    log_stream = args.std if hasattr(args, 'std') else "err"
+    log_stream = args.std if hasattr(args, "std") else "err"
 
     # Check if file logging should be disabled
-    no_log_file = args.no_log_file if hasattr(args, 'no_log_file') else False
+    no_log_file = args.no_log_file if hasattr(args, "no_log_file") else False
 
-    logbook.setup_logging(level=log_level, stream=log_stream, enable_file=not no_log_file)
+    logbook.setup_logging(
+        level=log_level, stream=log_stream, enable_file=not no_log_file
+    )
 
     # Set output format based on CLI argument
     try:
@@ -319,6 +321,8 @@ def main() -> int:
     auth_service = None
     database_context = None
 
+    use_kerberos = False
+
     if args.ntlm_relay:
         from .core.services.ntlmrelay import RelayMSSQL
 
@@ -355,8 +359,12 @@ def main() -> int:
             elif "/" in username and not username.startswith("/"):
                 domain, username = username.split("/", 1)
 
-        logger.debug(f"Parsed credentials — domain: {domain!r}, username: {username!r}, password set: {bool(password)}, hashes: {args.hashes!r}, windows_auth: {args.windows_auth}, kerberos: {args.kerberos}")
-        logger.debug(f"Target — host arg: {args.host!r}, server hostname: {server_instance.hostname!r}, port: {server_instance.port}, dc_ip: {args.dc_ip!r}, target_ip: {getattr(args, 'target_ip', None)!r}")
+        logger.debug(
+            f"Parsed credentials — domain: {domain!r}, username: {username!r}, password set: {bool(password)}, hashes: {args.hashes!r}, windows_auth: {args.windows_auth}, kerberos: {args.kerberos}"
+        )
+        logger.debug(
+            f"Target — host arg: {args.host!r}, server hostname: {server_instance.hostname!r}, port: {server_instance.port}, dc_ip: {args.dc_ip!r}, target_ip: {getattr(args, 'target_ip', None)!r}"
+        )
 
         # Prompt for password if username provided but no password/hashes/aesKey
         if (
@@ -413,7 +421,9 @@ def main() -> int:
 
     # Common execution path for both relay and normal authentication
     try:
-        user_name, system_user = database_context.user_service.get_info()
+        # Display pre-impersonation identity (matches MSSQLand GetInfo() order)
+        system_user = database_context.pre_impersonation_system
+        user_name = database_context.pre_impersonation_user
         database_context.server.mapped_user = user_name
         database_context.server.system_user = system_user
 
@@ -423,21 +433,33 @@ def main() -> int:
         # Compute effective user and source principal (handles group-based access via AD groups)
         # Only works for Windows authentication (NTLM/Kerberos) on on-premises SQL Server
         # Does NOT work for: SQL auth, Azure AD auth, LocalDB, or linked servers
+        # Already computed in DatabaseContext constructor (before impersonation)
         if (
             args.windows_auth or use_kerberos
         ) and database_context.user_service.is_domain_user:
-            database_context.user_service.compute_effective_user_and_source()
-
             effective_user = database_context.user_service.effective_user
             source_principal = database_context.user_service.source_principal
 
             if effective_user and not effective_user.lower() == user_name.lower():
                 logger.info(f"Effective database user: {effective_user}")
-            if (
-                source_principal
-                and source_principal.lower() != system_user.lower()
-            ):
-                logger.info(f"Domain user is mapped via Domain Group '{source_principal}'")
+            if source_principal and source_principal.lower() != system_user.lower():
+                logger.info(
+                    f"Domain user is mapped via Domain Group '{source_principal}'"
+                )
+
+        # Show impersonation chain if impersonation was applied on the initial server
+        impersonation_users = database_context.server.impersonation_users
+        if impersonation_users:
+            chain = " → ".join(impersonation_users)
+            logger.info(f"Impersonation chain: {chain}")
+
+            # Refresh identity to reflect the post-impersonation context
+            user_name, system_user = database_context.user_service.get_info()
+            database_context.server.mapped_user = user_name
+            database_context.server.system_user = system_user
+
+            logger.info(f"Login: {system_user}")
+            logger.info(f"Mapped to user: {user_name}")
 
         # If linked servers are provided, set them up
         if args.links:
@@ -445,10 +467,12 @@ def main() -> int:
                 linked_servers = LinkedServers(args.links)
                 database_context.query_service.linked_servers = linked_servers
 
-                chain_display = " -> ".join(linked_servers.server_names)
-                logger.info(
-                    f"Server chain: {database_context.server.hostname} -> {chain_display}"
+                chain_display = linked_servers.format_chain_display(
+                    initial_host=database_context.server.hostname,
+                    initial_login=database_context.server.system_user,
+                    initial_impersonation=database_context.server.impersonation_users,
                 )
+                logger.info(f"Server chain: {chain_display}")
 
                 # Compute execution database after linked server chain is set up
                 database_context.query_service.compute_execution_database()
@@ -511,7 +535,9 @@ def main() -> int:
                         return 1
 
                     server_name = database_context.query_service.execution_server
-                    logger.info(f"Executing action '{action_name}' against {server_name}")
+                    logger.info(
+                        f"Executing action '{action_name}' against {server_name}"
+                    )
 
                     try:
                         action_instance.execute(database_context=database_context)

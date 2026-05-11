@@ -37,6 +37,7 @@ class Search(BaseAction):
     - search email -c: Find columns containing 'email' (fast)
     """
 
+
     def __init__(self):
         super().__init__()
         self._keyword: str = ""
@@ -45,7 +46,7 @@ class Search(BaseAction):
         self._target_table: Optional[str] = None
         self._target_schema: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validates the search arguments.
 

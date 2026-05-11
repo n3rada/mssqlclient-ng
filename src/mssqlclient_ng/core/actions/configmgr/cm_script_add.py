@@ -22,13 +22,14 @@ class CMScriptAdd(CMBaseAction):
     Automatically sets script to approved state. Returns script GUID needed for cm-script-run.
     """
 
+
     def __init__(self):
         super().__init__()
         self._script_content: str = ""
         self._script_name: str = ""
         self._script_guid: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
 
         # Script content is required - can be passed as positional or --content

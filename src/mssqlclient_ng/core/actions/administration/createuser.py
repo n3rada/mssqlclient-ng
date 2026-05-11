@@ -24,13 +24,14 @@ class CreateUser(BaseAction):
     creation, but custom credentials can be specified.
     """
 
+
     def __init__(self):
         super().__init__()
         self._username: str = "backup_usr"
         self._password: str = "$ap3rlip0pe//e"
         self._role: str = "sysadmin"
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         """
         Validate and parse arguments for creating a user.
 

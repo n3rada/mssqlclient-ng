@@ -19,11 +19,12 @@ class CMRbacAdd(CMBaseAction):
     Queries existing admins, selects a template, and creates a new admin with matching patterns.
     """
 
+
     def __init__(self):
         super().__init__()
         self._account_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._account_name = self.get_positional_argument(positional, 0, "")
         if not self._account_name:

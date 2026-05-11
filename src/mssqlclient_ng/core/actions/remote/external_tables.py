@@ -30,7 +30,7 @@ class ExternalTables(BaseAction):
     With SELECT permission you can query data from those external systems.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         pass
 
     def execute(

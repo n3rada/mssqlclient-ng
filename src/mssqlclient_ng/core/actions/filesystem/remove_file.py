@@ -28,11 +28,12 @@ class RemoveFile(BaseAction):
     Requires OLE Automation Procedures to be enabled (or ALTER SETTINGS to enable them).
     """
 
+
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         _, positional = self._parse_action_arguments(additional_arguments)
 
         if not positional:

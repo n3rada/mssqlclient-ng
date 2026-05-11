@@ -20,6 +20,7 @@ class CMPrograms(CMBaseAction):
     Programs define how packages are executed.
     """
 
+
     def __init__(self):
         super().__init__()
         self._package_id: str = ""
@@ -27,7 +28,7 @@ class CMPrograms(CMBaseAction):
         self._command_line: str = ""
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._package_id = named.get("package", named.get("p", ""))
         self._program_name = named.get("name", named.get("n", ""))

@@ -25,13 +25,14 @@ class JobHistory(BaseAction):
     Use --failed/-f to show only failed runs.
     """
 
+
     def __init__(self):
         super().__init__()
         self._name: str = ""
         self._limit: int = 25
         self._failed_only: bool = False
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
+    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
         if not additional_arguments or not additional_arguments.strip():
             return
 
