@@ -587,7 +587,7 @@ class Terminal:
             logger.info(f"Context: {result}")
         else:
             chain_display = linked.format_chain_display(
-                initial_host=self._original_execution_server,
+                initial_host=self._original_execution_server or "",
                 initial_login=self._original_system_user,
             )
             logger.info(f"Chain: {chain_display}")
