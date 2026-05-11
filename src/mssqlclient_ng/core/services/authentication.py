@@ -91,9 +91,10 @@ class AuthenticationService:
                 address=self.server.hostname,
                 port=self.server.port,
                 remoteName=self._remote_name,
-                workstation_id=self._workstation_id,
-                application_name=self._application_name,
-                client_interface_name=self._client_interface_name,
+                # TODO: uncomment once Impacket PR is merged
+                # workstation_id=self._workstation_id,
+                # application_name=self._application_name,
+                # client_interface_name=self._client_interface_name,
             )
 
             # Establish TCP connection
@@ -144,14 +145,15 @@ class AuthenticationService:
                 self.server.version = str(self.mssql_instance.mssql_version)
                 logger.info(f"Server version: {self.server.version}")
 
+            # TODO: uncomment once Impacket PR is merged
             # Log connection details (matching MSSQLand's connection info block)
-            ms = self.mssql_instance
-            encrypted = "TLS" if ms.tlsSocket else "None"
-            logger.info(f"Encryption: {encrypted}")
-            logger.info(f"Packet size: {ms.packetSize}")
-            logger.info(f"Client workstation ID: {ms.workstation_id}")
-            logger.info(f"Client application name: {ms.application_name}")
-            logger.info(f"Client interface name: {ms.client_interface_name}")
+            # ms = self.mssql_instance
+            # encrypted = "TLS" if ms.tlsSocket else "None"
+            # logger.info(f"Encryption: {encrypted}")
+            # logger.info(f"Packet size: {ms.packetSize}")
+            # logger.info(f"Client workstation ID: {ms.workstation_id}")
+            # logger.info(f"Client application name: {ms.application_name}")
+            # logger.info(f"Client interface name: {ms.client_interface_name}")
 
             return True
 
