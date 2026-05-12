@@ -914,12 +914,14 @@ class LinkMap(BaseAction):
             logger.disable("")
             try:
                 with redirect_stdout(io.StringIO()):
-                    result = action.execute(database_context)
+                    raw = action.execute(database_context)
             finally:
                 logger.enable("")
 
-            if not result:
+            if not raw or not isinstance(raw, list):
                 return chains
+
+            result: List[Dict[str, Any]] = raw
 
             # Only keep the shortest chain to each unique end login
             shortest_by_end: Dict[str, List[str]] = {}
