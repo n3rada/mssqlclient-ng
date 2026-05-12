@@ -173,14 +173,14 @@ class Terminal:
             auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
         )
 
-    def _switch_history(self, server: str) -> None:
+    def _switch_history(self, server: Optional[str]) -> None:
         """Switch the prompt session's history to the file for the current (server, identity) context.
 
         Each unique combination of server + login identity gets its own history
         file, so landing on the same server under a different account starts
         with a clean slate automatically.
         """
-        if self._history_dir is None or not self._session_kwargs:
+        if server is None or self._history_dir is None or not self._session_kwargs:
             return
         state = ServerExecutionState(
             hostname=server,
@@ -471,6 +471,8 @@ class Terminal:
             f"'{prefix}help' lists all actions, '{prefix}<action> --help' shows usage."
         )
 
+        assert self._prompt_session is not None
+
         while True:
             try:
                 user_input = self._prompt_session.prompt(message=self._prompt())
@@ -597,7 +599,7 @@ class Terminal:
         print()
         logger.info(f"{len(all_actions)} action(s) — use !<action> --help for details")
 
-    def _handle_debug(self, command_line: str) -> None:
+    def _handle_debug(self, _command_line: str) -> None:
         """Toggle debug mode."""
         if self._log_level == "DEBUG":
             self._log_level = "INFO"
@@ -772,7 +774,7 @@ class Terminal:
         except Exception as e:
             logger.error(f"Failed to apply chain #{chain_id}: {e}")
 
-    def _handle_unlink_all(self, command_line: str) -> None:
+    def _handle_unlink_all(self, _command_line: str) -> None:
         """Clear entire linked server chain and revert impersonations."""
         if self._database_context.query_service.linked_servers.is_empty:
             logger.info("No linked servers to remove")
@@ -804,7 +806,7 @@ class Terminal:
         except Exception as e:
             logger.error(f"Error during impersonation: {e}")
 
-    def _handle_revert(self, command_line: str) -> None:
+    def _handle_revert(self, _command_line: str) -> None:
         """Revert impersonation on the current connection."""
         try:
             self._database_context.user_service.revert_impersonation()
@@ -856,7 +858,7 @@ class Terminal:
         except Exception as e:
             logger.error(f"Failed to add linked server: {e}")
 
-    def _handle_unlink(self, command_line: str) -> None:
+    def _handle_unlink(self, _command_line: str) -> None:
         """Pop the last server from the linked server chain."""
         linked = self._database_context.query_service.linked_servers
 

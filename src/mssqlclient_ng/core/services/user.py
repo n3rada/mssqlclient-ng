@@ -466,5 +466,3 @@ ORDER BY sp.principal_id;""")
         self._is_domain_user_cache.clear()
         self._permission_cache.clear()
         logger.debug("All user service caches cleared")
-
-
