@@ -24,17 +24,17 @@ class Kill(BaseAction):
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
-        if self._target.lower() != "all":
+        if self._target.lower() != "all":  # type: ignore[union-attr]
             try:
-                session_id = int(self._target)
+                session_id = int(self._target)  # type: ignore[arg-type]
                 if session_id <= 0:
                     raise ValueError("Session ID must be positive")
-            except ValueError:
+            except ValueError as exc:
                 raise ValueError(
                     "Invalid argument. Provide a positive session ID or 'all'"
-                )
+                ) from exc
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> Optional[object]:
         """
         Executes the kill operation on target session(s).
 
