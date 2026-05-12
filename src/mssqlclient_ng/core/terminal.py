@@ -20,13 +20,17 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import PygmentsLexer
 
 from pygments.lexers.sql import SqlLexer
-from pygments.styles.dracula import DraculaStyle
-from pygments.styles.solarized import SolarizedLightStyle
+from pygments.styles import get_style_by_name
 
 # Local library imports
 from .utils import logbook
 from .utils.common import yes_no_prompt
-from .utils.completions import ActionCompleter, SQLBuiltinCompleter, TSQL_STARTERS
+from .utils.completions import (
+    ActionCompleter,
+    SQLBuiltinCompleter,
+    TSQL_STARTERS,
+    TSQL_VALID_STANDALONE,
+)
 from .utils.formatters import OutputFormatter
 from .utils.storage import OutputCache
 
@@ -39,23 +43,7 @@ from .actions.factory import ActionFactory
 from .actions.execution import query
 
 
-def _is_dark_terminal() -> bool:
-    """Detect terminal background theme from environment variables."""
-    term_bg = os.environ.get("TERM_BACKGROUND", "").lower()
-    if term_bg in ("dark", "light"):
-        return term_bg == "dark"
-    colorfgbg = os.environ.get("COLORFGBG", "")
-    if colorfgbg:
-        try:
-            return int(colorfgbg.split(";")[-1]) < 8
-        except ValueError:
-            pass
-    return True  # default to dark
-
-
-SQL_STYLE = style_from_pygments_cls(
-    DraculaStyle if _is_dark_terminal() else SolarizedLightStyle
-)
+SQL_STYLE = style_from_pygments_cls(get_style_by_name("tango"))
 
 
 class _TeeWriter:
@@ -469,11 +457,18 @@ class Terminal:
 
     def _execute_raw_query(self, user_input: str) -> None:
         """Execute a raw SQL query (input without prefix)."""
-        first = user_input.strip().split()[0].lower().rstrip(";")
+        tokens = user_input.strip().split()
+        first = tokens[0].lower().rstrip(";")
         if first not in TSQL_STARTERS:
             logger.warning(
                 f"'{first}' is not a recognised T-SQL statement. "
                 f"Use '{self._prefix}' prefix for actions."
+            )
+            return
+
+        if len(tokens) == 1 and first not in TSQL_VALID_STANDALONE:
+            logger.warning(
+                f"Incomplete T-SQL statement: '{first.upper()}' requires more tokens."
             )
             return
 

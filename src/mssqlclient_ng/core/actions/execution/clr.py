@@ -2,8 +2,8 @@
 
 # Built-in imports
 import hashlib
-import os
 import re
+from pathlib import Path
 from typing import List
 
 # Third-party imports
@@ -49,7 +49,7 @@ class ClrExecution(BaseAction):
         self, additional_arguments: str = "", argument_list=None
     ) -> None:
         self._bind_arguments(additional_arguments)
-        logger.info(f"DLL path: {self._dll_path}")
+        logger.info(f"DLL path: {Path(self._dll_path).resolve()}")
         logger.info(f"Class: {self._class_name}")
         logger.info(f"Function: {self._function}")
         if self._args:
@@ -240,7 +240,8 @@ class ClrExecution(BaseAction):
         Returns:
             Tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
         """
-        return self._convert_dll_to_sql_bytes_file(normalize_windows_path(dll))
+        resolved = str(Path(normalize_windows_path(dll)).resolve())
+        return self._convert_dll_to_sql_bytes_file(resolved)
 
     def _convert_dll_to_sql_bytes_file(self, dll: str) -> tuple[str, str]:
         """
@@ -253,14 +254,15 @@ class ClrExecution(BaseAction):
             Tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
         """
         try:
-            if not os.path.exists(dll):
-                raise FileNotFoundError(f"File not found: {dll}")
+            path = Path(dll)
+            if not path.exists():
+                raise FileNotFoundError(f"File not found: {path}")
 
-            file_size = os.path.getsize(dll)
-            logger.info(f"{dll} is {file_size} bytes")
+            file_size = path.stat().st_size
+            logger.info(f"{path} is {file_size} bytes")
 
             # Read all DLL bytes
-            with open(dll, "rb") as f:
+            with path.open("rb") as f:
                 dll_bytes = f.read()
 
             # Compute SHA-512 hash

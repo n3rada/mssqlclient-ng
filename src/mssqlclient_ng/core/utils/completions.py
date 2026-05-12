@@ -16,47 +16,140 @@ from ..actions.factory import ActionFactory
 
 # DML/DDL/control-flow words that open a T-SQL statement
 _TSQL_STARTER_WORDS = [
-    "SELECT", "INSERT", "UPDATE", "DELETE", "MERGE", "TRUNCATE",
-    "CREATE", "DROP", "ALTER",
-    "EXEC", "EXECUTE", "WITH",
-    "USE", "DECLARE", "SET", "BEGIN", "COMMIT", "ROLLBACK",
-    "IF", "WHILE", "RETURN", "PRINT", "GOTO",
-    "GRANT", "REVOKE", "DENY",
-    "BACKUP", "RESTORE", "DBCC", "CHECKPOINT", "RECONFIGURE",
-    "BULK", "RAISERROR", "THROW",
+    "SELECT",
+    "INSERT",
+    "UPDATE",
+    "DELETE",
+    "MERGE",
+    "TRUNCATE",
+    "CREATE",
+    "DROP",
+    "ALTER",
+    "EXEC",
+    "EXECUTE",
+    "WITH",
+    "USE",
+    "DECLARE",
+    "SET",
+    "BEGIN",
+    "COMMIT",
+    "ROLLBACK",
+    "IF",
+    "WHILE",
+    "RETURN",
+    "PRINT",
+    "GOTO",
+    "GRANT",
+    "REVOKE",
+    "DENY",
+    "BACKUP",
+    "RESTORE",
+    "DBCC",
+    "CHECKPOINT",
+    "RECONFIGURE",
+    "BULK",
+    "RAISERROR",
+    "THROW",
 ]
 
 # Clause / mid-statement keywords
 _TSQL_CLAUSE_WORDS = [
-    "FROM", "WHERE",
-    "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "FULL", "CROSS", "APPLY", "ON",
-    "GROUP", "BY", "HAVING", "ORDER", "ASC", "DESC",
-    "TOP", "OFFSET", "FETCH", "NEXT", "ROWS", "ONLY",
-    "DISTINCT", "AS", "ALL", "INTO", "VALUES", "OUTPUT", "INSERTED", "DELETED",
-    "AND", "OR", "NOT", "IN", "BETWEEN", "LIKE", "IS", "NULL", "EXISTS",
-    "CASE", "WHEN", "THEN", "ELSE", "END",
-    "UNION", "INTERSECT", "EXCEPT",
-    "TRANSACTION", "TRY", "CATCH", "GO",
-    "WAITFOR", "DELAY", "TIME",
+    "FROM",
+    "WHERE",
+    "JOIN",
+    "INNER",
+    "LEFT",
+    "RIGHT",
+    "OUTER",
+    "FULL",
+    "CROSS",
+    "APPLY",
+    "ON",
+    "GROUP",
+    "BY",
+    "HAVING",
+    "ORDER",
+    "ASC",
+    "DESC",
+    "TOP",
+    "OFFSET",
+    "FETCH",
+    "NEXT",
+    "ROWS",
+    "ONLY",
+    "DISTINCT",
+    "AS",
+    "ALL",
+    "INTO",
+    "VALUES",
+    "OUTPUT",
+    "INSERTED",
+    "DELETED",
+    "AND",
+    "OR",
+    "NOT",
+    "IN",
+    "BETWEEN",
+    "LIKE",
+    "IS",
+    "NULL",
+    "EXISTS",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    "UNION",
+    "INTERSECT",
+    "EXCEPT",
+    "TRANSACTION",
+    "TRY",
+    "CATCH",
+    "GO",
+    "WAITFOR",
+    "DELAY",
+    "TIME",
 ]
 
 # Table hints
 _TSQL_HINT_WORDS = [
-    "NOLOCK", "READPAST", "UPDLOCK", "ROWLOCK", "TABLOCK",
+    "NOLOCK",
+    "READPAST",
+    "UPDLOCK",
+    "ROWLOCK",
+    "TABLOCK",
 ]
 
 # DDL object types and column/constraint modifiers
 _TSQL_DDL_WORDS = [
-    "TABLE", "DATABASE", "INDEX", "VIEW", "PROCEDURE", "FUNCTION",
-    "TRIGGER", "SCHEMA",
-    "IDENTITY", "PRIMARY", "KEY", "FOREIGN", "REFERENCES",
-    "CONSTRAINT", "CHECK", "DEFAULT", "UNIQUE", "CLUSTERED", "NONCLUSTERED",
+    "TABLE",
+    "DATABASE",
+    "INDEX",
+    "VIEW",
+    "PROCEDURE",
+    "FUNCTION",
+    "TRIGGER",
+    "SCHEMA",
+    "IDENTITY",
+    "PRIMARY",
+    "KEY",
+    "FOREIGN",
+    "REFERENCES",
+    "CONSTRAINT",
+    "CHECK",
+    "DEFAULT",
+    "UNIQUE",
+    "CLUSTERED",
+    "NONCLUSTERED",
     "COLLATE",
 ]
 
 # Rowset / special functions used as table sources
 _TSQL_ROWSET_WORDS = [
-    "OPENQUERY", "OPENROWSET", "PIVOT", "UNPIVOT",
+    "OPENQUERY",
+    "OPENROWSET",
+    "PIVOT",
+    "UNPIVOT",
 ]
 
 # SQL_KEYWORDS is the union of all groups (used for autocompletion)
@@ -69,7 +162,16 @@ SQL_KEYWORDS: list = (
 )
 
 # Fast lookup set for the terminal T-SQL guard (comment openers included)
-TSQL_STARTERS: frozenset = frozenset(w.lower() for w in _TSQL_STARTER_WORDS) | {"--", "/*"}
+TSQL_STARTERS: frozenset = frozenset(w.lower() for w in _TSQL_STARTER_WORDS) | {
+    "--",
+    "/*",
+}
+
+# Starters that are valid as a complete single-token statement.
+# Everything else in TSQL_STARTERS requires at least one more token.
+TSQL_VALID_STANDALONE: frozenset = frozenset(
+    w.lower() for w in ["COMMIT", "ROLLBACK", "CHECKPOINT", "RECONFIGURE", "RETURN"]
+)
 
 SQL_FUNCTIONS = [
     "COUNT",
@@ -296,7 +398,7 @@ class ActionCompleter(Completer):
             id_str = str(chain_id)
             if id_str.startswith(arg_prefix):
                 yield Completion(
-                    id_str[len(arg_prefix):],
+                    id_str[len(arg_prefix) :],
                     start_position=0,
                     display=id_str,
                     display_meta=summary,
@@ -346,5 +448,3 @@ class SQLBuiltinCompleter(Completer):
                     start_position=-len(word_before_cursor),
                     display_meta="function",
                 )
-
-
