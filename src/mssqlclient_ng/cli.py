@@ -294,10 +294,10 @@ def main() -> int:
         log_level = "INFO"
 
     # Determine output stream
-    log_stream = args.std if hasattr(args, "std") else "err"
+    log_stream = args.std
 
     # Check if file logging should be disabled
-    no_log_file = args.no_log_file if hasattr(args, "no_log_file") else False
+    no_log_file = args.no_log_file
 
     logbook.setup_logging(
         level=log_level, stream=log_stream, enable_file=not no_log_file
@@ -405,9 +405,7 @@ def main() -> int:
         use_kerberos = args.kerberos or (args.aesKey is not None)
 
         # Determine KDC host
-        kdc_host = (
-            args.kdcHost if hasattr(args, "kdcHost") and args.kdcHost else args.dc_ip
-        )
+        kdc_host = args.kdcHost or args.dc_ip
 
         # Create authentication service and connect (long-lived connection)
         auth_service = AuthenticationService(
@@ -525,7 +523,7 @@ def main() -> int:
             )
 
         # Detect Azure SQL on the final execution server
-        database_context.query_service.is_azure_sql
+        _ = database_context.query_service.is_azure_sql
 
         if args.query or args.action:
             # Execute single action/query and exit
@@ -597,5 +595,3 @@ def main() -> int:
         # Clean up authentication service if it was created (non-relay mode)
         if auth_service is not None:
             auth_service.disconnect()
-
-    return 1
