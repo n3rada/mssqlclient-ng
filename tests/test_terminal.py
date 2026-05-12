@@ -418,3 +418,183 @@ class TestTerminalHistorySwitching:
         h1 = ServerExecutionState("SQL02", "sa", "dbo", False).short_hash
         h2 = ServerExecutionState("SQL03", "sa", "dbo", False).short_hash
         assert h1 != h2
+
+
+class TestTerminalHandleLink:
+    """Test _handle_link: sets chain, updates execution server, refreshes user."""
+
+    def test_link_single_server_updates_execution_server(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_link("link SQL02")
+        assert mock_database_context.query_service.execution_server == "SQL02"
+
+    def test_link_updates_chain(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_link("link SQL02")
+        assert not mock_database_context.query_service.linked_servers.is_empty
+        assert (
+            mock_database_context.query_service.linked_servers.server_chain[0].hostname
+            == "SQL02"
+        )
+
+    def test_link_calls_refresh_user_info(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        with patch.object(terminal, "_refresh_user_info") as mock_refresh:
+            terminal._handle_link("link SQL02")
+            mock_refresh.assert_called()
+
+    def test_link_multi_hop_sets_last_server(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_link("link SQL02;SQL03")
+        assert mock_database_context.query_service.execution_server == "SQL03"
+
+    def test_link_with_impersonation_stored_in_chain(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_link("link SQL02/john")
+        chain = mock_database_context.query_service.linked_servers.server_chain
+        assert chain[0].impersonation_users == ["john"]
+
+    def test_link_no_server_shows_empty_message(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        # No args — just shows chain status, does not modify linked_servers
+        terminal._handle_link("link")
+        assert mock_database_context.query_service.linked_servers.is_empty
+
+
+class TestTerminalChainAndUnchain:
+    """Integration-style tests: chain up then walk back, verifying state at each step."""
+
+    def _make_ctx(self, mock_database_context, system_user="sa", mapped_user="dbo"):
+        """Convenience: set user_service identity and get_info return value."""
+        mock_database_context.user_service.system_user = system_user
+        mock_database_context.user_service.mapped_user = mapped_user
+        mock_database_context.user_service.get_info.return_value = (
+            mapped_user,
+            system_user,
+        )
+
+    def test_unlink_all_clears_chain_and_reverts_impersonation(
+        self, mock_database_context
+    ):
+        """Unlink-all must call revert_impersonation and land at the original server."""
+        # Simulate: after revert_impersonation the user_service reports original identity
+        mock_database_context.user_service.get_info.return_value = ("dbo", "sa")
+        terminal = Terminal(mock_database_context)
+
+        # Apply a chain AFTER creating the terminal so _original_execution_server = LAB-SQL01
+        linked = LinkedServers("SQL02/john;SQL03")
+        mock_database_context.query_service.linked_servers = linked
+        mock_database_context.query_service.execution_server = "SQL03"
+
+        terminal._handle_unlink_all("unlink-all")
+
+        mock_database_context.user_service.revert_impersonation.assert_called_once()
+        assert mock_database_context.query_service.linked_servers.is_empty
+        assert mock_database_context.query_service.execution_server == "LAB-SQL01"
+
+    def test_unlink_all_live_identity_used_not_stale_cache(self, mock_database_context):
+        """_restore_to_original must call get_info() after revert, not use stale cached values."""
+        linked = LinkedServers("SQL02/john")
+        mock_database_context.query_service.linked_servers = linked
+
+        # After revert the live user_service reports a different user than stored original
+        mock_database_context.user_service.get_info.return_value = (
+            "domain_user",
+            "DOMAIN\\user",
+        )
+
+        terminal = Terminal(mock_database_context)
+        terminal._handle_unlink_all("unlink-all")
+
+        # server.* fields must reflect the live get_info() result, not _original_*
+        assert mock_database_context.server.mapped_user == "domain_user"
+        assert mock_database_context.server.system_user == "DOMAIN\\user"
+
+    def test_unlink_single_hop_calls_restore(self, mock_database_context):
+        """!unlink with exactly one hop left triggers full restore."""
+        linked = LinkedServers("SQL02")
+        mock_database_context.query_service.linked_servers = linked
+
+        terminal = Terminal(mock_database_context)
+        with patch.object(terminal, "_restore_to_original") as mock_restore:
+            terminal._handle_unlink("unlink")
+            mock_restore.assert_called_once()
+
+    def test_unlink_multi_hop_pops_last_and_updates_server(self, mock_database_context):
+        """!unlink on a 2-hop chain must remove the last hop and update execution_server."""
+        linked = LinkedServers("SQL02;SQL03")
+        mock_database_context.query_service.linked_servers = linked
+        mock_database_context.query_service.execution_server = "SQL03"
+
+        terminal = Terminal(mock_database_context)
+        terminal._handle_unlink("unlink")
+
+        assert len(linked.server_chain) == 1
+        assert linked.server_chain[0].hostname == "SQL02"
+        assert mock_database_context.query_service.execution_server == "SQL02"
+
+    def test_unlink_refreshes_user_info_after_pop(self, mock_database_context):
+        """After popping back to SQL02, get_info() must be called to refresh identity."""
+        linked = LinkedServers("SQL02;SQL03")
+        mock_database_context.query_service.linked_servers = linked
+
+        terminal = Terminal(mock_database_context)
+        get_info_call_count_before = (
+            mock_database_context.user_service.get_info.call_count
+        )
+        terminal._handle_unlink("unlink")
+        assert (
+            mock_database_context.user_service.get_info.call_count
+            > get_info_call_count_before
+        )
+
+    def test_chain_then_unlink_all_restores_execution_server(
+        self, mock_database_context
+    ):
+        """Simulates: link SQL02;SQL03 then !unlink-all -> back to LAB-SQL01."""
+        terminal = Terminal(mock_database_context)
+
+        mock_database_context.user_service.get_info.return_value = ("dbo", "sa")
+        terminal._handle_link("link SQL02;SQL03")
+
+        assert mock_database_context.query_service.execution_server == "SQL03"
+
+        mock_database_context.user_service.get_info.return_value = ("dbo", "sa")
+        terminal._handle_unlink_all("unlink-all")
+
+        assert mock_database_context.query_service.execution_server == "LAB-SQL01"
+        assert mock_database_context.query_service.linked_servers.is_empty
+
+    def test_chain_with_impersonation_then_unlink_reverts(self, mock_database_context):
+        """Impersonation encoded in chain spec is stored; unlink-all reverts it."""
+        mock_database_context.user_service.get_info.return_value = ("john-a", "john-a")
+        terminal = Terminal(mock_database_context)
+        terminal._handle_link("link SQL02/john/john-a")
+
+        chain = mock_database_context.query_service.linked_servers.server_chain
+        assert chain[0].impersonation_users == ["john", "john-a"]
+
+        # Now unlink-all: revert_impersonation + live get_info
+        mock_database_context.user_service.get_info.return_value = ("dbo", "sa")
+        terminal._handle_unlink_all("unlink-all")
+
+        mock_database_context.user_service.revert_impersonation.assert_called()
+        assert mock_database_context.server.system_user == "sa"
+        assert mock_database_context.server.mapped_user == "dbo"
+
+    def test_restore_to_original_uses_live_get_info(self, mock_database_context):
+        """_restore_to_original must call get_info() not rely on _original_* for server fields."""
+        linked = LinkedServers("SQL02")
+        mock_database_context.query_service.linked_servers = linked
+
+        # Live get_info returns a different identity than the stored original
+        mock_database_context.user_service.get_info.return_value = (
+            "live_mapped",
+            "live_system",
+        )
+
+        terminal = Terminal(mock_database_context)
+        terminal._restore_to_original()
+
+        assert mock_database_context.server.mapped_user == "live_mapped"
+        assert mock_database_context.server.system_user == "live_system"

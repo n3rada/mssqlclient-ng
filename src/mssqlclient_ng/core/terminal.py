@@ -139,8 +139,9 @@ class Terminal:
         self._database_context.query_service.execution_database = (
             self._original_execution_database
         )
-        self._database_context.server.mapped_user = self._original_mapped_user
-        self._database_context.server.system_user = self._original_system_user
+        # Refresh from the live user_service (now that impersonation is reverted)
+        # rather than trusting the stale cached original values.
+        self._refresh_user_info()
 
     def _update_execution_context(self) -> None:
         """Update execution server/database to match the last server in the chain."""
@@ -202,6 +203,10 @@ class Terminal:
         server = self._database_context.query_service.execution_server
         logger.info(f"Execution server: {server}")
         self._switch_history(server)
+        if not self._database_context.query_service.linked_servers.is_empty:
+            logger.info(
+                "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
+            )
 
     def _cache_context(self) -> tuple:
         """Return the current execution context tuple for cache operations."""
@@ -697,9 +702,6 @@ class Terminal:
             )
             logger.success(f"Linked server chain set: {chain_display}")
             self._log_server_context()
-            logger.info(
-                "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
-            )
 
         except Exception as e:
             logger.error(f"Failed to set linked servers: {e}")
@@ -779,9 +781,6 @@ class Terminal:
             )
             logger.success(f"Chain #{chain_id} applied: {chain_display}")
             self._log_server_context()
-            logger.info(
-                "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
-            )
 
         except Exception as e:
             logger.error(f"Failed to apply chain #{chain_id}: {e}")
