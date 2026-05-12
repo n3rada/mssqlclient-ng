@@ -262,6 +262,7 @@ class Terminal:
             if cached is not None:
                 logger.debug(f"Cache hit for '{canonical_name}' on {server_name}")
                 print(cached, end="")
+                logger.warning("Cached output. Use --force to re-execute.")
                 return None
 
         logger.info(f"Executing action '{action_name}' against {server_name}")
