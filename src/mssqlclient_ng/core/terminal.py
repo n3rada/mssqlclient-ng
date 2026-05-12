@@ -192,8 +192,8 @@ class Terminal:
         history_file.touch(exist_ok=True)
         try:
             os.chmod(history_file, 0o600)
-        except PermissionError:
-            pass
+        except PermissionError as e:
+            logger.warning(f"⚠️ Could not set secure permissions on history file: {e}")
         self._history_file = history_file
         self._prompt_session = self._make_session(
             ThreadedHistory(FileHistory(str(history_file)))
@@ -418,41 +418,9 @@ class Terminal:
                 )
             history_dir = base / "mssqlclient_ng" / "history"
             history_dir.mkdir(parents=True, exist_ok=True)
-
-            # Create unique history file per (server, identity) context
-            server = self._database_context.query_service.execution_server
-            state = ServerExecutionState(
-                hostname=server,
-                system_user=self._database_context.user_service.system_user or "",
-                mapped_user=self._database_context.user_service.mapped_user or "",
-                is_sysadmin=self._database_context.user_service.is_admin(),
-            )
-            ctx_hash = state.short_hash
-            history_file = history_dir / f"{server}_{ctx_hash}_history"
-
-            history_file.touch(exist_ok=True)
-
-            # Set permissions to 0600 (rw-------)
-            try:
-                os.chmod(history_file, 0o600)
-            except PermissionError as e:
-                logger.warning(
-                    f"⚠️ Could not set secure permissions on history file: {e}"
-                )
-
-            history_backend = ThreadedHistory(FileHistory(str(history_file)))
-            self._history_file = history_file
             self._history_dir = history_dir
-            identity = (
-                f"{state.system_user}({state.mapped_user})"
-                if state.mapped_user
-                else state.system_user
-            )
-            logger.info(f"Session context [{ctx_hash}]: {server} as {identity}")
-            logger.debug(f"History file: {history_file}")
         else:
             logger.debug("🗑️ In-memory command history enabled.")
-            history_backend = ThreadedHistory(InMemoryHistory())
 
         if multiline:
             logger.warning(
@@ -482,7 +450,12 @@ class Terminal:
             "style": SQL_STYLE,
         }
 
-        self._prompt_session = self._make_session(history_backend)
+        if history:
+            # Delegate to _switch_history: it handles file creation, permissions,
+            # identity logging, and session construction.
+            self._switch_history(self._database_context.query_service.execution_server)
+        else:
+            self._prompt_session = self._make_session(ThreadedHistory(InMemoryHistory()))
 
         logger.info(
             f"Type SQL directly or use '{prefix}<action> [args]' to run an action."
@@ -509,7 +482,7 @@ class Terminal:
                 else:
                     continue
             except Exception as exc:
-                logger.warning(f"Exception occured: {exc}")
+                logger.warning(f"Exception occurred: {exc}")
                 continue
             else:
                 if not user_input.startswith(prefix):
