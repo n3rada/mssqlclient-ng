@@ -405,7 +405,7 @@ ORDER BY sp.principal_id;""")
         try:
             self._query_service.execute_non_processing(query, silent=True)
             self._admin_status_cache.clear()
-            logger.info(f"Impersonated user {user} for current connection")
+            logger.debug(f"Impersonated user {user} for current connection")
             return True
         except Exception as e:
             error_msg = str(e)
@@ -420,7 +420,7 @@ ORDER BY sp.principal_id;""")
                     )
                     self._query_service.execute_non_processing(query, silent=True)
                     self._admin_status_cache.clear()
-                    logger.info(
+                    logger.debug(
                         f"Impersonated user {user} for current connection (via master)"
                     )
                     return True
@@ -450,7 +450,7 @@ ORDER BY sp.principal_id;""")
         try:
             self._query_service.execute_non_processing(query)
             self._admin_status_cache.clear()
-            logger.info("Reverted impersonation, restored original login.")
+            logger.debug("Reverted impersonation")
             return True
         except Exception as e:
             logger.error(f"Failed to revert impersonation: {e}")

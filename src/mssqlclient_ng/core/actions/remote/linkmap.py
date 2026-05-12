@@ -1,6 +1,9 @@
 # mssqlclient_ng/core/actions/remote/linkmap.py
 
 # Built-in imports
+import io
+import sys
+from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Set, Tuple
 import hashlib
@@ -18,6 +21,7 @@ from ...models.server import Server
 from ...utils.formatters import OutputFormatter
 from ...utils.common import bracket_identifier
 from ...utils.storage import ChainStore
+from ...utils.logbook import _format_message
 
 # Server roles that grant significant privileges beyond standard access.
 ELEVATED_ROLES: Set[str] = {
@@ -71,7 +75,6 @@ class ServerNode:
     impersonation_chain: List[ImpersonationStep] = field(default_factory=list)
     is_sysadmin: bool = False
     server_roles: List[str] = field(default_factory=list)
-    non_sql_links: List[str] = field(default_factory=list)
     children: List["ServerNode"] = field(default_factory=list)
     escalation_paths: List[List[ImpersonationStep]] = field(default_factory=list)
 
@@ -183,6 +186,7 @@ class LinkMap(BaseAction):
         self._failed_link_attempts: Set[str] = set()
         self._context_role_cache: Dict[str, Tuple[List[str], bool]] = {}
         self._all_chains: List[List[ServerNode]] = []
+        self._seen_chain_displays: Set[str] = set()
         self._starting_impersonation: List[str] = []
         self._chain_store = ChainStore()
 
@@ -244,9 +248,8 @@ class LinkMap(BaseAction):
             logger.warning("No linked servers found.")
             return None
 
-        # Separate SQL Server links (chainable) from others
+        # Separate SQL Server links (chainable) from non-chainable
         sql_server_links: List[Dict[str, Any]] = []
-        other_links: List[Dict[str, Any]] = []
         no_visibility_links: List[Dict[str, Any]] = []
 
         for row in all_linked_servers:
@@ -258,8 +261,6 @@ class LinkMap(BaseAction):
             provider = _get_row_string(row, "Provider")
             if provider.startswith("SQLNCLI") or provider.startswith("MSOLEDBSQL"):
                 sql_server_links.append(row)
-            else:
-                other_links.append(row)
 
         if no_visibility_links:
             logger.debug(
@@ -299,19 +300,6 @@ class LinkMap(BaseAction):
             is_sysadmin=database_context.user_service.is_admin(),
             server_roles=root_roles,
         )
-
-        # Add non-SQL linked servers at initial server
-        for row in other_links:
-            name = _get_row_string(row, "Link")
-            provider = _get_row_string(row, "Provider")
-            self._root_node.non_sql_links.append(f"{name} ({provider})")
-
-        if other_links:
-            logger.debug("Other linked servers (queryable via OPENQUERY):")
-            for row in other_links:
-                logger.debug(
-                    f"  {row.get('Link')} ({row.get('Provider')}) - {row.get('Product', '')}"
-                )
 
         if not sql_server_links and not no_visibility_links:
             logger.warning("No SQL Server linked servers to explore.")
@@ -432,7 +420,7 @@ class LinkMap(BaseAction):
         start_time = time.time()
 
         # Explore each discovered SQL link
-        for (remote_server_upper, _), (
+        for (_, _), (
             link_row,
             chain_to_reach,
         ) in all_sql_links.items():
@@ -597,11 +585,11 @@ class LinkMap(BaseAction):
             # Clear stale caches
             database_context.user_service.clear_caches()
 
-            # Probe connectivity
+            # Silently probe connectivity: avoids noisy error output for inaccessible servers
             actual_server_name = target_server
             try:
                 server_name_result = database_context.query_service.execute_scalar(
-                    "SELECT @@SERVERNAME"
+                    "SELECT @@SERVERNAME", silent=True
                 )
                 if server_name_result:
                     actual_server_name = str(server_name_result)
@@ -678,9 +666,17 @@ class LinkMap(BaseAction):
                 server_roles=node_roles,
             )
 
-            parent_node.children.append(current_node)
             new_path = current_path + [current_node]
+
+            # Deduplicate: skip if this exact chain was already discovered
+            chain_display = self._format_chain_progress(new_path)
+            if chain_display in self._seen_chain_displays:
+                return
+            self._seen_chain_displays.add(chain_display)
+
+            parent_node.children.append(current_node)
             self._all_chains.append(new_path)
+            logger.info(f"Chain #{len(self._all_chains)}: {chain_display}")
 
             # If already explored, leaf is enough
             if already_explored:
@@ -777,11 +773,10 @@ class LinkMap(BaseAction):
                     if chain_key not in all_links_on_server:
                         all_links_on_server[chain_key] = (existing_row, chain)
 
-            # Classify discovered links
+            # Classify discovered links (only SQL Server providers are chainable)
             remote_sql_links: List[
                 Tuple[str, str, Dict[str, Any], Optional[List[str]]]
             ] = []
-            remote_other_links: List[str] = []
 
             for (server_link_upper, _), (row, chain) in all_links_on_server.items():
                 provider = _get_row_string(row, "Provider")
@@ -791,12 +786,6 @@ class LinkMap(BaseAction):
                 if provider.startswith("SQLNCLI") or provider.startswith("MSOLEDBSQL"):
                     if not _is_system_account(local_login):
                         remote_sql_links.append((server_link, local_login, row, chain))
-                else:
-                    remote_other_links.append(f"{server_link} ({provider})")
-
-            # Store non-SQL linked servers
-            for link in remote_other_links:
-                current_node.non_sql_links.append(f"[OPENQUERY] {link}")
 
             logger.debug(
                 f"Exploring SQL Server links on '{target_server}' (found {len(remote_sql_links)})"
@@ -951,23 +940,26 @@ class LinkMap(BaseAction):
 
             action = ImpersonationMap()
 
-            # Suppress output during discovery
+            # Suppress all output during discovery (both logger and print)
             original_level = logger._core.min_level
             logger.remove()
             logger.add(
-                lambda msg: print(msg, end=""),
-                level="ERROR",
+                lambda msg: None,
+                level="CRITICAL",
                 format="{message}",
             )
 
-            result = action.execute(database_context)
+            with redirect_stdout(io.StringIO()):
+                result = action.execute(database_context)
 
-            # Restore logging
+            # Restore logging with proper format
             logger.remove()
             logger.add(
-                lambda msg: print(msg, end=""),
+                sys.stderr,
                 level=original_level,
-                format="{message}",
+                format=_format_message,
+                colorize=True,
+                enqueue=False,
             )
 
             if not result:
@@ -1054,7 +1046,7 @@ LEFT JOIN master.sys.server_principals prin ON ll.local_principal_id = prin.prin
 WHERE srv.is_linked = 1
 ORDER BY srv.provider, srv.modify_date DESC;"""
 
-        raw_rows = database_context.query_service.execute_table(query)
+        raw_rows = database_context.query_service.execute_table(query, silent=True)
         if not raw_rows:
             return None
 
@@ -1118,6 +1110,45 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         return count
 
     # ------------------------------------------------------------------
+    # Display: Real-time progress
+    # ------------------------------------------------------------------
+
+    def _format_chain_progress(self, path: List[ServerNode]) -> str:
+        """
+        Format a discovered chain for real-time display, matching the CLI chain format.
+
+        Example:
+            LAB-SQL01 (operator) ─(operator)─> LAB-SQL02 ─(john → john-a)─> LAB-SQL03 (john-a) ★
+        """
+        parts: List[str] = []
+
+        # Root server with its login
+        root_login = self._root_node.logged_in_user
+        parts.append(f"{self._root_node.alias} ({root_login})")
+
+        for i, node in enumerate(path):
+            # Connector: show impersonation on the parent server
+            imp_logins = [s.login for s in node.impersonation_chain]
+            if i == 0 and self._starting_impersonation:
+                imp_logins = list(self._starting_impersonation) + imp_logins
+
+            if imp_logins:
+                cascade = " \u2192 ".join(imp_logins)
+                parts.append(f"\u2500({cascade})\u2500> ")
+            else:
+                parts.append(" \u2500\u2500> ")
+
+            # Server name
+            is_last = i == len(path) - 1
+            display = node.alias
+            if is_last:
+                display += f" ({node.logged_in_user}){node.privilege_marker}"
+
+            parts.append(display)
+
+        return "".join(parts)
+
+    # ------------------------------------------------------------------
     # Display: Tree view
     # ------------------------------------------------------------------
 
@@ -1127,11 +1158,6 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             f"{self._root_node.alias} ({self._root_node.logged_in_user} "
             f"[{self._root_node.mapped_user}]){self._root_node.privilege_marker}"
         )
-
-        if self._root_node.non_sql_links:
-            print(
-                f"    \u2514\u2500\u2500 [OPENQUERY] {', '.join(self._root_node.non_sql_links)}"
-            )
 
         for i, child in enumerate(self._root_node.children):
             is_last = i == len(self._root_node.children) - 1
@@ -1190,12 +1216,6 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
                 f"({node.logged_in_user} [{node.mapped_user}]){node.privilege_marker}"
             )
 
-            if node.non_sql_links:
-                print(
-                    f"{server_child_indent}\u2514\u2500\u2500 [OPENQUERY] "
-                    f"{', '.join(node.non_sql_links)}"
-                )
-
             for i, child in enumerate(node.children):
                 child_is_last = (
                     i == len(node.children) - 1 and not node.escalation_paths
@@ -1214,12 +1234,6 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
                 f"{indent}{connector}{display_name} "
                 f"({node.logged_in_user} [{node.mapped_user}]){node.privilege_marker}"
             )
-
-            if node.non_sql_links:
-                print(
-                    f"{child_indent}\u2514\u2500\u2500 [OPENQUERY] "
-                    f"{', '.join(node.non_sql_links)}"
-                )
 
             for i, child in enumerate(node.children):
                 child_is_last = (
