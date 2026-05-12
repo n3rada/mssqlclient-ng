@@ -117,6 +117,9 @@ class Terminal:
             None  # set by start() when history is enabled
         )
         self._prompt_session: Optional[PromptSession] = None
+        self._session_kwargs: dict = (
+            {}
+        )  # set by start(); used when recreating session on history switch
 
     # ── Helper Methods ──────────────────────────────────────────────────
 
@@ -147,6 +150,19 @@ class Terminal:
         self._database_context.query_service.execution_server = last_server.hostname
         self._database_context.query_service.compute_execution_database()
 
+    def _make_session(self, history_backend) -> PromptSession:
+        """Create a fresh PromptSession bound to *history_backend*.
+
+        prompt_toolkit creates its Application (and the Buffer inside it) once
+        inside PromptSession.__init__ and never recreates it.  Reassigning
+        session.history after construction has no effect because the cached
+        Buffer already holds the original history reference and has loaded its
+        strings into memory.  Creating a new PromptSession is therefore the
+        only reliable way to make the up-arrow key reflect a different history
+        file after a server hop.
+        """
+        return PromptSession(**self._session_kwargs, history=history_backend)
+
     def _switch_history(self, server: str) -> None:
         """Switch the prompt session's history to the file for the current (server, identity) context.
 
@@ -154,7 +170,7 @@ class Terminal:
         file, so landing on the same server under a different account starts
         with a clean slate automatically.
         """
-        if self._history_dir is None or self._prompt_session is None:
+        if self._history_dir is None or not self._session_kwargs:
             return
         state = ServerExecutionState(
             hostname=server,
@@ -170,7 +186,9 @@ class Terminal:
         except PermissionError:
             pass
         self._history_file = history_file
-        self._prompt_session.history = ThreadedHistory(FileHistory(str(history_file)))
+        self._prompt_session = self._make_session(
+            ThreadedHistory(FileHistory(str(history_file)))
+        )
         identity = (
             f"{state.system_user}({state.mapped_user})"
             if state.mapped_user
@@ -438,17 +456,21 @@ class Terminal:
             ]
         )
 
-        self._prompt_session = PromptSession(
-            cursor=CursorShape.BLINKING_BEAM,
-            multiline=multiline,
-            enable_history_search=True,
-            wrap_lines=True,
-            auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
-            history=history_backend,
-            completer=combined_completer,
-            lexer=PygmentsLexer(SqlLexer),
-            style=SQL_STYLE,
-        )
+        # Store session kwargs so _switch_history can recreate the session with
+        # a different history backend (prompt_toolkit caches its Application in
+        # __init__, so reassigning session.history has no effect at runtime).
+        self._session_kwargs = {
+            "cursor": CursorShape.BLINKING_BEAM,
+            "multiline": multiline,
+            "enable_history_search": True,
+            "wrap_lines": True,
+            "auto_suggest": ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
+            "completer": combined_completer,
+            "lexer": PygmentsLexer(SqlLexer),
+            "style": SQL_STYLE,
+        }
+
+        self._prompt_session = self._make_session(history_backend)
 
         logger.info(
             f"Type SQL directly or use '{prefix}<action> [args]' to run an action."

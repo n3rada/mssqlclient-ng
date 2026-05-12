@@ -292,11 +292,12 @@ class TestTerminalHistorySwitching:
         """Return a Terminal whose history is rooted in tmp_path."""
         terminal = Terminal(mock_database_context)
         terminal._history_dir = tmp_path
-        from prompt_toolkit.history import InMemoryHistory, ThreadedHistory
-
-        session = MagicMock()
-        session.history = ThreadedHistory(InMemoryHistory())
-        terminal._prompt_session = session
+        # Provide non-empty _session_kwargs so the guard passes; patch
+        # _make_session so it returns a fresh MagicMock (avoids constructing a
+        # real PromptSession which would need a real terminal).
+        terminal._session_kwargs = {"_test": True}
+        terminal._prompt_session = MagicMock()
+        terminal._make_session = lambda history_backend: MagicMock()
         return terminal
 
     def _expected_file(
