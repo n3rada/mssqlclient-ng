@@ -318,38 +318,6 @@ ORDER BY sp.principal_id;""")
             self.effective_user = self._mapped_user or "Unknown"
             self.source_principal = self._system_user or "Unknown"
 
-    def get_user_database_roles(self) -> list[str]:
-        """
-        Retrieves the list of database roles the current user is a member of.
-        Checks roles in the current database context.
-
-        Returns:
-            List of database role names the user belongs to, or empty list if none found
-        """
-        roles = []
-
-        try:
-            # Get all database roles that the current user is a member of
-            roles_query = """
-                SELECT r.name
-                FROM sys.database_principals r
-                INNER JOIN sys.database_role_members rm ON r.principal_id = rm.role_principal_id
-                INNER JOIN sys.database_principals m ON rm.member_principal_id = m.principal_id
-                WHERE m.name = USER_NAME()
-                AND r.type = 'R'
-                ORDER BY r.name;"""
-
-            roles_table = self._query_service.execute_table(roles_query)
-
-            for row in roles_table:
-                role_name = row.get("name")
-                if role_name:
-                    roles.append(str(role_name))
-        except Exception as ex:
-            logger.warning(f"Error retrieving database roles: {ex}")
-
-        return roles
-
     def can_impersonate(self, user: str) -> bool:
         """
         Check if the current user can impersonate a specified login.
@@ -367,10 +335,11 @@ ORDER BY sp.principal_id;""")
             )
             return True
 
+        safe_user = user.replace("'", "''")
         query = (
             "SELECT 1 FROM master.sys.server_permissions a "
             "INNER JOIN master.sys.server_principals b ON a.grantor_principal_id = b.principal_id "
-            f"WHERE a.permission_name = 'IMPERSONATE' AND b.name = '{user}';"
+            f"WHERE a.permission_name = 'IMPERSONATE' AND b.name = '{safe_user}';"
         )
 
         try:
@@ -488,11 +457,6 @@ ORDER BY sp.principal_id;""")
         self._query_service.linked_servers._recompute_chain()
         logger.debug(f"Linked impersonation reverted to: {users if users else 'none'}")
 
-    def clear_admin_cache(self) -> None:
-        """Clear the admin status cache for all servers."""
-        self._admin_status_cache.clear()
-        logger.debug("Admin status cache cleared")
-
     def clear_caches(self) -> None:
         """
         Clear all cached admin, domain user, and permission status.
@@ -503,13 +467,4 @@ ORDER BY sp.principal_id;""")
         self._permission_cache.clear()
         logger.debug("All user service caches cleared")
 
-    def clear_admin_cache_for_server(self, server: str) -> None:
-        """
-        Clear the admin status cache for a specific server.
 
-        Args:
-            server: The server name to clear from cache
-        """
-        if server in self._admin_status_cache:
-            del self._admin_status_cache[server]
-            logger.debug(f"Admin status cache cleared for server: {server}")
