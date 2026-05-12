@@ -85,7 +85,7 @@ class BaseAction(ABC):
         self._bind_arguments(additional_arguments)
 
     @abstractmethod
-    def execute(self, database_context=None) -> Optional[object]:
+    def execute(self, database_context: Any) -> Optional[object]:
         pass
 
     @classmethod

@@ -52,7 +52,7 @@ class SmbCoerce(BaseAction):
             )
         self._unc_path = path
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> Optional[object]:
         """
         Execute SMB coercion using multiple fallback methods.
 
