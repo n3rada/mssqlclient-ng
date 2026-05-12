@@ -123,8 +123,8 @@ class Links(BaseAction):
         for row in raw:
             uses_self_raw = row.get("Uses Self")
             has_row = uses_self_raw is not None
-            uses_self = has_row and int(uses_self_raw) == 1 if has_row else False
-            is_default = int(row.get("Is Default", 0)) == 1
+            uses_self = int(uses_self_raw) == 1 if has_row else False
+            is_default = int(row.get("Is Default") or 0) == 1
             remote_login = row.get("Remote Login")
 
             if not has_row:

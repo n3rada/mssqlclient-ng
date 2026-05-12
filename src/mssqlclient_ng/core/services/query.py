@@ -167,7 +167,17 @@ class QueryService:
             List of row dictionaries, one per result row.
         """
         rows = self.execute(query, tuple_mode=False, silent=silent)
-        return rows if rows else []
+        if not rows:
+            return []
+        return [self._normalize_row(row) for row in rows]
+
+    @staticmethod
+    def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert impacket's 'NULL' sentinel strings to Python None."""
+        return {
+            k: (None if isinstance(v, str) and v.upper() == "NULL" else v)
+            for k, v in row.items()
+        }
 
     def execute_scalar(self, query: str, silent: bool = False) -> Optional[Any]:
         """
