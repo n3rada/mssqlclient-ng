@@ -2,7 +2,6 @@
 
 # Built-in imports
 import io
-import sys
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Set, Tuple
@@ -21,7 +20,6 @@ from ...models.server_execution_state import ServerExecutionState
 from ...utils.formatters import OutputFormatter
 from ...utils.common import bracket_identifier
 from ...utils.storage import ChainStore
-from ...utils.logbook import _format_message
 
 # Server roles that grant significant privileges beyond standard access.
 ELEVATED_ROLES: Set[str] = {
@@ -915,27 +913,12 @@ class LinkMap(BaseAction):
 
             action = ImpersonationMap()
 
-            # Suppress all output during discovery (both logger and print)
-            original_level = logger._core.min_level
-            logger.remove()
-            logger.add(
-                lambda msg: None,
-                level="CRITICAL",
-                format="{message}",
-            )
-
-            with redirect_stdout(io.StringIO()):
-                result = action.execute(database_context)
-
-            # Restore logging with proper format
-            logger.remove()
-            logger.add(
-                sys.stderr,
-                level=original_level,
-                format=_format_message,
-                colorize=True,
-                enqueue=False,
-            )
+            logger.disable("")
+            try:
+                with redirect_stdout(io.StringIO()):
+                    result = action.execute(database_context)
+            finally:
+                logger.enable("")
 
             if not result:
                 return chains
