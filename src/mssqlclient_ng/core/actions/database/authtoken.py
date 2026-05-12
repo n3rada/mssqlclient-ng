@@ -35,19 +35,6 @@ class AuthToken(BaseAction):
         """
         return []
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate the arguments for the authtoken action.
-
-        Args:
-            additional_arguments: Not used for this action
-
-        Raises:
-            ValueError: Never raised - no arguments required
-        """
-        # No additional arguments needed
-        pass
-
     def execute(
         self, database_context: DatabaseContext
     ) -> Optional[List[Dict[str, str]]]:

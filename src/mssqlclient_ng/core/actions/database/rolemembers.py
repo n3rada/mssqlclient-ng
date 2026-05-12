@@ -5,7 +5,7 @@ from typing import Optional
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -20,38 +20,7 @@ class RoleMembers(BaseAction):
     processadmin, diskadmin, dbcreator, bulkadmin, public
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._role_name: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validates that a role name has been provided.
-
-        Args:
-            additional_arguments: The server role name.
-
-        Raises:
-            ValueError: If the role name is empty.
-        """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError(
-                "Role name is required. Example: sysadmin, serveradmin, securityadmin, etc."
-            )
-
-        # Parse both positional and named arguments
-        named_args, positional_args = self._parse_action_arguments(
-            additional_arguments.strip()
-        )
-
-        # Get role name from position 0
-        self._role_name = positional_args[0] if positional_args else ""
-
-        if not self._role_name:
-            raise ValueError(
-                "Role name is required. Example: sysadmin, serveradmin, securityadmin, etc."
-            )
+    _role_name: str = Arg(position=0, required=True, description="Server role name (e.g., sysadmin)")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """

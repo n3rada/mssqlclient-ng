@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
@@ -20,27 +20,12 @@ class Kill(BaseAction):
     Can target a specific session ID or use 'all' to kill all active sessions.
     """
 
+    _target: str = Arg(position=0, required=True, description="Session ID or 'all'")  # type: ignore[assignment]
 
-    def __init__(self):
-        super().__init__()
-        self._target: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validates the kill target argument.
-
-        Args:
-            additional_arguments: Session ID (positive integer) or 'all'
-
-        Raises:
-            ValueError: If arguments are invalid.
-        """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("Please specify a session ID or 'all' as an argument")
-
-        self._target = additional_arguments.strip()
-
-        # Verify target is "all" or a valid integer
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
+        self._bind_arguments(additional_arguments)
         if self._target.lower() != "all":
             try:
                 session_id = int(self._target)

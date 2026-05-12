@@ -10,7 +10,7 @@ from typing import List
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import (
@@ -40,61 +40,15 @@ class ClrExecution(BaseAction):
     6. Cleanup (drop procedure, assembly, and hash)
     """
 
-    def __init__(self):
-        super().__init__()
-        self._dll_path: str = ""
-        self._class_name: str = "StoredProcedures"
-        self._function: str = "Main"
-        self._args: str = ""
+    _dll_path: str = Arg(position=0, required=True, description="Path to the DLL (local or HTTP/S)")  # type: ignore[assignment]
+    _class_name: str = Arg(position=1, required=True, default="StoredProcedures", description="Class name containing the function")  # type: ignore[assignment]
+    _function: str = Arg(position=2, required=True, default="Main", description="Function name to execute")  # type: ignore[assignment]
+    _args: str = Arg(position=3, remainder=True, default="", description="Function args")  # type: ignore[assignment]
 
     def validate_arguments(
         self, additional_arguments: str = "", argument_list=None
     ) -> None:
-        """
-        Validate arguments for CLR execution.
-
-        Args:
-            additional_arguments: The argument string to parse
-                Format: <dll_path> <class_name> <function> [args...]
-
-        Raises:
-            ValueError: If arguments are invalid
-        """
-        named_args, positional_args = self._parse_action_arguments(additional_arguments)
-
-        # Parse DLL path (required)
-        if len(positional_args) >= 1:
-            self._dll_path = positional_args[0]
-        else:
-            raise ValueError(
-                "DLL path is required. Usage: <dll_path> <className> <function> [args...]"
-            )
-
-        # Parse class name (required)
-        if len(positional_args) >= 2:
-            self._class_name = positional_args[1]
-        else:
-            raise ValueError(
-                "Class name is required. Usage: <dll_path> <className> <function> [args...]"
-            )
-
-        # Parse function name (required)
-        if len(positional_args) >= 3:
-            self._function = positional_args[2]
-        else:
-            raise ValueError(
-                "Function name is required. Usage: <dll_path> <className> <function> [args...]"
-            )
-
-        # Parse remaining args (optional, joined with space)
-        if len(positional_args) >= 4:
-            self._args = " ".join(positional_args[3:])
-
-        if not self._dll_path:
-            raise ValueError(
-                "DLL path is required. Usage: <dll_path> <className> <function> [args...]"
-            )
-
+        self._bind_arguments(additional_arguments)
         logger.info(f"DLL path: {self._dll_path}")
         logger.info(f"Class: {self._class_name}")
         logger.info(f"Function: {self._function}")

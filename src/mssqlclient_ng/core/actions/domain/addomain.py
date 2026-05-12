@@ -25,15 +25,6 @@ class DomainSid(BaseAction):
     then strips the trailing RID to get the domain SID prefix.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        No additional arguments required for this action.
-
-        Args:
-            additional_arguments: Ignored.
-        """
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[dict]:
         """
         Executes the domain SID retrieval.

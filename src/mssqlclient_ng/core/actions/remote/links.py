@@ -27,18 +27,6 @@ class Links(BaseAction):
     collation compatibility.
     """
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
-        """
-        Validate arguments (none required for this action).
-
-        Args:
-            additional_arguments: Not used
-        """
-        # No arguments needed
-        pass
-
     def execute(
         self, database_context: DatabaseContext
     ) -> Optional[List[Dict[str, Any]]]:

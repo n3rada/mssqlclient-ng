@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
@@ -40,31 +40,8 @@ class AdsiRedirect(BaseAction):
     Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._listener_address: str = ""
-        self._target_server: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError(
-                "Listener address is required. "
-                "Usage: adsi-redirect <listener-ip[:port]> [adsi-server]"
-            )
-
-        _, positional = self._parse_action_arguments(additional_arguments)
-
-        if not positional:
-            raise ValueError(
-                "Listener address is required. "
-                "Usage: adsi-redirect <listener-ip[:port]> [adsi-server]"
-            )
-
-        self._listener_address = positional[0]
-
-        if len(positional) > 1:
-            self._target_server = positional[1]
+    _listener_address: str = Arg(position=0, required=True, description="Listener IP[:port] for LDAP capture")  # type: ignore[assignment]
+    _target_server: str = Arg(position=1, default="", description="ADSI server name to redirect")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         adsi_service = AdsiService(database_context)

@@ -24,18 +24,6 @@ class AdSid(BaseAction):
     Also extracts domain SID and RID if the user is a domain account.
     """
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
-        """
-        Validate arguments (no arguments required).
-
-        Args:
-            additional_arguments: The argument string to parse (unused)
-        """
-        # No additional arguments needed
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[Dict[str, str]]:
         """
         Execute the user SID retrieval action.

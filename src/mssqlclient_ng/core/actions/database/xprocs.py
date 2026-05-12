@@ -14,7 +14,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-
 # Descriptions for common extended procedures (xp_*)
 XP_DESCRIPTIONS = {
     # Command Execution & System
@@ -145,17 +144,6 @@ class ExtendedProcs(BaseAction):
     This action lists all available extended procedures and checks execution permissions.
     """
 
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate arguments (none required for this action).
-
-        Args:
-            additional_arguments: Not used
-        """
-        # No arguments needed
-        pass
-
     def execute(
         self, database_context: DatabaseContext
     ) -> Optional[List[Dict[str, Any]]]:
@@ -196,9 +184,13 @@ class ExtendedProcs(BaseAction):
 
             if xp_rows:
                 enriched = self._enrich_procs(xp_rows, XP_DESCRIPTIONS)
-                executable = sum(1 for p in enriched if str(p["Execute"]).startswith("Yes"))
+                executable = sum(
+                    1 for p in enriched if str(p["Execute"]).startswith("Yes")
+                )
                 print(OutputFormatter.convert_list_of_dicts(enriched))
-                logger.success(f"Found {len(enriched)} extended procedures ({executable} executable)")
+                logger.success(
+                    f"Found {len(enriched)} extended procedures ({executable} executable)"
+                )
             else:
                 logger.warning("No extended stored procedures found or access denied")
                 enriched = []
@@ -207,13 +199,17 @@ class ExtendedProcs(BaseAction):
             print()
             logger.info("Enumerating OLE Automation procedures (sp_OA*)")
 
-            ole_status = database_context.configuration_service.get_configuration_status(
-                "Ole Automation Procedures"
+            ole_status = (
+                database_context.configuration_service.get_configuration_status(
+                    "Ole Automation Procedures"
+                )
             )
             if ole_status == 1:
                 logger.success("Ole Automation Procedures: Enabled")
             else:
-                logger.warning("Ole Automation Procedures: Disabled (sp_OA* won't work)")
+                logger.warning(
+                    "Ole Automation Procedures: Disabled (sp_OA* won't work)"
+                )
 
             ole_query = f"""
                 SELECT
@@ -241,13 +237,31 @@ class ExtendedProcs(BaseAction):
             print()
             logger.info("Checking other useful system procedures")
 
-            ext_scripts = database_context.configuration_service.get_configuration_status("external scripts enabled")
-            clr_enabled = database_context.configuration_service.get_configuration_status("clr enabled")
-            adhoc_queries = database_context.configuration_service.get_configuration_status("Ad Hoc Distributed Queries")
+            ext_scripts = (
+                database_context.configuration_service.get_configuration_status(
+                    "external scripts enabled"
+                )
+            )
+            clr_enabled = (
+                database_context.configuration_service.get_configuration_status(
+                    "clr enabled"
+                )
+            )
+            adhoc_queries = (
+                database_context.configuration_service.get_configuration_status(
+                    "Ad Hoc Distributed Queries"
+                )
+            )
 
-            logger.info(f"External Scripts (R/Python): {'Enabled' if ext_scripts == 1 else 'Disabled'}")
-            logger.info(f"CLR Integration: {'Enabled' if clr_enabled == 1 else 'Disabled'}")
-            logger.info(f"Ad Hoc Distributed Queries (OPENROWSET/OPENDATASOURCE): {'Enabled' if adhoc_queries == 1 else 'Disabled'}")
+            logger.info(
+                f"External Scripts (R/Python): {'Enabled' if ext_scripts == 1 else 'Disabled'}"
+            )
+            logger.info(
+                f"CLR Integration: {'Enabled' if clr_enabled == 1 else 'Disabled'}"
+            )
+            logger.info(
+                f"Ad Hoc Distributed Queries (OPENROWSET/OPENDATASOURCE): {'Enabled' if adhoc_queries == 1 else 'Disabled'}"
+            )
 
             system_query = f"""
                 SELECT
@@ -277,14 +291,22 @@ class ExtendedProcs(BaseAction):
                 sys_enriched = []
                 for proc in sys_rows:
                     proc_name = str(proc.get("Procedure", ""))
-                    simple_name = proc_name.split(".")[-1] if "." in proc_name else proc_name
-                    sys_enriched.append({
-                        "Procedure": proc_name,
-                        "Execute": str(proc.get("Execute", "")),
-                        "Description": SYSTEM_PROC_DESCRIPTIONS.get(simple_name, ""),
-                        "Type": str(proc.get("Type", "")),
-                    })
-                sys_enriched.sort(key=lambda x: (x["Execute"].startswith("No"), x["Procedure"]))
+                    simple_name = (
+                        proc_name.split(".")[-1] if "." in proc_name else proc_name
+                    )
+                    sys_enriched.append(
+                        {
+                            "Procedure": proc_name,
+                            "Execute": str(proc.get("Execute", "")),
+                            "Description": SYSTEM_PROC_DESCRIPTIONS.get(
+                                simple_name, ""
+                            ),
+                            "Type": str(proc.get("Type", "")),
+                        }
+                    )
+                sys_enriched.sort(
+                    key=lambda x: (x["Execute"].startswith("No"), x["Procedure"])
+                )
                 print(OutputFormatter.convert_list_of_dicts(sys_enriched))
                 logger.success(f"Found {len(sys_enriched)} system procedures")
 
@@ -302,13 +324,15 @@ class ExtendedProcs(BaseAction):
         enriched = []
         for proc in rows:
             proc_name = str(proc.get("Procedure", ""))
-            enriched.append({
-                "Procedure": proc_name,
-                "Execute": str(proc.get("Execute", "")),
-                "Description": descriptions.get(proc_name, ""),
-                "Created": proc.get("Created", ""),
-                "Modified": proc.get("Modified", ""),
-            })
+            enriched.append(
+                {
+                    "Procedure": proc_name,
+                    "Execute": str(proc.get("Execute", "")),
+                    "Description": descriptions.get(proc_name, ""),
+                    "Created": proc.get("Created", ""),
+                    "Modified": proc.get("Modified", ""),
+                }
+            )
         enriched.sort(key=lambda x: (x["Execute"].startswith("No"), x["Procedure"]))
         return enriched
 

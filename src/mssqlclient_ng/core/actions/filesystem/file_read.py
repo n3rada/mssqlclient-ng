@@ -7,7 +7,7 @@ from typing import Optional, List
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
@@ -28,40 +28,14 @@ class FileRead(BaseAction):
                       Useful for binary files or files with characters that break the console.
     """
 
+    _file_path: str = Arg(position=0, required=True, description="Remote file path to read")  # type: ignore[assignment]
+    _base64: str = Arg(short_name="b", long_name="base64", default="", description="Output as base64")  # type: ignore[assignment]
 
-    def __init__(self):
-        super().__init__()
-        self._file_path: str = ""
-        self._base64: bool = False
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate and bind the arguments passed to the FileRead action.
-
-        Args:
-            additional_arguments: The argument string to parse
-
-        Raises:
-            ValueError: If the file path is empty
-        """
-        named_args, positional_args = self._parse_action_arguments(additional_arguments)
-
-        if len(positional_args) >= 1:
-            self._file_path = positional_args[0]
-        else:
-            self._file_path = ""
-
-        if not self._file_path:
-            raise ValueError(
-                "File path is required. Example: read C:\\\\temp\\\\data.txt"
-            )
-
-        # Normalize Windows path to handle single backslashes
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
+        self._bind_arguments(additional_arguments)
         self._file_path = normalize_windows_path(self._file_path)
-
-        # Base64 flag
-        if "base64" in named_args or "b" in named_args:
-            self._base64 = True
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """

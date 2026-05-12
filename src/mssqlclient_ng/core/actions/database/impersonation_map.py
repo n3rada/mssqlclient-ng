@@ -50,9 +50,6 @@ class ImpersonationMap(BaseAction):
       End Login      — the final reachable login
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        pass
-
     def execute(
         self, database_context: DatabaseContext
     ) -> Optional[List[Dict[str, Any]]]:

@@ -13,7 +13,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-
 # Query sets organized by environment type
 INFO_QUERIES = {
     "all": {
@@ -62,17 +61,6 @@ class Info(BaseAction):
     operating system information, and service account. Uses only DMVs and
     built-in functions (no registry access required).
     """
-
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate arguments (none required for this action).
-
-        Args:
-            additional_arguments: Not used
-        """
-        # No arguments needed
-        pass
 
     def execute(self, database_context: DatabaseContext) -> Optional[Dict[str, str]]:
         """

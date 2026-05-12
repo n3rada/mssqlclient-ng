@@ -7,7 +7,7 @@ from typing import List
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils import common
@@ -32,27 +32,12 @@ class ObjectLinkingEmbedding(BaseAction):
     wscript.shell COM object for command execution.
     """
 
+    _command: str = Arg(position=0, remainder=True, required=True, description="OS command to execute")  # type: ignore[assignment]
 
-    def __init__(self):
-        super().__init__()
-        self._command: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate that a command is provided.
-
-        Args:
-            additional_arguments: Command arguments to execute
-
-        Raises:
-            ValueError: If no command is provided
-        """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError(
-                "A command must be provided for OLE execution. Usage: <command>"
-            )
-
-        self._command = additional_arguments
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
+        self._bind_arguments(additional_arguments)
         logger.info(f"Command to execute: {self._command}")
 
     def execute(self, database_context: DatabaseContext) -> None:

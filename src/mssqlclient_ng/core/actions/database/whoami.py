@@ -21,15 +21,6 @@ class Whoami(BaseAction):
     Shows user identity, server roles (fixed and custom), database roles, and accessible databases.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        No additional arguments needed for whoami.
-
-        Args:
-            additional_arguments: Ignored.
-        """
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[dict]:
         """
         Executes the whoami action.

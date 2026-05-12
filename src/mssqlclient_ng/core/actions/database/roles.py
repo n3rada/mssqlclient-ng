@@ -26,21 +26,6 @@ class Roles(BaseAction):
     For server-level logins and instance-wide privileges, use the 'users' action instead.
     """
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
-        """
-        Validates the arguments for the roles action.
-
-        Args:
-            additional_arguments: No arguments required
-
-        Raises:
-            ValueError: If arguments are provided (none expected).
-        """
-        # No arguments required
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[dict]:
         """
         Executes the roles enumeration.

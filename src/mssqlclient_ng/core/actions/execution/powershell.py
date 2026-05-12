@@ -8,6 +8,7 @@ from typing import Optional, List
 from loguru import logger
 
 # Local imports
+from ..base import Arg
 from ..execution.xpcmd import XpCmd
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
@@ -25,25 +26,7 @@ class PowerShell(XpCmd):
     and handles special characters properly.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._script: Optional[str] = None
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate that a PowerShell script is provided.
-
-        Args:
-            additional_arguments: The PowerShell script or command to execute
-
-        Raises:
-            ValueError: If no script is provided
-        """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError("PowerShell action requires a script to execute.")
-
-        self._script = additional_arguments.strip()
+    _script: str = Arg(position=0, remainder=True, required=True, description="PowerShell script to execute")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
         """

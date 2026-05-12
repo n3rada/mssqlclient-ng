@@ -6,7 +6,6 @@ from typing import Optional, List
 # Third-party imports
 from loguru import logger
 
-
 # Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
@@ -27,7 +26,6 @@ class RunExecutable(BaseAction):
     The action verifies the file exists before attempting execution.
     """
 
-
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
@@ -35,7 +33,9 @@ class RunExecutable(BaseAction):
         self._async_mode: bool = True  # Default to async (non-blocking)
         self._capture_output: bool = False  # Force xp_cmdshell for output capture
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
         """
         Validate arguments for the run action.
 
@@ -55,16 +55,16 @@ class RunExecutable(BaseAction):
         named_args, positional_args = self._parse_action_arguments(
             additional_arguments=additional_arguments
         )
-        
+
         # Check for --capture-output or -o flag (forces sync + xp_cmdshell)
         self._capture_output = "capture-output" in named_args or "o" in named_args
-        
+
         # Check for --wait or -w flag
         wait_requested = "wait" in named_args or "w" in named_args
-        
+
         # If capture_output is requested, force synchronous mode
         self._async_mode = not (wait_requested or self._capture_output)
-        
+
         if self._capture_output:
             logger.info("Output capture mode enabled (synchronous via xp_cmdshell)")
         elif self._async_mode:
@@ -75,9 +75,9 @@ class RunExecutable(BaseAction):
         # Extract file path (first positional argument)
         if len(positional_args) < 1:
             raise ValueError("Run action requires a file path as an argument.")
-            
+
         self._file_path = normalize_windows_path(positional_args[0])
-        
+
         # Extract additional arguments (remaining positional args, joined with spaces)
         if len(positional_args) > 1:
             self._arguments = " ".join(positional_args[1:])

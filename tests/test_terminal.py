@@ -46,7 +46,7 @@ class TestTerminalInit:
         expected = {
             "debug", "chain", "format", "link",
             "unlink-all", "impersonate", "revert",
-            "add-link", "unlink", "help",
+            "add-link", "unlink", "help", "flush",
         }
         assert set(terminal._command_handlers.keys()) == expected
 

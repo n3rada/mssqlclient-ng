@@ -25,17 +25,6 @@ class Users(BaseAction):
     For database-level role memberships, use the 'roles' action instead.
     """
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
-        """
-        No additional arguments needed for user enumeration.
-
-        Args:
-            additional_arguments: Ignored.
-        """
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[dict]:
         """
         Executes the user enumeration.

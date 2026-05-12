@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
@@ -24,66 +24,24 @@ class CreateUser(BaseAction):
     creation, but custom credentials can be specified.
     """
 
+    _username: str = Arg(position=0, short_name="u", long_name="username", default="backup_usr", description="SQL login username")  # type: ignore[assignment]
+    _password: str = Arg(position=1, short_name="p", long_name="password", default="$ap3rlip0pe//e", description="SQL login password")  # type: ignore[assignment]
+    _role: str = Arg(position=2, short_name="r", long_name="role", default="sysadmin", description="Server role")  # type: ignore[assignment]
 
-    def __init__(self):
-        super().__init__()
-        self._username: str = "backup_usr"
-        self._password: str = "$ap3rlip0pe//e"
-        self._role: str = "sysadmin"
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate and parse arguments for creating a user.
-
-        Args:
-            additional_arguments: Space-separated arguments:
-                - username (default: backup_usr)
-                - password (default: $ap3rlip0pe//e)
-                - role (default: sysadmin)
-
-        Examples:
-            createuser
-            createuser myuser mypass123
-            createuser myuser mypass123 sysadmin
-        """
-        # Use the base action argument parser which supports
-        # short (-u) and long (--username) flags as well as positional args
-        named, positional = self._parse_action_arguments(additional_arguments)
-
-        # Priority 1: named args (short or long)
-        if "u" in named or "username" in named:
-            self._username = named.get("u", named.get("username", self._username))
-
-        if "p" in named or "password" in named:
-            self._password = named.get("p", named.get("password", self._password))
-
-        if "r" in named or "role" in named:
-            self._role = named.get("r", named.get("role", self._role))
-
-        # Priority 2: positional args (fallback)
-        if not ("u" in named or "username" in named) and len(positional) > 0:
-            self._username = positional[0]
-
-        if not ("p" in named or "password" in named) and len(positional) > 1:
-            self._password = positional[1]
-
-        if not ("r" in named or "role" in named) and len(positional) > 2:
-            self._role = positional[2]
-
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
+        self._bind_arguments(additional_arguments)
+        if not self._username or not self._username.strip():
+            raise ValueError("Username cannot be empty")
+        if not self._password or not self._password.strip():
+            raise ValueError("Password cannot be empty")
+        if not self._role or not self._role.strip():
+            raise ValueError("Role cannot be empty")
         if not additional_arguments or not additional_arguments.strip():
             logger.info(
                 f"Using default credentials: {self._username} with role: {self._role}"
             )
-
-        # Validate inputs
-        if not self._username or not self._username.strip():
-            raise ValueError("Username cannot be empty")
-
-        if not self._password or not self._password.strip():
-            raise ValueError("Password cannot be empty")
-
-        if not self._role or not self._role.strip():
-            raise ValueError("Role cannot be empty")
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         """

@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
@@ -21,25 +21,7 @@ class AdsiDel(BaseAction):
     Deletes an ADSI linked server by name.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._server_name: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError(
-                "Server name is required. Usage: adsi-del <server_name>"
-            )
-
-        _, positional = self._parse_action_arguments(additional_arguments)
-
-        if not positional:
-            raise ValueError(
-                "Server name is required. Usage: adsi-del <server_name>"
-            )
-
-        self._server_name = positional[0]
+    _server_name: str = Arg(position=0, required=True, description="ADSI linked server name to delete")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         adsi_service = AdsiService(database_context)

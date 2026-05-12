@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
@@ -120,23 +120,8 @@ class AdsiCredentialExtractor(BaseAction):
     Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._target_server: str = ""
-        self._use_temporary_server: bool = False
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            return
-
-        named_args, positional = self._parse_action_arguments(additional_arguments)
-
-        if positional:
-            self._target_server = positional[0]
-
-        if "temp" in named_args or "t" in named_args:
-            self._use_temporary_server = True
+    _target_server: str = Arg(position=0, default="", description="ADSI server name")  # type: ignore[assignment]
+    _use_temporary_server: str = Arg(short_name="t", long_name="temp", default="", description="Use temporary server")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[Tuple[str, str]]:
         adsi_service = AdsiService(database_context)

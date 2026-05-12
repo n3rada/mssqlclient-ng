@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
@@ -28,20 +28,13 @@ class RemoveFile(BaseAction):
     Requires OLE Automation Procedures to be enabled (or ALTER SETTINGS to enable them).
     """
 
+    _file_path: str = Arg(position=0, required=True, description="Remote file path to delete")  # type: ignore[assignment]
 
-    def __init__(self):
-        super().__init__()
-        self._file_path: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        _, positional = self._parse_action_arguments(additional_arguments)
-
-        if not positional:
-            raise ValueError(
-                "File path is required. Example: rm C:\\\\temp\\\\payload.exe"
-            )
-
-        self._file_path = normalize_windows_path(positional[0]).replace("/", "\\")
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
+        self._bind_arguments(additional_arguments)
+        self._file_path = normalize_windows_path(self._file_path).replace("/", "\\")
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         logger.info(f"Deleting remote file: {self._file_path}")

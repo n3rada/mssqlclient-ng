@@ -268,8 +268,7 @@ class Terminal:
                 if output:
                     ctx = self._cache_context()
                     self._output_cache.put(
-                        ctx[0], ctx[1], ctx[2], ctx[3],
-                        canonical_name, args_str, output
+                        ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str, output
                     )
 
             return result

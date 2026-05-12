@@ -12,9 +12,7 @@ from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register(
-    "sessions", "List active SQL Server sessions", aliases=["who"]
-)
+@ActionFactory.register("sessions", "List active SQL Server sessions", aliases=["who"])
 class Sessions(BaseAction):
     """
     Display active SQL Server sessions with connection information.
@@ -25,17 +23,6 @@ class Sessions(BaseAction):
     Usage:
         sessions      # List all active sessions
     """
-
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate arguments (none required for sessions action).
-
-        Args:
-            additional_arguments: Ignored, no arguments needed
-        """
-        # No additional arguments needed
-        pass
 
     def execute(self, database_context=None) -> Optional[List[Dict[str, Any]]]:
         """

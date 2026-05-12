@@ -8,7 +8,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
@@ -33,45 +33,23 @@ class SmbCoerce(BaseAction):
     3. xp_fileexist - Checks if file exists (last resort)
     """
 
+    _unc_path: str = Arg(position=0, remainder=True, required=True, description="Target UNC path")  # type: ignore[assignment]
 
-    def __init__(self):
-        super().__init__()
-        self._unc_path: Optional[str] = None
-
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        """
-        Validate and normalize the UNC path argument.
-
-        Args:
-            additional_arguments: The UNC path (e.g., \\\\192.168.1.10\\share)
-
-        Raises:
-            ValueError: If the UNC path is invalid or missing
-        """
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError(
-                "SMB action requires a targeted UNC path (e.g., \\\\172.16.118.218\\shared)."
-            )
-
-        path = additional_arguments.strip()
-
-        # Auto-prepend \\ if missing
+    def validate_arguments(
+        self, additional_arguments: str = "", argument_list=None
+    ) -> None:
+        self._bind_arguments(additional_arguments)
+        path = self._unc_path
         if not path.startswith("\\\\"):
             path = "\\\\" + path.lstrip("\\")
-
-        # If only hostname provided (no share), append default share name
         parts = path[2:].split("\\")
-        parts = [p for p in parts if p]  # Remove empty strings
+        parts = [p for p in parts if p]
         if len(parts) == 1:
-            # Only hostname, add default share
             path = path.rstrip("\\") + "\\Data"
-
-        # Verify UNC path format
         if not self._validate_unc_path(path):
             raise ValueError(
                 f"Invalid UNC path format: {path}. Ensure it includes a valid host and share name."
             )
-
         self._unc_path = path
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
