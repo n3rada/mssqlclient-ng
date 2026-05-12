@@ -777,8 +777,11 @@ class Terminal:
             except Exception as exc:
                 logger.error(f"Error retrieving user info: {exc}")
 
-            chain_parts = linked.get_chain_parts()
-            logger.success(f"Current chain: {' -> '.join(chain_parts)}")
+            chain_parts = linked.format_chain_display(
+                initial_host=self._original_execution_server or "",
+                initial_login=self._original_system_user,
+            )
+            logger.success(f"Current chain: {chain_parts}")
 
     # ── Display ─────────────────────────────────────────────────────────
 
