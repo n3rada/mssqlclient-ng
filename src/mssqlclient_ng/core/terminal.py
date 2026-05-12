@@ -42,8 +42,7 @@ from .services.database import DatabaseContext
 from .actions.factory import ActionFactory
 from .actions.execution import query
 
-
-SQL_STYLE = style_from_pygments_cls(get_style_by_name("tango"))
+SQL_STYLE = style_from_pygments_cls(get_style_by_name("one-dark"))
 
 
 class _TeeWriter:
