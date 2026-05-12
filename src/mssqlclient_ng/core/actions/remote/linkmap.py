@@ -1117,38 +1117,38 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
 
     def _format_chain_progress(self, path: List[ServerNode]) -> str:
         """
-        Format a discovered chain for real-time display, matching the CLI chain format.
+        Format a discovered chain for real-time display using LinkedServers.format_chain_display().
 
         Example:
             LAB-SQL01 (operator) ─(operator)─> LAB-SQL02 ─(john → john-a)─> LAB-SQL03 (john-a) ★
         """
-        parts: List[str] = []
-
-        # Root server with its login
-        root_login = self._root_node.logged_in_user
-        parts.append(f"{self._root_node.alias} ({root_login})")
-
+        # Build Server objects from the path (same logic as _build_chain_row)
+        server_list: List[Server] = []
         for i, node in enumerate(path):
-            # Connector: show impersonation on the parent server
-            imp_logins = [s.login for s in node.impersonation_chain]
-            if i == 0 and self._starting_impersonation:
-                imp_logins = list(self._starting_impersonation) + imp_logins
+            if i > 0 and node.impersonation_chain:
+                server_list[-1].impersonation_users = [
+                    s.login for s in node.impersonation_chain
+                ]
+            server_list.append(Server(hostname=node.alias, impersonation_users=[]))
 
-            if imp_logins:
-                cascade = " \u2192 ".join(imp_logins)
-                parts.append(f"\u2500({cascade})\u2500> ")
-            else:
-                parts.append(" \u2500\u2500> ")
+        linked_servers = LinkedServers(server_list)
 
-            # Server name
-            is_last = i == len(path) - 1
-            display = node.alias
-            if is_last:
-                display += f" ({node.logged_in_user}){node.privilege_marker}"
+        # Initial impersonation: starting_impersonation + first node's impersonation
+        initial_imp = list(self._starting_impersonation)
+        if path and path[0].impersonation_chain:
+            initial_imp.extend(s.login for s in path[0].impersonation_chain)
 
-            parts.append(display)
+        result = linked_servers.format_chain_display(
+            initial_host=self._root_node.alias,
+            initial_login=self._root_node.logged_in_user,
+            initial_impersonation=initial_imp or None,
+        )
 
-        return "".join(parts)
+        # Append endpoint login and privilege marker
+        last_node = path[-1]
+        result += f" ({last_node.logged_in_user}){last_node.privilege_marker}"
+
+        return result
 
     # ------------------------------------------------------------------
     # Display: Tree view

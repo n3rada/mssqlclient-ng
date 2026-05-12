@@ -471,7 +471,9 @@ class Terminal:
                 initial_login=self._original_system_user,
             )
             logger.success(f"Linked server chain set: {chain_display}")
-            logger.info("Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything")
+            logger.info(
+                "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
+            )
 
         except Exception as e:
             logger.error(f"Failed to set linked servers: {e}")
@@ -550,7 +552,9 @@ class Terminal:
                 initial_login=self._original_system_user,
             )
             logger.success(f"Chain #{chain_id} applied: {chain_display}")
-            logger.info("Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything")
+            logger.info(
+                "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
+            )
 
         except Exception as e:
             logger.error(f"Failed to apply chain #{chain_id}: {e}")
