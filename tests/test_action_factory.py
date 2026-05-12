@@ -37,7 +37,7 @@ class TestActionFactoryRegistration:
         ActionFactory._aliases = self._original_aliases
 
     def test_register_and_get(self):
-        ActionFactory.register_action("test-dummy", DummyAction, "A test action")
+        ActionFactory.register("test-dummy", "A test action")(DummyAction)
         action = ActionFactory.get_action("test-dummy")
         assert action is not None
         assert isinstance(action, DummyAction)
@@ -46,35 +46,36 @@ class TestActionFactoryRegistration:
         assert ActionFactory.get_action("nonexistent-action-xyz") is None
 
     def test_case_insensitive(self):
-        ActionFactory.register_action("test-UPPER", DummyAction, "Upper case")
+        ActionFactory.register("test-UPPER", "Upper case")(DummyAction)
         action = ActionFactory.get_action("TEST-upper")
         assert action is not None
 
     def test_action_exists(self):
-        ActionFactory.register_action("test-exists", DummyAction, "Exists check")
+        ActionFactory.register("test-exists", "Exists check")(DummyAction)
         assert ActionFactory.action_exists("test-exists")
         assert not ActionFactory.action_exists("test-does-not-exist-xyz")
 
     def test_list_actions_includes_registered(self):
-        ActionFactory.register_action("test-list", DummyAction, "Listed")
+        ActionFactory.register("test-list", "Listed")(DummyAction)
         assert "test-list" in ActionFactory.list_actions()
 
     def test_get_action_description(self):
-        ActionFactory.register_action("test-desc", DummyAction, "My description")
+        ActionFactory.register("test-desc", "My description")(DummyAction)
         assert ActionFactory.get_action_description("test-desc") == "My description"
 
     def test_get_action_description_nonexistent(self):
         assert ActionFactory.get_action_description("nope-xyz") is None
 
     def test_get_action_type(self):
-        ActionFactory.register_action("test-type", DummyAction, "Type check")
-        assert ActionFactory.get_action_type("test-type") == DummyAction
+        ActionFactory.register("test-type", "Type check")(DummyAction)
+        action_class = ActionFactory._registry["test-type"][0]
+        assert action_class == DummyAction
 
     def test_get_action_type_nonexistent(self):
-        assert ActionFactory.get_action_type("nope-xyz") is None
+        assert ActionFactory._registry.get("nope-xyz") is None
 
     def test_clear_registry(self):
-        ActionFactory.register_action("test-clear", DummyAction, "Will be cleared")
+        ActionFactory.register("test-clear", "Will be cleared")(DummyAction)
         ActionFactory.clear_registry()
         assert ActionFactory.get_action("test-clear") is None
         # Restore for teardown
@@ -93,7 +94,7 @@ class TestActionFactoryAliases:
         ActionFactory._aliases = self._original_aliases
 
     def test_alias_resolves(self):
-        ActionFactory.register_action("test-canonical", DummyAction, "Canonical")
+        ActionFactory.register("test-canonical", "Canonical")(DummyAction)
         ActionFactory._aliases["tc"] = "test-canonical"
         action = ActionFactory.get_action("tc")
         assert isinstance(action, DummyAction)

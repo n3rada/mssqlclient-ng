@@ -48,20 +48,6 @@ class ActionFactory:
         return decorator
 
     @classmethod
-    def register_action(
-        cls, name: str, action_class: Type[BaseAction], description: str
-    ) -> None:
-        """
-        Manually register an action class (used in tests).
-
-        Args:
-            name: The action name (command)
-            action_class: The action class
-            description: Human-readable description of the action
-        """
-        cls._registry[name.lower()] = (action_class, description)
-
-    @classmethod
     def get_action(cls, action_type: str) -> BaseAction | None:
         """Get an action instance by name or alias.
 
@@ -110,14 +96,6 @@ class ActionFactory:
                 result.append((name, description, []))
 
         return result
-
-    @classmethod
-    def get_action_type(cls, action_name: str) -> Optional[Type[BaseAction]]:
-        """Get the class type of an action by its name or alias (used in tests)."""
-        action_key = cls._aliases.get(action_name.lower(), action_name.lower())
-        if action_key in cls._registry:
-            return cls._registry[action_key][0]
-        return None
 
     @classmethod
     def get_action_description(cls, action_name: str) -> Optional[str]:
