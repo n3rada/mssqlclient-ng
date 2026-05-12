@@ -390,6 +390,8 @@ class ActionCompleter(Completer):
 
     def _chain_id_completions(self, arg_prefix: str):
         """Yield chain ID completions from the chain loader."""
+        if self._chain_loader is None:
+            return
         try:
             entries = self._chain_loader()
         except Exception:
