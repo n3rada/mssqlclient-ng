@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from mssqlclient_ng.core.terminal import Terminal
 from mssqlclient_ng.core.models.linked_servers import LinkedServers
+from mssqlclient_ng.core.models.server_execution_state import ServerExecutionState
 
 
 class TestTerminalAliases:
@@ -44,9 +45,17 @@ class TestTerminalInit:
     def test_command_handlers_registered(self, mock_database_context):
         terminal = Terminal(mock_database_context)
         expected = {
-            "debug", "chain", "format", "link",
-            "unlink-all", "impersonate", "revert",
-            "add-link", "unlink", "help", "flush",
+            "debug",
+            "chain",
+            "format",
+            "link",
+            "unlink-all",
+            "impersonate",
+            "revert",
+            "add-link",
+            "unlink",
+            "help",
+            "flush",
         }
         assert set(terminal._command_handlers.keys()) == expected
 
@@ -159,7 +168,10 @@ class TestTerminalRefreshUserInfo:
     """Test _refresh_user_info helper."""
 
     def test_updates_server_model(self, mock_database_context):
-        mock_database_context.user_service.get_info.return_value = ("new_mapped", "new_system")
+        mock_database_context.user_service.get_info.return_value = (
+            "new_mapped",
+            "new_system",
+        )
         terminal = Terminal(mock_database_context)
         terminal._refresh_user_info()
 
@@ -227,7 +239,10 @@ class TestTerminalHandleImpersonate:
     def test_successful_impersonation(self, mock_database_context):
         mock_database_context.user_service.can_impersonate.return_value = True
         mock_database_context.user_service.impersonate_user.return_value = True
-        mock_database_context.user_service.get_info.return_value = ("dbo", "sa_impersonated")
+        mock_database_context.user_service.get_info.return_value = (
+            "dbo",
+            "sa_impersonated",
+        )
 
         terminal = Terminal(mock_database_context)
         terminal._handle_impersonate("impersonate sa")
@@ -268,3 +283,137 @@ class TestTerminalHandleFormat:
         terminal._handle_format("format csv")
         assert OutputFormatter.current_format() == "csv"
         OutputFormatter.set_format("markdown")  # cleanup
+
+
+class TestTerminalHistorySwitching:
+    """Test that _switch_history creates per-(server, identity) history files."""
+
+    def _make_terminal_with_history(self, mock_database_context, tmp_path):
+        """Return a Terminal whose history is rooted in tmp_path."""
+        terminal = Terminal(mock_database_context)
+        terminal._history_dir = tmp_path
+        from prompt_toolkit.history import InMemoryHistory, ThreadedHistory
+
+        session = MagicMock()
+        session.history = ThreadedHistory(InMemoryHistory())
+        terminal._prompt_session = session
+        return terminal
+
+    def _expected_file(
+        self, tmp_path, server, system_user, mapped_user, is_sysadmin=False
+    ):
+        state = ServerExecutionState(
+            hostname=server,
+            system_user=system_user,
+            mapped_user=mapped_user,
+            is_sysadmin=is_sysadmin,
+        )
+        return tmp_path / f"{server}_{state.short_hash}_history"
+
+    # ------------------------------------------------------------------
+    # Basic mechanics
+    # ------------------------------------------------------------------
+
+    def test_switch_creates_file(self, mock_database_context, tmp_path):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL02")
+        expected = self._expected_file(tmp_path, "SQL02", "sa", "dbo")
+        assert expected.exists()
+
+    def test_switch_updates_history_file_attr(self, mock_database_context, tmp_path):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL02")
+        expected = self._expected_file(tmp_path, "SQL02", "sa", "dbo")
+        assert terminal._history_file == expected
+
+    def test_switch_assigns_new_history_to_session(
+        self, mock_database_context, tmp_path
+    ):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL02")
+        assert terminal._prompt_session.history is not None
+
+    # ------------------------------------------------------------------
+    # Different servers, different identities
+    # ------------------------------------------------------------------
+
+    def test_switch_different_servers_different_files(
+        self, mock_database_context, tmp_path
+    ):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL02")
+        file_sql02 = terminal._history_file
+        terminal._switch_history("SQL03")
+        file_sql03 = terminal._history_file
+        assert file_sql02 != file_sql03
+        assert file_sql02 == self._expected_file(tmp_path, "SQL02", "sa", "dbo")
+        assert file_sql03 == self._expected_file(tmp_path, "SQL03", "sa", "dbo")
+
+    def test_same_server_different_identity_different_file(
+        self, mock_database_context, tmp_path
+    ):
+        """Same server but different login must yield a distinct history file."""
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL02")
+        file_as_sa = terminal._history_file
+
+        # Simulate a privilege escalation — identity changes
+        mock_database_context.user_service.system_user = "svc-deploy"
+        mock_database_context.user_service.mapped_user = "svc-deploy"
+        terminal._switch_history("SQL02")
+        file_as_svc = terminal._history_file
+
+        assert file_as_sa != file_as_svc
+        assert file_as_svc == self._expected_file(
+            tmp_path, "SQL02", "svc-deploy", "svc-deploy"
+        )
+
+    def test_switch_same_server_same_identity_idempotent(
+        self, mock_database_context, tmp_path
+    ):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL02")
+        first = terminal._history_file
+        terminal._switch_history("SQL02")
+        assert terminal._history_file == first
+
+    # ------------------------------------------------------------------
+    # Edge cases
+    # ------------------------------------------------------------------
+
+    def test_switch_no_history_dir_is_noop(self, mock_database_context):
+        """If history is disabled (_history_dir is None), _switch_history must not raise."""
+        terminal = Terminal(mock_database_context)
+        terminal._switch_history("SQL02")  # no-op, no exception
+
+    def test_log_server_context_switches_history(self, mock_database_context, tmp_path):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        mock_database_context.query_service.execution_server = "SQL02"
+        terminal._log_server_context()
+        expected = self._expected_file(tmp_path, "SQL02", "sa", "dbo")
+        assert terminal._history_file == expected
+
+    def test_history_file_permissions(self, mock_database_context, tmp_path):
+        import stat
+
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        terminal._switch_history("SQL04")
+        expected = self._expected_file(tmp_path, "SQL04", "sa", "dbo")
+        mode = expected.stat().st_mode
+        assert stat.S_IMODE(mode) == 0o600
+
+    def test_context_hash_is_deterministic(self):
+        state = ServerExecutionState(
+            hostname="SQL02", system_user="sa", mapped_user="dbo", is_sysadmin=False
+        )
+        assert state.short_hash == state.short_hash
+
+    def test_context_hash_differs_on_user_change(self):
+        h1 = ServerExecutionState("SQL02", "sa", "dbo", False).short_hash
+        h2 = ServerExecutionState("SQL02", "svc-deploy", "svc-deploy", False).short_hash
+        assert h1 != h2
+
+    def test_context_hash_differs_on_server_change(self):
+        h1 = ServerExecutionState("SQL02", "sa", "dbo", False).short_hash
+        h2 = ServerExecutionState("SQL03", "sa", "dbo", False).short_hash
+        assert h1 != h2

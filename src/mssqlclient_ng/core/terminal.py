@@ -2,8 +2,8 @@
 
 # Built-in imports
 import io
-import shlex
 import os
+import shlex
 import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -36,6 +36,7 @@ from .utils.storage import OutputCache
 
 from .models.server import Server
 from .models.linked_servers import LinkedServers
+from .models.server_execution_state import ServerExecutionState
 
 from .services.database import DatabaseContext
 
@@ -111,6 +112,11 @@ class Terminal:
 
         self._output_cache = OutputCache()
         self._prefix = "!"  # default; overwritten by start()
+        self._history_file: Optional[Path] = None
+        self._history_dir: Optional[Path] = (
+            None  # set by start() when history is enabled
+        )
+        self._prompt_session: Optional[PromptSession] = None
 
     # ── Helper Methods ──────────────────────────────────────────────────
 
@@ -140,6 +146,44 @@ class Terminal:
         ]
         self._database_context.query_service.execution_server = last_server.hostname
         self._database_context.query_service.compute_execution_database()
+
+    def _switch_history(self, server: str) -> None:
+        """Switch the prompt session's history to the file for the current (server, identity) context.
+
+        Each unique combination of server + login identity gets its own history
+        file, so landing on the same server under a different account starts
+        with a clean slate automatically.
+        """
+        if self._history_dir is None or self._prompt_session is None:
+            return
+        state = ServerExecutionState(
+            hostname=server,
+            system_user=self._database_context.user_service.system_user or "",
+            mapped_user=self._database_context.user_service.mapped_user or "",
+            is_sysadmin=self._database_context.user_service.is_admin(),
+        )
+        ctx_hash = state.short_hash
+        history_file = self._history_dir / f"{server}_{ctx_hash}_history"
+        history_file.touch(exist_ok=True)
+        try:
+            os.chmod(history_file, 0o600)
+        except PermissionError:
+            pass
+        self._history_file = history_file
+        self._prompt_session.history = ThreadedHistory(FileHistory(str(history_file)))
+        identity = (
+            f"{state.system_user}({state.mapped_user})"
+            if state.mapped_user
+            else state.system_user
+        )
+        logger.info(f"Session context [{ctx_hash}]: {server} as {identity}")
+        logger.debug(f"History file: {history_file}")
+
+    def _log_server_context(self) -> None:
+        """Log the current execution server and switch history to it."""
+        server = self._database_context.query_service.execution_server
+        logger.info(f"Execution server: {server}")
+        self._switch_history(server)
 
     def _cache_context(self) -> tuple:
         """Return the current execution context tuple for cache operations."""
@@ -344,13 +388,17 @@ class Terminal:
             history_dir = base / "mssqlclient_ng" / "history"
             history_dir.mkdir(parents=True, exist_ok=True)
 
-            # Create unique history file per execution server
-            history_file = (
-                history_dir
-                / f"{self._database_context.query_service.execution_server}_history"
+            # Create unique history file per (server, identity) context
+            server = self._database_context.query_service.execution_server
+            state = ServerExecutionState(
+                hostname=server,
+                system_user=self._database_context.user_service.system_user or "",
+                mapped_user=self._database_context.user_service.mapped_user or "",
+                is_sysadmin=self._database_context.user_service.is_admin(),
             )
+            ctx_hash = state.short_hash
+            history_file = history_dir / f"{server}_{ctx_hash}_history"
 
-            # Create the history file first if it doesn't exist
             history_file.touch(exist_ok=True)
 
             # Set permissions to 0600 (rw-------)
@@ -362,7 +410,15 @@ class Terminal:
                 )
 
             history_backend = ThreadedHistory(FileHistory(str(history_file)))
-            logger.debug(f"Persistent command history: {history_file}")
+            self._history_file = history_file
+            self._history_dir = history_dir
+            identity = (
+                f"{state.system_user}({state.mapped_user})"
+                if state.mapped_user
+                else state.system_user
+            )
+            logger.info(f"Session context [{ctx_hash}]: {server} as {identity}")
+            logger.debug(f"History file: {history_file}")
         else:
             logger.debug("🗑️ In-memory command history enabled.")
             history_backend = ThreadedHistory(InMemoryHistory())
@@ -382,7 +438,7 @@ class Terminal:
             ]
         )
 
-        prompt_session = PromptSession(
+        self._prompt_session = PromptSession(
             cursor=CursorShape.BLINKING_BEAM,
             multiline=multiline,
             enable_history_search=True,
@@ -403,13 +459,13 @@ class Terminal:
 
         while True:
             try:
-                user_input = prompt_session.prompt(message=self._prompt())
+                user_input = self._prompt_session.prompt(message=self._prompt())
                 if not user_input:
                     continue
             except EOFError:
                 break  # Control-D pressed.
             except KeyboardInterrupt:
-                if prompt_session.app.current_buffer.text:
+                if self._prompt_session.app.current_buffer.text:
                     continue
 
                 logger.warning("Keyboard interrupt detected.")
@@ -618,6 +674,7 @@ class Terminal:
                 initial_login=self._original_system_user,
             )
             logger.success(f"Linked server chain set: {chain_display}")
+            self._log_server_context()
             logger.info(
                 "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
             )
@@ -699,6 +756,7 @@ class Terminal:
                 initial_login=self._original_system_user,
             )
             logger.success(f"Chain #{chain_id} applied: {chain_display}")
+            self._log_server_context()
             logger.info(
                 "Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything"
             )
@@ -713,6 +771,7 @@ class Terminal:
         else:
             self._restore_to_original()
             logger.success("Linked server chain cleared")
+            self._log_server_context()
 
     def _handle_impersonate(self, command_line: str) -> None:
         """Impersonate a login on the current connection: !impersonate <login>"""
@@ -784,6 +843,7 @@ class Terminal:
                 self._database_context.query_service.linked_servers.get_chain_parts()
             )
             logger.success(f"Added to chain: {' -> '.join(chain_parts)}")
+            self._log_server_context()
 
         except Exception as e:
             logger.error(f"Failed to add linked server: {e}")
@@ -798,6 +858,7 @@ class Terminal:
             # Going back from a single-server chain means unlinking completely
             self._restore_to_original()
             logger.success("Returned to original server")
+            self._log_server_context()
         else:
             # Remove the last server from chain
             linked.remove_last_from_chain()
@@ -820,6 +881,7 @@ class Terminal:
                 initial_login=self._original_system_user,
             )
             logger.success(f"Current chain: {chain_parts}")
+            self._log_server_context()
 
     # ── Display ─────────────────────────────────────────────────────────
 

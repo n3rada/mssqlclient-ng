@@ -34,5 +34,6 @@ def mock_database_context(mock_server):
     ctx.user_service.system_user = "sa"
     ctx.user_service.mapped_user = "dbo"
     ctx.user_service.get_info.return_value = ("dbo", "sa")
+    ctx.user_service.is_admin.return_value = False
 
     return ctx

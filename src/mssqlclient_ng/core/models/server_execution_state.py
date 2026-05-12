@@ -79,6 +79,11 @@ class ServerExecutionState:
 
         return hashlib.sha256(state_string.encode("utf-8")).hexdigest()
 
+    @property
+    def short_hash(self) -> str:
+        """8-character hex prefix of the state hash, suitable for use in filenames."""
+        return self.get_state_hash()[:8]
+
     def __eq__(self, other) -> bool:
         """
         Checks if two ServerExecutionState instances represent the same execution state.
