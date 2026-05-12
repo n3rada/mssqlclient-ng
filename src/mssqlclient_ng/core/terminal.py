@@ -395,7 +395,12 @@ class Terminal:
             logger.info("🔊 Debug mode enabled")
 
     def _handle_chain(self, command_line: str) -> None:
-        """Display full connection chain with impersonation context."""
+        """Display current chain, or apply a chain by ID: !chain [id]"""
+        parts = command_line.split(maxsplit=1)
+        if len(parts) > 1:
+            # Delegate to link handler: !chain 1 == !link 1
+            self._handle_link(f"link {parts[1]}")
+            return
         self._display_chain()
 
     def _handle_format(self, command_line: str) -> None:
