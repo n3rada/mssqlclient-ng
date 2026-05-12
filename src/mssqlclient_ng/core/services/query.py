@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/services/query.py
 
 # Built-in imports
+import re
 from typing import Optional, Any, List, Dict, TYPE_CHECKING
 
 # Third party imports
@@ -33,6 +34,8 @@ class QueryService:
         self.mssql_instance = mssql
         self.execution_server: Optional[str] = None
         self.execution_database: Optional[str] = None
+        self.linked_server_alias: Optional[str] = None
+        self._full_version_string: Optional[str] = None
         self._linked_servers = LinkedServers()
         self.command_timeout = 120  # Default timeout in seconds
 
@@ -677,8 +680,6 @@ class QueryService:
         Returns:
             The server name, or None if it couldn't be parsed
         """
-        import re
-
         match = re.search(
             r"Server '([^']+)' is not configured for RPC", error_message, re.IGNORECASE
         )
