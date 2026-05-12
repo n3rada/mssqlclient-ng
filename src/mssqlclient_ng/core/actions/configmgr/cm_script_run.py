@@ -28,7 +28,7 @@ class CMScriptRun(CMBaseAction):
         self._resource_id: str = ""
         self._script_guid: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._resource_id = named.get("resourceid", named.get("r", ""))
         self._script_guid = named.get("scriptguid", named.get("g", ""))

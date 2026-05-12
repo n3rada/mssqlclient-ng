@@ -33,9 +33,7 @@ class RunExecutable(BaseAction):
         self._async_mode: bool = True  # Default to async (non-blocking)
         self._capture_output: bool = False  # Force xp_cmdshell for output capture
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for the run action.
 

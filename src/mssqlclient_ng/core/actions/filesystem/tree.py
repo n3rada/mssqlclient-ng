@@ -46,9 +46,7 @@ class Tree(BaseAction):
         self._show_files: bool = True
         self._use_unicode: bool = True
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for the tree action.
 

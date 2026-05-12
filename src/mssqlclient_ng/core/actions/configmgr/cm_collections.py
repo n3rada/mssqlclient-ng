@@ -31,7 +31,7 @@ class CMCollections(CMBaseAction):
         self._limit: int = 25
         self._with_members: bool = False
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._collection_id = self.get_positional_argument(
             positional, 0, ""

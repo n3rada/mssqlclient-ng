@@ -29,7 +29,7 @@ class CMScriptAdd(CMBaseAction):
         self._script_name: str = ""
         self._script_guid: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
 
         # Script content is required - can be passed as positional or --content

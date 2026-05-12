@@ -33,9 +33,7 @@ class JobExec(BaseAction):
         self._wait: bool = False
         self._timeout: int = 30
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Missing command to execute. "

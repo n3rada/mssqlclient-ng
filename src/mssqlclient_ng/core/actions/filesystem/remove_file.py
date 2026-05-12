@@ -30,9 +30,7 @@ class RemoveFile(BaseAction):
 
     _file_path: str = Arg(position=0, required=True, description="Remote file path to delete")  # type: ignore[assignment]
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
         self._file_path = normalize_windows_path(self._file_path).replace("/", "\\")
 

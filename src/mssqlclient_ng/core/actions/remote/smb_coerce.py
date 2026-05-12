@@ -35,9 +35,7 @@ class SmbCoerce(BaseAction):
 
     _unc_path: str = Arg(position=0, remainder=True, required=True, description="Target UNC path")  # type: ignore[assignment]
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
         path = self._unc_path
         if not path.startswith("\\\\"):

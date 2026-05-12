@@ -35,9 +35,7 @@ class DataAccess(BaseAction):
         self._enable: bool = True
         self._linked_server_name: str = ""
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         if not additional_arguments or not additional_arguments.strip():
             raise ValueError(
                 "Data access action requires two arguments: "

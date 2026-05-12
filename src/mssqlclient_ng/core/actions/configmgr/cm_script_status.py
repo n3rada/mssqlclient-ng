@@ -25,7 +25,7 @@ class CMScriptStatus(CMBaseAction):
         super().__init__()
         self._task_id: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._task_id = named.get("taskid", named.get("t", "")) or self.get_positional_argument(positional, 0, "")
         if not self._task_id:

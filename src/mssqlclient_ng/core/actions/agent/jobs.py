@@ -58,7 +58,7 @@ class Jobs(BaseAction):
         self._show_commands: bool = False
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         if not additional_arguments or not additional_arguments.strip():
             return
 

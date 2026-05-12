@@ -22,9 +22,7 @@ class Kill(BaseAction):
 
     _target: str = Arg(position=0, required=True, description="Session ID or 'all'")  # type: ignore[assignment]
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
         if self._target.lower() != "all":
             try:

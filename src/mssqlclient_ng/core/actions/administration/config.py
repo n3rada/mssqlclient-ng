@@ -39,9 +39,7 @@ class Config(BaseAction):
         self._option_name: Optional[str] = None
         self._value: int = -1
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate arguments for configuration action.
 

@@ -29,7 +29,7 @@ class CMAadApps(CMBaseAction):
         super().__init__()
         self._filter: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._filter = named.get("filter", named.get("f", "")) or self.get_positional_argument(positional, 0, "")
 

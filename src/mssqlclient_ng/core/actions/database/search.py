@@ -46,7 +46,7 @@ class Search(BaseAction):
         self._target_table: Optional[str] = None
         self._target_schema: Optional[str] = None
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates the search arguments.
 

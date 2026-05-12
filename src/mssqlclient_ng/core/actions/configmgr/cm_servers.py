@@ -17,7 +17,7 @@ from ...utils.formatters import OutputFormatter
 class CMServers(CMBaseAction):
     """Enumerate ConfigMgr servers including site servers, management points, and distribution points."""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         pass
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:

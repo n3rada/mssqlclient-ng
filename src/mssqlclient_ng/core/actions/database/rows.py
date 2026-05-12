@@ -35,9 +35,7 @@ class Rows(BaseAction):
         self._table: str = ""
         self._limit: int = 25  # Default: 25 rows (0 = unlimited)
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validates the table name argument and optional flags.
 

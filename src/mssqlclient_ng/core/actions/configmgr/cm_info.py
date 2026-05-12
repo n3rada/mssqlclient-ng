@@ -22,7 +22,7 @@ class CMInfo(CMBaseAction):
     database server, and management point details.
     """
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         pass
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:

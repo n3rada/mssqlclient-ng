@@ -31,7 +31,7 @@ class CMApplications(CMBaseAction):
         self._model_name: str = ""
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._display_name = named.get("displayname", named.get("n", ""))
         self._model_name = named.get("modelname", named.get("m", ""))

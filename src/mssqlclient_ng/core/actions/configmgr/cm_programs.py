@@ -28,7 +28,7 @@ class CMPrograms(CMBaseAction):
         self._command_line: str = ""
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._package_id = named.get("package", named.get("p", ""))
         self._program_name = named.get("name", named.get("n", ""))

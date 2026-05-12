@@ -25,7 +25,7 @@ class CMDevice(CMBaseAction):
         super().__init__()
         self._device_name: str = ""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._device_name = named.get("name", named.get("n", "")) or self.get_positional_argument(positional, 0, "")
         if not self._device_name:

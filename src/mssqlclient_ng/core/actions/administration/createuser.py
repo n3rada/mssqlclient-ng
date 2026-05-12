@@ -28,18 +28,13 @@ class CreateUser(BaseAction):
     _password: str = Arg(position=1, short_name="p", long_name="password", default="$ap3rlip0pe//e", description="SQL login password")  # type: ignore[assignment]
     _role: str = Arg(position=2, short_name="r", long_name="role", default="sysadmin", description="Server role")  # type: ignore[assignment]
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
-        username: str = self._username  # type: ignore[assignment]
-        password: str = self._password  # type: ignore[assignment]
-        role: str = self._role  # type: ignore[assignment]
-        if not username or not username.strip():
+        if not self._username or not str(self._username).strip():
             raise ValueError("Username cannot be empty")
-        if not password or not password.strip():
+        if not self._password or not str(self._password).strip():
             raise ValueError("Password cannot be empty")
-        if not role or not role.strip():
+        if not self._role or not str(self._role).strip():
             raise ValueError("Role cannot be empty")
         if not additional_arguments or not additional_arguments.strip():
             logger.info(
@@ -66,13 +61,9 @@ class CreateUser(BaseAction):
         create_login_query = f"CREATE LOGIN [{self._username}] WITH PASSWORD = '{escaped_password}', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;"
 
         try:
-            res = database_context.query_service.execute_non_processing(
-                create_login_query
+            database_context.query_service.execute_non_processing(
+                create_login_query, silent=True
             )
-            # execute_non_processing returns -1 on error; if so, raise to handle below
-            if res == -1:
-                raise RuntimeError("create_login_failed")
-
             logger.success(f"SQL login '{self._username}' created successfully")
 
         except Exception as ex:

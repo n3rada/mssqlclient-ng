@@ -31,7 +31,7 @@ class CMDistributionPoints(CMBaseAction):
         self._active_only: bool = False
         self._limit: int = 25
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
         self._server = named.get("server", named.get("s", ""))
         self._active_only = "active" in named or "a" in named
