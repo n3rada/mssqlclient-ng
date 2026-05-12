@@ -161,8 +161,16 @@ class Terminal:
         strings into memory.  Creating a new PromptSession is therefore the
         only reliable way to make the up-arrow key reflect a different history
         file after a server hop.
+
+        ThreadedAutoSuggest is also instantiated fresh here because it carries
+        internal thread state (_current_suggestion) that must not be shared
+        across sessions.
         """
-        return PromptSession(**self._session_kwargs, history=history_backend)
+        return PromptSession(
+            **self._session_kwargs,
+            history=history_backend,
+            auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
+        )
 
     def _switch_history(self, server: str) -> None:
         """Switch the prompt session's history to the file for the current (server, identity) context.
@@ -469,7 +477,6 @@ class Terminal:
             "multiline": multiline,
             "enable_history_search": True,
             "wrap_lines": True,
-            "auto_suggest": ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
             "completer": combined_completer,
             "lexer": PygmentsLexer(SqlLexer),
             "style": SQL_STYLE,
