@@ -1,8 +1,10 @@
 # mssqlclient_ng/core/terminal.py
 
 # Built-in imports
+import io
 import shlex
 import os
+import sys
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -25,6 +27,7 @@ from .utils import logbook
 from .utils.common import yes_no_prompt
 from .utils.completions import ActionCompleter, SQLBuiltinCompleter
 from .utils.formatters import OutputFormatter
+from .utils.storage import OutputCache
 
 from .models.server import Server
 from .models.linked_servers import LinkedServers
@@ -35,6 +38,22 @@ from .actions.factory import ActionFactory
 from .actions.execution import query
 
 SQL_STYLE = style_from_pygments_cls(MonokaiStyle)
+
+
+class _TeeWriter:
+    """Write to two streams simultaneously (for stdout capture)."""
+
+    def __init__(self, primary, secondary):
+        self._primary = primary
+        self._secondary = secondary
+
+    def write(self, data):
+        self._primary.write(data)
+        self._secondary.write(data)
+
+    def flush(self):
+        self._primary.flush()
+        self._secondary.flush()
 
 
 class Terminal:
@@ -81,7 +100,10 @@ class Terminal:
             "revert": self._handle_revert,
             "add-link": self._handle_add_link,
             "unlink": self._handle_unlink,
+            "flush": self._handle_flush,
         }
+
+        self._output_cache = OutputCache()
 
     # ── Helper Methods ──────────────────────────────────────────────────
 
@@ -111,6 +133,17 @@ class Terminal:
         ]
         self._database_context.query_service.execution_server = last_server.hostname
         self._database_context.query_service.compute_execution_database()
+
+    def _cache_context(self) -> tuple:
+        """Return the current execution context tuple for cache operations."""
+        linked = self._database_context.query_service.linked_servers
+        chain_spec = linked.get_chain_arguments() if not linked.is_empty else ""
+        return (
+            self._database_context.query_service.execution_server or "",
+            self._database_context.server.system_user or "",
+            chain_spec,
+            self._database_context.query_service.execution_database or "",
+        )
 
     # ── Prompt ──────────────────────────────────────────────────────────
 
@@ -153,6 +186,9 @@ class Terminal:
         """
         Execute an action by its registered name with a list of arguments.
 
+        Checks the output cache before executing. Use --force/-f to bypass
+        the cache and re-execute the action (the fresh output replaces the cache).
+
         Args:
             action_name: The name of the action to execute
             argument_list: List of arguments for the action
@@ -170,9 +206,26 @@ class Terminal:
             ActionFactory.display_action_help(action_name)
             return None
 
+        # Resolve canonical action name for cache key
+        canonical_name = ActionFactory.resolve_alias(action_name)
+        cacheable = OutputCache.is_cacheable(canonical_name)
+
+        # For cacheable actions, extract --force/-f as cache bypass
+        # For non-cacheable actions, pass --force/-f through to the action
+        force = False
+        if cacheable:
+            filtered_args = []
+            for arg in argument_list:
+                if arg in ("--force", "-f"):
+                    force = True
+                else:
+                    filtered_args.append(arg)
+        else:
+            filtered_args = list(argument_list)
+
         try:
             # Use shlex.join to preserve arguments with spaces
-            args_str = shlex.join(argument_list)
+            args_str = shlex.join(filtered_args)
             action.validate_arguments(args_str)
         except ValueError as ve:
             logger.error(f"Argument validation error: {ve}")
@@ -181,10 +234,44 @@ class Terminal:
         # Get server name from database context
         server_name = self._database_context.query_service.execution_server
 
+        # Check output cache (unless --force or action is not cacheable)
+        if not force and cacheable:
+            ctx = self._cache_context()
+            cached = self._output_cache.get(
+                ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str
+            )
+            if cached is not None:
+                logger.debug(f"Cache hit for '{canonical_name}' on {server_name}")
+                print(cached, end="")
+                return None
+
         logger.info(f"Executing action '{action_name}' against {server_name}")
 
+        # Capture stdout for caching
+        stdout_capture = io.StringIO() if cacheable else None
+
+        original_stdout = sys.stdout
+
         try:
-            result = action.execute(database_context=self._database_context)
+            if stdout_capture is not None:
+                # Tee stdout: write to both the real stdout and the capture buffer
+                sys.stdout = _TeeWriter(original_stdout, stdout_capture)
+
+            try:
+                result = action.execute(database_context=self._database_context)
+            finally:
+                sys.stdout = original_stdout
+
+            # Cache the captured output
+            if stdout_capture is not None:
+                output = stdout_capture.getvalue()
+                if output:
+                    ctx = self._cache_context()
+                    self._output_cache.put(
+                        ctx[0], ctx[1], ctx[2], ctx[3],
+                        canonical_name, args_str, output
+                    )
+
             return result
         except KeyboardInterrupt:
             print("\r", end="", flush=True)  # Clear the ^C
@@ -393,6 +480,18 @@ class Terminal:
             self._log_level = "DEBUG"
             logbook.setup_logging(self._log_level)
             logger.info("🔊 Debug mode enabled")
+
+    def _handle_flush(self, command_line: str) -> None:
+        """Flush cached action outputs: !flush [--all]"""
+        parts = command_line.split()
+        if len(parts) > 1 and parts[1] in ("--all", "-a"):
+            deleted = self._output_cache.flush()
+            logger.success(f"Flushed {deleted} cached output(s) across all contexts")
+        else:
+            ctx = self._cache_context()
+            deleted = self._output_cache.flush(ctx[0], ctx[1], ctx[2], ctx[3])
+            server = self._database_context.query_service.execution_server
+            logger.success(f"Flushed {deleted} cached output(s) for {server}")
 
     def _handle_chain(self, command_line: str) -> None:
         """Display current chain, or apply a chain by ID: !chain [id]"""

@@ -83,6 +83,11 @@ class ActionFactory:
         return action_class()
 
     @classmethod
+    def resolve_alias(cls, action_type: str) -> str:
+        """Resolve an action name or alias to its canonical name."""
+        return cls._aliases.get(action_type.lower(), action_type.lower())
+
+    @classmethod
     def get_available_actions(cls) -> List[Tuple[str, str, List[str]]]:
         """
         Get a list of all available actions with their descriptions and arguments.

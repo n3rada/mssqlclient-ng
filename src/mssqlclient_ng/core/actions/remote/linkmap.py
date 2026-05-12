@@ -180,7 +180,6 @@ class LinkMap(BaseAction):
     def __init__(self):
         super().__init__()
         self._limit: int = self.DEFAULT_MAX_DEPTH
-        self._force: bool = False
         self._root_node: Optional[ServerNode] = None
         self._globally_explored_contexts: Set[str] = set()
         self._failed_link_attempts: Set[str] = set()
@@ -198,9 +197,6 @@ class LinkMap(BaseAction):
 
         parts = additional_arguments.strip().split()
         for part in parts:
-            if part in ("--force", "-f"):
-                self._force = True
-                continue
             try:
                 depth = int(part)
                 if not (1 <= depth <= self.MAX_ALLOWED_DEPTH):
@@ -211,25 +207,12 @@ class LinkMap(BaseAction):
             except ValueError as e:
                 if "invalid literal" in str(e):
                     raise ValueError(
-                        f"Invalid argument '{part}'. Expected integer depth (1-{self.MAX_ALLOWED_DEPTH}) or --force/-f"
+                        f"Invalid argument '{part}'. Expected integer depth (1-{self.MAX_ALLOWED_DEPTH})"
                     )
                 raise
 
     def execute(self, database_context: DatabaseContext) -> Optional[Any]:
         server_name = database_context.server.hostname
-
-        # Check for saved chains unless --force is specified
-        if not self._force:
-            saved = self._chain_store.load(server_name)
-            if saved and saved.get("chains"):
-                logger.success(
-                    f"Showing {len(saved['chains'])} saved chain(s) for {server_name} "
-                    f"(from {saved['last_updated']})"
-                )
-                print(OutputFormatter.convert_list_of_dicts(saved["chains"]))
-                logger.info("Use !link #<id> to apply a chain from the table above")
-                logger.info("Use --force or -f to re-scan")
-                return saved["chains"]
 
         logger.info(f"Maximum recursion depth: {self._limit}")
 
@@ -1290,7 +1273,9 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             for escalation in last_node.escalation_paths:
                 chain_id += 1
                 esc_hops = hops + len(escalation)
-                esc_row = self._build_escalation_row(chain, escalation, esc_hops, chain_id)
+                esc_row = self._build_escalation_row(
+                    chain, escalation, esc_hops, chain_id
+                )
                 rows.append(esc_row)
 
         if rows:
@@ -1439,4 +1424,4 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
     # ------------------------------------------------------------------
 
     def get_arguments(self) -> List[str]:
-        return ["[max_depth]", "[--force|-f]"]
+        return ["[max_depth]"]

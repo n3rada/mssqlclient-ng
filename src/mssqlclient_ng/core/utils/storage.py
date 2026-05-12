@@ -7,6 +7,7 @@ and a chain store for saving/loading discovered linked server chains per server.
 """
 
 # Built-in imports
+import hashlib
 import json
 import os
 from datetime import datetime, timezone
@@ -159,3 +160,168 @@ class ChainStore:
             except Exception:
                 servers.append(f.stem)
         return servers
+
+
+class OutputCache:
+    """
+    Caches action output per execution context (server + user + chain + database).
+
+    Storage layout:
+        <data_dir>/cache/<context_hash>/<action_key>.txt
+
+    The context hash is derived from execution_server, system_user,
+    linked server chain, and execution database. Each action invocation
+    (name + arguments) is stored as a separate file.
+    """
+
+    # Actions that manage their own caching or produce side effects
+    _EXCLUDED_ACTIONS = frozenset(
+        {
+            "query",
+            "sql",  # arbitrary queries
+            "exec",
+            "ole",
+            "powershell",
+            "pwsh",
+            "run",
+            "clr",  # execution
+            "kill",
+            "config",
+            "user-add",  # mutations
+            "adsi-add",
+            "adsi-del",
+            "adsi-delete",
+            "adsi-drop",  # mutations
+            "rpc",
+            "data",  # toggle actions
+            "upload",
+            "rm",
+            "del",
+            "delete",  # filesystem mutations
+            "unc",
+            "coerce",
+            "smb",
+            "ntlm",  # coercion (side effect)
+            "adsi-creds",
+            "adsi-redirect",  # credential capture (side effect)
+            "job-exec",  # agent execution
+            "cm-script-add",
+            "cm-script-delete",
+            "cm-script-run",  # CM mutations
+            "cm-admin-add",
+            "cm-rbac-add",  # CM mutations
+        }
+    )
+
+    def __init__(self):
+        self._cache_dir = get_data_dir() / "cache"
+
+    @staticmethod
+    def _context_hash(
+        execution_server: str,
+        system_user: str,
+        chain_spec: str,
+        database: str,
+    ) -> str:
+        """Compute a short hash from the execution context."""
+        context = f"{execution_server}|{system_user}|{chain_spec}|{database}".upper()
+        return hashlib.sha256(context.encode("utf-8")).hexdigest()[:16]
+
+    @staticmethod
+    def _action_key(action_name: str, args: str) -> str:
+        """Build a safe filename from action name and arguments."""
+        raw = action_name if not args else f"{action_name}_{args}"
+        return _sanitize_filename(raw)
+
+    @staticmethod
+    def is_cacheable(action_name: str) -> bool:
+        """Check if an action is eligible for output caching."""
+        return action_name.lower() not in OutputCache._EXCLUDED_ACTIONS
+
+    def get(
+        self,
+        execution_server: str,
+        system_user: str,
+        chain_spec: str,
+        database: str,
+        action_name: str,
+        args: str,
+    ) -> Optional[str]:
+        """
+        Retrieve cached output for an action in the given context.
+
+        Returns:
+            The cached output string, or None if not cached.
+        """
+        ctx = self._context_hash(execution_server, system_user, chain_spec, database)
+        key = self._action_key(action_name, args)
+        cache_file = self._cache_dir / ctx / f"{key}.txt"
+
+        if not cache_file.is_file():
+            return None
+
+        try:
+            return cache_file.read_text(encoding="utf-8")
+        except Exception as ex:
+            logger.debug(f"Failed to read cache file {cache_file}: {ex}")
+            return None
+
+    def put(
+        self,
+        execution_server: str,
+        system_user: str,
+        chain_spec: str,
+        database: str,
+        action_name: str,
+        args: str,
+        output: str,
+    ) -> None:
+        """Store action output in the cache."""
+        ctx = self._context_hash(execution_server, system_user, chain_spec, database)
+        key = self._action_key(action_name, args)
+        ctx_dir = self._cache_dir / ctx
+
+        try:
+            ctx_dir.mkdir(parents=True, exist_ok=True)
+            cache_file = ctx_dir / f"{key}.txt"
+            cache_file.write_text(output, encoding="utf-8")
+            if os.name != "nt":
+                os.chmod(cache_file, 0o600)
+            logger.debug(f"Cached output for '{action_name}' in {cache_file}")
+        except Exception as ex:
+            logger.debug(f"Failed to cache output: {ex}")
+
+    def flush(
+        self,
+        execution_server: str = "",
+        system_user: str = "",
+        chain_spec: str = "",
+        database: str = "",
+    ) -> int:
+        """
+        Flush cached outputs. If context fields are provided, flush only
+        that context directory. Otherwise flush the entire cache.
+
+        Returns:
+            Number of files deleted.
+        """
+        deleted = 0
+        if execution_server:
+            ctx = self._context_hash(
+                execution_server, system_user, chain_spec, database
+            )
+            ctx_dir = self._cache_dir / ctx
+            if ctx_dir.is_dir():
+                for f in ctx_dir.iterdir():
+                    f.unlink()
+                    deleted += 1
+                ctx_dir.rmdir()
+        else:
+            if self._cache_dir.is_dir():
+                for ctx_dir in self._cache_dir.iterdir():
+                    if ctx_dir.is_dir():
+                        for f in ctx_dir.iterdir():
+                            f.unlink()
+                            deleted += 1
+                        ctx_dir.rmdir()
+        return deleted
