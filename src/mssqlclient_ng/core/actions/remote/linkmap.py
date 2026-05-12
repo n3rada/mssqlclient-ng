@@ -157,7 +157,7 @@ def _is_system_account(login: str) -> bool:
 @ActionFactory.register(
     "linkmap",
     "Recursively explore all accessible linked server chains with impersonation discovery",
-    aliases=["linksmap"],
+    aliases=["linksmap", "chains", "tunnel"],
 )
 class LinkMap(BaseAction):
     """
@@ -227,6 +227,7 @@ class LinkMap(BaseAction):
                     f"(from {saved['last_updated']})"
                 )
                 print(OutputFormatter.convert_list_of_dicts(saved["chains"]))
+                logger.info("Use !link #<id> to apply a chain from the table above")
                 logger.info("Use --force or -f to re-scan")
                 return saved["chains"]
 
@@ -1277,17 +1278,19 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             key=lambda c: (-self._get_chain_priority(c), self._get_total_hops(c)),
         )
 
-        for idx, chain in enumerate(ordered, start=1):
+        chain_id = 0
+        for chain in ordered:
+            chain_id += 1
             hops = self._get_total_hops(chain)
-            row = self._build_chain_row(chain, hops, idx)
+            row = self._build_chain_row(chain, hops, chain_id)
             rows.append(row)
 
             # Add escalation path rows for the last node
             last_node = chain[-1]
             for escalation in last_node.escalation_paths:
-                idx += 1
+                chain_id += 1
                 esc_hops = hops + len(escalation)
-                esc_row = self._build_escalation_row(chain, escalation, esc_hops, idx)
+                esc_row = self._build_escalation_row(chain, escalation, esc_hops, chain_id)
                 rows.append(esc_row)
 
         if rows:

@@ -431,9 +431,12 @@ class Terminal:
 
         link_spec = parts[1].strip()
 
-        # Support #<id> to reference a saved chain by its table index
+        # Support #<id> or bare number to reference a saved chain by its table index
         if link_spec.startswith("#"):
             self._handle_link_by_id(link_spec[1:])
+            return
+        if link_spec.isdigit():
+            self._handle_link_by_id(link_spec)
             return
 
         try:
