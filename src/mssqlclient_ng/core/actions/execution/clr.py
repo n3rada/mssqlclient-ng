@@ -4,7 +4,6 @@
 import hashlib
 import os
 import re
-import urllib.request
 from typing import List
 
 # Third-party imports
@@ -41,7 +40,7 @@ class ClrExecution(BaseAction):
     6. Cleanup (drop procedure, assembly, and hash)
     """
 
-    _dll_path: str = Arg(position=0, required=True, description="Path to the DLL (local or HTTP/S)")  # type: ignore[assignment]
+    _dll_path: str = Arg(position=0, required=True, description="Path to the DLL (local file)")  # type: ignore[assignment]
     _class_name: str = Arg(position=1, required=True, default="StoredProcedures", description="Class name containing the function")  # type: ignore[assignment]
     _function: str = Arg(position=2, required=True, default="Main", description="Function name to execute")  # type: ignore[assignment]
     _args: str = Arg(position=3, remainder=True, default="", description="Function args")  # type: ignore[assignment]
@@ -211,7 +210,7 @@ class ClrExecution(BaseAction):
             List of argument descriptions
         """
         return [
-            "DLL path (local path or HTTP/S URL)",
+            "DLL path (local file)",
             "Class name containing the function",
             "Function name to execute",
             "Function args (optional)",
@@ -233,20 +232,15 @@ class ClrExecution(BaseAction):
 
     def _convert_dll_to_sql_bytes(self, dll: str) -> tuple[str, str]:
         """
-        Convert DLL to SQL-compatible bytes (from file or URL).
+        Convert DLL to SQL-compatible bytes from a local file.
 
         Args:
-            dll: Path to local file or HTTP/S URL
+            dll: Path to local file
 
         Returns:
             Tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
         """
-        if dll.lower().startswith("http://") or dll.lower().startswith("https://"):
-            return self._convert_dll_to_sql_bytes_web(dll)
-        else:
-            # Normalize Windows path for local files
-            normalized_dll = normalize_windows_path(dll)
-            return self._convert_dll_to_sql_bytes_file(normalized_dll)
+        return self._convert_dll_to_sql_bytes_file(normalize_windows_path(dll))
 
     def _convert_dll_to_sql_bytes_file(self, dll: str) -> tuple[str, str]:
         """
@@ -293,48 +287,4 @@ class ClrExecution(BaseAction):
             return ("", "")
         except Exception as e:
             logger.error(f"Error reading DLL file: {e}")
-            return ("", "")
-
-    def _convert_dll_to_sql_bytes_web(self, dll: str) -> tuple[str, str]:
-        """
-        Download a .NET assembly from HTTP/S and convert to SQL format.
-
-        Args:
-            dll: The URL of the DLL to download
-
-        Returns:
-            Tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
-        """
-        try:
-            if not dll.startswith("http://") and not dll.startswith("https://"):
-                raise ValueError(f"Invalid DLL URL: {dll}")
-
-            logger.info(f"Downloading DLL from {dll}")
-
-            # Download the DLL content
-            with urllib.request.urlopen(dll) as response:
-                dll_bytes = response.read()
-
-            logger.info(f"DLL downloaded successfully, size: {len(dll_bytes)} bytes")
-
-            # Compute SHA-512 hash
-            sha512 = hashlib.sha512()
-            sha512.update(dll_bytes)
-            hash_bytes = sha512.digest()
-
-            # Convert hash to lowercase hex
-            hash_hex = "".join(f"{b:02x}" for b in hash_bytes)
-
-            logger.info(f"SHA-512 hash computed: {hash_hex}")
-
-            # Convert DLL bytes to uppercase hex
-            dll_hex_string = "".join(f"{b:02X}" for b in dll_bytes)
-
-            return (hash_hex, dll_hex_string)
-
-        except urllib.error.URLError as e:
-            logger.error(f"Failed to download DLL from {dll}. URL error: {e.reason}")
-            return ("", "")
-        except Exception as e:
-            logger.error(f"An error occurred while processing the DLL: {e}")
             return ("", "")
