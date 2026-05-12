@@ -466,11 +466,12 @@ class Terminal:
             except Exception as exc:
                 logger.error(f"Error retrieving user info from linked server: {exc}")
 
-            chain_parts = (
-                self._database_context.query_service.linked_servers.get_chain_parts()
+            chain_display = self._database_context.query_service.linked_servers.format_chain_display(
+                initial_host=self._original_execution_server or "",
+                initial_login=self._original_system_user,
             )
-            logger.success(f"Linked server chain set: {' -> '.join(chain_parts)}")
-            logger.info("Use !unlink to go back")
+            logger.success(f"Linked server chain set: {chain_display}")
+            logger.info("Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything")
 
         except Exception as e:
             logger.error(f"Failed to set linked servers: {e}")
@@ -544,11 +545,12 @@ class Terminal:
             except Exception as exc:
                 logger.error(f"Error retrieving user info from linked server: {exc}")
 
-            chain_parts = (
-                self._database_context.query_service.linked_servers.get_chain_parts()
+            chain_display = self._database_context.query_service.linked_servers.format_chain_display(
+                initial_host=self._original_execution_server or "",
+                initial_login=self._original_system_user,
             )
-            logger.success(f"Chain #{chain_id} applied: {' -> '.join(chain_parts)}")
-            logger.info("Use !unlink-all to revert")
+            logger.success(f"Chain #{chain_id} applied: {chain_display}")
+            logger.info("Use !unlink to pop one link, !revert to undo impersonation, or !unlink-all to revert everything")
 
         except Exception as e:
             logger.error(f"Failed to apply chain #{chain_id}: {e}")
