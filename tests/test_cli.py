@@ -127,11 +127,11 @@ class TestCliAdvancedOptions:
 
     def test_history_default(self, parser):
         args = parser.parse_args(["SQL01"])
-        assert args.history is False
+        assert args.no_history is False
 
-    def test_history_enabled(self, parser):
-        args = parser.parse_args(["SQL01", "--history"])
-        assert args.history is True
+    def test_history_disabled(self, parser):
+        args = parser.parse_args(["SQL01", "--no-history"])
+        assert args.no_history is True
 
     def test_multiline_default(self, parser):
         args = parser.parse_args(["SQL01"])

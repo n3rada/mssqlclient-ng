@@ -10,8 +10,8 @@ from loguru import logger
 # Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from ...services.database import DatabaseContext
-from ...utils.formatters.formatter import OutputFormatter
+from services.database import DatabaseContext
+from utils.formatters.formatter import OutputFormatter
 
 
 class RpcActionMode(Enum):

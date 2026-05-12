@@ -9,8 +9,8 @@ from loguru import logger
 # Local imports
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
-from ...services.database import DatabaseContext
-from ...utils import common
+from services.database import DatabaseContext
+from utils import common
 
 
 @ActionFactory.register(

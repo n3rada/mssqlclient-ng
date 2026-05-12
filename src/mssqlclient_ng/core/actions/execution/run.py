@@ -9,8 +9,8 @@ from loguru import logger
 # Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from ...services.database import DatabaseContext
-from ...utils.common import normalize_windows_path
+from services.database import DatabaseContext
+from utils.common import normalize_windows_path
 
 
 @ActionFactory.register("run", "Execute a remote file on the SQL Server")
@@ -41,7 +41,7 @@ class RunExecutable(BaseAction):
 
         Args:
             additional_arguments: File path and optional arguments
-                Format: [--wait|-w] [--capture-output|-o] <file_path> [arguments...]
+                Format: [--wait|-w] [--capture-output|-o] <file_path> [arguments]
                 --wait/-w: Execute synchronously (wait for completion)
                 --capture-output/-o: Capture stdout/stderr (implies --wait, forces xp_cmdshell)
 

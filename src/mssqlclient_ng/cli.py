@@ -212,11 +212,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     advanced_group.add_argument(
-        "--history",
+        "--no-history",
         action="store_true",
         required=False,
         default=False,
-        help="Enable persistent command history (stored in $XDG_STATE_HOME/mssqlclient_ng/).",
+        help="Disable persistent command history.",
     )
 
     advanced_group.add_argument(
@@ -530,7 +530,7 @@ def main() -> int:
         if args.query or args.action:
             # Execute single action/query and exit
             if args.action:
-                # args.action is a list: [action_name, arg1, arg2, ...]
+                # args.action is a list: [action_name, arg1, arg2, ]
                 if isinstance(args.action, list) and len(args.action) > 0:
                     action_name = args.action[0]
                     argument_list = args.action[1:]
@@ -584,7 +584,9 @@ def main() -> int:
             # Starting interactive shell - only create Terminal instance here
             terminal_instance = Terminal(database_context)
             terminal_instance.start(
-                prefix=args.prefix, multiline=args.multiline, history=args.history
+                prefix=args.prefix,
+                multiline=args.multiline,
+                history=not args.no_history,
             )
             return 0
 

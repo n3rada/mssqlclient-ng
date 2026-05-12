@@ -30,7 +30,7 @@ class ActionFactory:
         Usage:
             @ActionFactory.register("whoami", "Display current user context", aliases=["id"])
             class Whoami(BaseAction):
-                ...
+
 
         Args:
             name: The action name (command)

@@ -12,8 +12,8 @@ from loguru import logger
 # Local imports
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
-from ...services.database import DatabaseContext
-from ...utils.common import (
+from services.database import DatabaseContext
+from utils.common import (
     generate_random_string,
     get_hex_char,
     normalize_windows_path,

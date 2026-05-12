@@ -326,10 +326,10 @@ class Terminal:
             history_dir = base / "mssqlclient_ng" / "history"
             history_dir.mkdir(parents=True, exist_ok=True)
 
-            # Create unique history file using hostname and user
+            # Create unique history file per execution server
             history_file = (
                 history_dir
-                / f"{self._database_context.server.hostname}_{self._database_context.server.system_user}_history"
+                / f"{self._database_context.query_service.execution_server}_history"
             )
 
             # Create the history file first if it doesn't exist
@@ -344,7 +344,7 @@ class Terminal:
                 )
 
             history_backend = ThreadedHistory(FileHistory(str(history_file)))
-            logger.info(f"💾 Persistent command history: {history_file}")
+            logger.debug(f"Persistent command history: {history_file}")
         else:
             logger.debug("🗑️ In-memory command history enabled.")
             history_backend = ThreadedHistory(InMemoryHistory())
@@ -461,7 +461,7 @@ class Terminal:
             ActionFactory.display_action_help(term)
             return
 
-        # Build reverse alias map: canonical_name -> [alias, ...]
+        # Build reverse alias map: canonical_name -> [alias, ]
         reverse_aliases: Dict[str, List[str]] = {}
         for alias, canonical in ActionFactory.list_aliases().items():
             reverse_aliases.setdefault(canonical, []).append(alias)

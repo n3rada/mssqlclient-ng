@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 from ..base import BaseAction
-from ...utils.formatters import OutputFormatter
+from utils.formatters import OutputFormatter
 
 
 # Not registered via ActionFactory - Query is invoked directly by the shell
