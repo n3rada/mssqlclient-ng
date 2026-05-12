@@ -554,6 +554,7 @@ class LinkMap(BaseAction):
         # Persist discovered chains for future quick access
         if chain_rows:
             self._chain_store.save(server_name, chain_rows)
+            logger.info("Use !link #<id> to apply a chain from the table above")
 
         return self._all_chains
 
@@ -1276,16 +1277,17 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             key=lambda c: (-self._get_chain_priority(c), self._get_total_hops(c)),
         )
 
-        for chain in ordered:
+        for idx, chain in enumerate(ordered, start=1):
             hops = self._get_total_hops(chain)
-            row = self._build_chain_row(chain, hops)
+            row = self._build_chain_row(chain, hops, idx)
             rows.append(row)
 
             # Add escalation path rows for the last node
             last_node = chain[-1]
             for escalation in last_node.escalation_paths:
+                idx += 1
                 esc_hops = hops + len(escalation)
-                esc_row = self._build_escalation_row(chain, escalation, esc_hops)
+                esc_row = self._build_escalation_row(chain, escalation, esc_hops, idx)
                 rows.append(esc_row)
 
         if rows:
@@ -1313,7 +1315,9 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             return 1
         return 0
 
-    def _build_chain_row(self, chain: List[ServerNode], hops: int) -> Dict[str, Any]:
+    def _build_chain_row(
+        self, chain: List[ServerNode], hops: int, chain_id: int
+    ) -> Dict[str, Any]:
         """Build a row for the chain summary table."""
         last_node = chain[-1]
 
@@ -1356,6 +1360,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             privilege = ""
 
         return {
+            "#": chain_id,
             "Endpoint": endpoint,
             "Login": last_node.logged_in_user,
             "Mapped To": last_node.mapped_user,
@@ -1369,6 +1374,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         chain: List[ServerNode],
         escalation: List[ImpersonationStep],
         hops: int,
+        chain_id: int,
     ) -> Dict[str, Any]:
         """Build a row for a privilege escalation path."""
         last_node = chain[-1]
@@ -1416,6 +1422,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             privilege = ", ".join(last_step.roles)
 
         return {
+            "#": chain_id,
             "Endpoint": endpoint,
             "Login": last_step.login,
             "Mapped To": "",

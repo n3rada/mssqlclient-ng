@@ -42,7 +42,7 @@ class ClrExecution(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._dll_uri: str = ""
+        self._dll_path: str = ""
         self._class_name: str = "StoredProcedures"
         self._function: str = "Main"
         self._args: str = ""
@@ -55,19 +55,19 @@ class ClrExecution(BaseAction):
 
         Args:
             additional_arguments: The argument string to parse
-                Format: <dll_uri> <class_name> <function> [args...]
+                Format: <dll_path> <class_name> <function> [args...]
 
         Raises:
             ValueError: If arguments are invalid
         """
         named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
-        # Parse DLL URI (required)
+        # Parse DLL path (required)
         if len(positional_args) >= 1:
-            self._dll_uri = positional_args[0]
+            self._dll_path = positional_args[0]
         else:
             raise ValueError(
-                "DLL URI is required. Usage: <dllURI> <className> <function> [args...]"
+                "DLL path is required. Usage: <dll_path> <className> <function> [args...]"
             )
 
         # Parse class name (required)
@@ -75,7 +75,7 @@ class ClrExecution(BaseAction):
             self._class_name = positional_args[1]
         else:
             raise ValueError(
-                "Class name is required. Usage: <dllURI> <className> <function> [args...]"
+                "Class name is required. Usage: <dll_path> <className> <function> [args...]"
             )
 
         # Parse function name (required)
@@ -83,19 +83,19 @@ class ClrExecution(BaseAction):
             self._function = positional_args[2]
         else:
             raise ValueError(
-                "Function name is required. Usage: <dllURI> <className> <function> [args...]"
+                "Function name is required. Usage: <dll_path> <className> <function> [args...]"
             )
 
         # Parse remaining args (optional, joined with space)
         if len(positional_args) >= 4:
             self._args = " ".join(positional_args[3:])
 
-        if not self._dll_uri:
+        if not self._dll_path:
             raise ValueError(
-                "DLL URI is required. Usage: <dllURI> <className> <function> [args...]"
+                "DLL path is required. Usage: <dll_path> <className> <function> [args...]"
             )
 
-        logger.info(f"DLL URI: {self._dll_uri}")
+        logger.info(f"DLL path: {self._dll_path}")
         logger.info(f"Class: {self._class_name}")
         logger.info(f"Function: {self._function}")
         if self._args:
@@ -112,7 +112,7 @@ class ClrExecution(BaseAction):
             True if execution succeeded; otherwise False
         """
         # Step 1: Get the SHA-512 hash for the DLL and its bytes
-        library_hash, library_hex_bytes = self._convert_dll_to_sql_bytes(self._dll_uri)
+        library_hash, library_hex_bytes = self._convert_dll_to_sql_bytes(self._dll_path)
 
         if not library_hash or not library_hex_bytes:
             logger.error("Failed to convert DLL to SQL-compatible bytes")
@@ -240,7 +240,7 @@ class ClrExecution(BaseAction):
             List of argument descriptions
         """
         return [
-            "DLL URI (local path or HTTP/S URL)",
+            "DLL path (local path or HTTP/S URL)",
             "Class name containing the function",
             "Function name to execute",
             "Function args (optional)",

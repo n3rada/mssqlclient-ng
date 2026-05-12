@@ -416,7 +416,7 @@ class Terminal:
                 logger.error(str(e))
 
     def _handle_link(self, command_line: str) -> None:
-        """Handle link command: !link [server_spec]"""
+        """Handle link command: !link [server_spec | #id]"""
         parts = command_line.split(maxsplit=1)
         if len(parts) == 1:
             # No server specified, show current linked server chain
@@ -429,7 +429,13 @@ class Terminal:
                 logger.info(f"Current linked server chain: {' -> '.join(chain_parts)}")
             return
 
-        link_spec = parts[1]
+        link_spec = parts[1].strip()
+
+        # Support #<id> to reference a saved chain by its table index
+        if link_spec.startswith("#"):
+            self._handle_link_by_id(link_spec[1:])
+            return
+
         try:
             new_chain = LinkedServers(link_spec)
             self._database_context.query_service.linked_servers = new_chain
@@ -460,6 +466,84 @@ class Terminal:
 
         except Exception as e:
             logger.error(f"Failed to set linked servers: {e}")
+
+    def _handle_link_by_id(self, id_str: str) -> None:
+        """Look up a saved chain by its # index and apply it."""
+        try:
+            chain_id = int(id_str)
+        except ValueError:
+            logger.error(f"Invalid chain ID: #{id_str}")
+            return
+
+        from .utils.storage import ChainStore
+
+        store = ChainStore()
+        server_name = self._database_context.server.hostname
+        saved = store.load(server_name)
+
+        if not saved or not saved.get("chains"):
+            logger.error(f"No saved chains for {server_name}. Run !linkmap first.")
+            return
+
+        chains = saved["chains"]
+        if chain_id < 1 or chain_id > len(chains):
+            logger.error(f"Chain #{chain_id} not found (valid: 1-{len(chains)})")
+            return
+
+        row = chains[chain_id - 1]
+        command = row.get("Command") or row.get("command", "")
+        if not command:
+            logger.error(f"Chain #{chain_id} has no command")
+            return
+
+        # The command is "HOST/imp -l CHAIN_ARG" - extract the -l part
+        if " -l " not in command:
+            logger.error(f"Cannot parse chain command: {command}")
+            return
+
+        link_spec = command.split(" -l ", 1)[1]
+
+        # Also extract host impersonation if present
+        host_part = command.split(" -l ", 1)[0].strip().strip('"')
+        host_impersonation = []
+        if "/" in host_part:
+            host_impersonation = host_part.split("/")[1:]
+
+        # Apply host impersonation first
+        if host_impersonation:
+            for login in host_impersonation:
+                if not self._database_context.user_service.impersonate_user(login):
+                    logger.error(f"Failed to impersonate '{login}' on starting server")
+                    return
+
+        try:
+            new_chain = LinkedServers(link_spec)
+            self._database_context.query_service.linked_servers = new_chain
+
+            last_server = new_chain.server_chain[-1]
+            self._database_context.query_service.execution_server = last_server.hostname
+            self._database_context.query_service.compute_execution_database()
+
+            try:
+                self._refresh_user_info()
+                logger.info(
+                    f"Logged in on {self._database_context.query_service.execution_server} "
+                    f"as {self._database_context.server.system_user}"
+                )
+                logger.info(
+                    f"Mapped to the user: {self._database_context.server.mapped_user}"
+                )
+            except Exception as exc:
+                logger.error(f"Error retrieving user info from linked server: {exc}")
+
+            chain_parts = (
+                self._database_context.query_service.linked_servers.get_chain_parts()
+            )
+            logger.success(f"Chain #{chain_id} applied: {' -> '.join(chain_parts)}")
+            logger.info("Use !unlink-all to revert")
+
+        except Exception as e:
+            logger.error(f"Failed to apply chain #{chain_id}: {e}")
 
     def _handle_unlink_all(self, command_line: str) -> None:
         """Clear entire linked server chain and revert impersonations."""
