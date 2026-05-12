@@ -64,6 +64,10 @@ class Links(BaseAction):
             logger.warning(
                 "Only returns the linked servers that user has visibility into"
             )
+            logger.info("Use !link <server> to hop to a linked server")
+            logger.info(
+                "Use !linkmap to discover full chains, then !chain <id> to apply one"
+            )
 
             return result_rows
 

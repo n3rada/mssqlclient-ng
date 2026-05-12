@@ -538,7 +538,7 @@ class LinkMap(BaseAction):
         # Persist discovered chains for future quick access
         if chain_rows:
             self._chain_store.save(server_name, chain_rows)
-            logger.info("Use !link #<id> to apply a chain from the table above")
+            logger.info("Use !chain <id> to apply a chain from the table above")
 
         return self._all_chains
 

@@ -84,6 +84,7 @@ class Terminal:
         "ul": "unlink",
         "ula": "unlink-all",
         "al": "add-link",
+        "ch": "chain",
     }
 
     def __init__(
@@ -511,11 +512,11 @@ class Terminal:
             logger.success(f"Flushed {deleted} cached output(s) for {server}")
 
     def _handle_chain(self, command_line: str) -> None:
-        """Display current chain, or apply a chain by ID: !chain [id]"""
+        """Display current chain, or apply a saved linkmap chain by ID: !chain [id]"""
         parts = command_line.split(maxsplit=1)
         if len(parts) > 1:
-            # Delegate to link handler: !chain 1 == !link 1
-            self._handle_link(f"link {parts[1]}")
+            id_str = parts[1].strip().lstrip("#")
+            self._handle_link_by_id(id_str)
             return
         self._display_chain()
 
@@ -537,7 +538,7 @@ class Terminal:
                 logger.error(str(e))
 
     def _handle_link(self, command_line: str) -> None:
-        """Handle link command: !link [server_spec | #id]"""
+        """Hop to a directly linked server: !link [server_spec]"""
         parts = command_line.split(maxsplit=1)
         if len(parts) == 1:
             # No server specified, show current linked server chain
@@ -551,15 +552,6 @@ class Terminal:
             return
 
         link_spec = parts[1].strip()
-
-        # Support #<id> or bare number to reference a saved chain by its table index
-        if link_spec.startswith("#"):
-            self._handle_link_by_id(link_spec[1:])
-            return
-        if link_spec.isdigit():
-            self._handle_link_by_id(link_spec)
-            return
-
         try:
             new_chain = LinkedServers(link_spec)
             self._database_context.query_service.linked_servers = new_chain
