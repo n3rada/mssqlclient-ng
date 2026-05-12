@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/execution/xpcmd.py
 
 # Built-in imports
-from typing import Optional, List
+from typing import Any, List, Optional
 
 # Third-party imports
 from loguru import logger
@@ -43,18 +43,19 @@ class XpCmd(BaseAction):
             return None
 
         # Escape single quotes in command
-        escaped_command = self._command.replace("'", "''")
+        command = str(self._command)
+        escaped_command = command.replace("'", "''")
         query = f"EXEC master..xp_cmdshell '{escaped_command}'"
 
         output_lines: List[str] = []
 
         try:
-            result = database_context.query_service.execute(query, tuple_mode=True)
+            rows: List[Any] = database_context.query_service.execute(query, tuple_mode=True)  # type: ignore[assignment]
 
-            if result:
+            if rows:
                 print()
-                for row in result:
-                    output = row.pop(0).strip()
+                for row in rows:
+                    output = str(row[0]).strip()
                     if output and output.upper() != "NULL":
                         print(output)
                         output_lines.append(output)
