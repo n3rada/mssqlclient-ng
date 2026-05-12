@@ -192,7 +192,7 @@ class LinkMap(BaseAction):
                 if "invalid literal" in str(e):
                     raise ValueError(
                         f"Invalid argument '{part}'. Expected integer depth (1-{self.MAX_ALLOWED_DEPTH})"
-                    )
+                    ) from e
                 raise
 
     def execute(self, database_context: DatabaseContext) -> Optional[Any]:
@@ -750,7 +750,7 @@ class LinkMap(BaseAction):
                 Tuple[str, str, Dict[str, Any], Optional[List[str]]]
             ] = []
 
-            for (server_link_upper, _), (row, chain) in all_links_on_server.items():
+            for (_, __), (row, chain) in all_links_on_server.items():
                 provider = _get_row_string(row, "Provider")
                 local_login = _get_row_string(row, "Local Login")
                 server_link = _get_row_string(row, "Link")
@@ -1093,6 +1093,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         if path and path[0].impersonation_chain:
             initial_imp.extend(s.login for s in path[0].impersonation_chain)
 
+        assert self._root_node is not None
         result = linked_servers.format_chain_display(
             initial_host=self._root_node.alias,
             initial_login=self._root_node.logged_in_user,
@@ -1111,6 +1112,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
 
     def _display_tree(self) -> None:
         """Display the linked server tree with ASCII art."""
+        assert self._root_node is not None
         print(
             f"{self._root_node.alias} ({self._root_node.logged_in_user} "
             f"[{self._root_node.mapped_user}]){self._root_node.privilege_marker}"
@@ -1294,6 +1296,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         chain_arg = linked_servers.get_chain_arguments()
 
         # Build host argument
+        assert self._root_node is not None
         host_arg = bracket_identifier(self._root_node.alias)
         host_impersonation = list(self._starting_impersonation)
         if chain and chain[0].impersonation_chain:
@@ -1355,6 +1358,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         chain_arg = linked_servers.get_chain_arguments()
 
         # Build host argument
+        assert self._root_node is not None
         host_arg = bracket_identifier(self._root_node.alias)
         host_impersonation = list(self._starting_impersonation)
         if chain and chain[0].impersonation_chain:
