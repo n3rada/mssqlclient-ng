@@ -20,7 +20,8 @@ from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import PygmentsLexer
 
 from pygments.lexers.sql import SqlLexer
-from pygments.styles.monokai import MonokaiStyle
+from pygments.styles.dracula import DraculaStyle
+from pygments.styles.solarized import SolarizedLightStyle
 
 # Local library imports
 from .utils import logbook
@@ -37,7 +38,24 @@ from .services.database import DatabaseContext
 from .actions.factory import ActionFactory
 from .actions.execution import query
 
-SQL_STYLE = style_from_pygments_cls(MonokaiStyle)
+
+def _is_dark_terminal() -> bool:
+    """Detect terminal background theme from environment variables."""
+    term_bg = os.environ.get("TERM_BACKGROUND", "").lower()
+    if term_bg in ("dark", "light"):
+        return term_bg == "dark"
+    colorfgbg = os.environ.get("COLORFGBG", "")
+    if colorfgbg:
+        try:
+            return int(colorfgbg.split(";")[-1]) < 8
+        except ValueError:
+            pass
+    return True  # default to dark
+
+
+SQL_STYLE = style_from_pygments_cls(
+    DraculaStyle if _is_dark_terminal() else SolarizedLightStyle
+)
 
 
 class _TeeWriter:
