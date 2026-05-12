@@ -12,6 +12,7 @@ from loguru import logger
 
 # Local imports
 from ..base import BaseAction
+from ..database.impersonation_map import ImpersonationMap
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...models.linked_servers import LinkedServers
@@ -907,8 +908,6 @@ class LinkMap(BaseAction):
         """
         chains: List[List[str]] = []
         try:
-            from ..database.impersonation_map import ImpersonationMap
-
             action = ImpersonationMap()
 
             logger.disable("")
