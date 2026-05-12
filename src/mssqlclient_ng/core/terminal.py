@@ -164,6 +164,34 @@ class Terminal:
             self._database_context.query_service.execution_database or "",
         )
 
+    def _load_chain_completions(self) -> list:
+        """
+        Load saved chains for the current server and return [(id, summary), ...].
+        Called lazily by ActionCompleter on each Tab press.
+        """
+        from .utils.storage import ChainStore
+
+        store = ChainStore()
+        server_name = self._database_context.server.hostname
+        saved = store.load(server_name)
+        if not saved or not saved.get("chains"):
+            return []
+        result = []
+        for i, row in enumerate(saved["chains"], start=1):
+            endpoint = row.get("Endpoint") or row.get("endpoint", "")
+            login = row.get("Login") or row.get("login", "")
+            roles = row.get("Server Roles") or row.get("server_roles", "")
+            hops = row.get("Hops") or row.get("hops", "")
+            parts = [endpoint]
+            if login:
+                parts.append(f"as {login}")
+            if roles:
+                parts.append(f"[{roles}]")
+            if hops:
+                parts.append(f"{hops} hops")
+            result.append((i, "  ".join(parts)))
+        return result
+
     # ── Prompt ──────────────────────────────────────────────────────────
 
     def _prompt(self) -> str:
@@ -356,7 +384,7 @@ class Terminal:
 
         # Merge action completer and SQL builtin completer
         combined_completer = merge_completers(
-            [ActionCompleter(prefix=prefix), SQLBuiltinCompleter()]
+            [ActionCompleter(prefix=prefix, chain_loader=self._load_chain_completions), SQLBuiltinCompleter()]
         )
 
         prompt_session = PromptSession(
@@ -755,7 +783,7 @@ class Terminal:
         linked = self._database_context.query_service.linked_servers
 
         if linked.is_empty:
-            logger.info("Already at the original server, cannot go back")
+            logger.warning("Already at the original server, cannot go back")
         elif len(linked.server_chain) == 1:
             # Going back from a single-server chain means unlinking completely
             self._restore_to_original()

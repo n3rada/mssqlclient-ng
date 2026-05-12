@@ -1,5 +1,8 @@
 # mssqlclient_ng/core/utils/completions.py
 
+# Built-in imports
+from typing import Callable, List, Optional, Tuple
+
 # External library imports
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
@@ -301,8 +304,22 @@ class ActionCompleter(Completer):
     Suggests available actions when user starts typing with prefix.
     """
 
-    def __init__(self, prefix: str = "!"):
+    # Commands that accept a chain ID as their first argument
+    _CHAIN_ID_COMMANDS = {"chain", "ch", "tunnel", "linkmap", "linksmap", "chains"}
+
+    def __init__(
+        self,
+        prefix: str = "!",
+        chain_loader: Optional[Callable[[], List[Tuple[int, str]]]] = None,
+    ):
+        """
+        Args:
+            prefix: The command prefix character (default "!")
+            chain_loader: Optional callable returning [(id, summary), ...] for
+                          chain ID completion. Called lazily on each completion.
+        """
         self.prefix = prefix
+        self._chain_loader = chain_loader
 
         # Built-in commands with descriptions
         self.builtins = {
@@ -342,7 +359,17 @@ class ActionCompleter(Completer):
         # Check if we're at the start with prefix
         if text.startswith(self.prefix):
             # Get the part after the prefix
-            command_part = text[len(self.prefix) :].strip()
+            command_part = text[len(self.prefix) :].lstrip()
+
+            # Check if the user has already typed a complete command and a space,
+            # meaning they are now typing the argument to that command.
+            parts = command_part.split(maxsplit=1)
+            if len(parts) == 2 or (len(parts) == 1 and text.endswith(" ")):
+                cmd = parts[0].lower()
+                arg_prefix = parts[1] if len(parts) == 2 else ""
+                if cmd in self._CHAIN_ID_COMMANDS and self._chain_loader is not None:
+                    yield from self._chain_id_completions(arg_prefix)
+                    return
 
             # Get all available actions
             actions = ActionFactory.list_actions()
@@ -376,6 +403,22 @@ class ActionCompleter(Completer):
                 if alias.startswith(command_part.lower()):
                     completion_text = alias[len(command_part) :]
                     yield Completion(completion_text, 0, display_meta=f"→ !{canonical}")
+
+    def _chain_id_completions(self, arg_prefix: str):
+        """Yield chain ID completions from the chain loader."""
+        try:
+            entries = self._chain_loader()
+        except Exception:
+            return
+        for chain_id, summary in entries:
+            id_str = str(chain_id)
+            if id_str.startswith(arg_prefix):
+                yield Completion(
+                    id_str[len(arg_prefix):],
+                    start_position=0,
+                    display=id_str,
+                    display_meta=summary,
+                )
 
 
 class SQLBuiltinCompleter(Completer):

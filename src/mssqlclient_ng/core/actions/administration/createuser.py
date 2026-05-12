@@ -32,11 +32,14 @@ class CreateUser(BaseAction):
         self, additional_arguments: str = "", argument_list=None
     ) -> None:
         self._bind_arguments(additional_arguments)
-        if not self._username or not self._username.strip():
+        username: str = self._username  # type: ignore[assignment]
+        password: str = self._password  # type: ignore[assignment]
+        role: str = self._role  # type: ignore[assignment]
+        if not username or not username.strip():
             raise ValueError("Username cannot be empty")
-        if not self._password or not self._password.strip():
+        if not password or not password.strip():
             raise ValueError("Password cannot be empty")
-        if not self._role or not self._role.strip():
+        if not role or not role.strip():
             raise ValueError("Role cannot be empty")
         if not additional_arguments or not additional_arguments.strip():
             logger.info(
