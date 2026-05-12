@@ -31,9 +31,7 @@ class Query(BaseAction):
         self._query: Optional[str] = None
         self._execute_all: bool = False
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         """
         Validate that a query is provided.
 

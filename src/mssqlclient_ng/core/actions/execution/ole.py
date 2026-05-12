@@ -34,9 +34,7 @@ class ObjectLinkingEmbedding(BaseAction):
 
     _command: str = Arg(position=0, remainder=True, required=True, description="OS command to execute")  # type: ignore[assignment]
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
         logger.info(f"Command to execute: {self._command}")
 

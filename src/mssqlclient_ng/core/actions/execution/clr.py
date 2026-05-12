@@ -45,9 +45,7 @@ class ClrExecution(BaseAction):
     _function: str = Arg(position=2, required=True, default="Main", description="Function name to execute")  # type: ignore[assignment]
     _args: str = Arg(position=3, remainder=True, default="", description="Function args")  # type: ignore[assignment]
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list=None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)
         logger.info(f"DLL path: {Path(self._dll_path).resolve()}")
         logger.info(f"Class: {self._class_name}")

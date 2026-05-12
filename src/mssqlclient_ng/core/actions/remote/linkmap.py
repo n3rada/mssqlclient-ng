@@ -174,9 +174,7 @@ class LinkMap(BaseAction):
         self._starting_impersonation: List[str] = []
         self._chain_store = ChainStore()
 
-    def validate_arguments(
-        self, additional_arguments: str = "", argument_list: Optional[List[str]] = None
-    ) -> None:
+    def validate_arguments(self, additional_arguments: str = "") -> None:
         if not additional_arguments or not additional_arguments.strip():
             return
 
