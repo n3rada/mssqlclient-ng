@@ -9,8 +9,8 @@ from loguru import logger
 # Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from services.database import DatabaseContext
-from utils.formatters import OutputFormatter
+from ...services.database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register(

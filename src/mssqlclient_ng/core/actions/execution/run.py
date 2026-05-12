@@ -9,8 +9,8 @@ from loguru import logger
 # Local library imports
 from ..base import BaseAction
 from ..factory import ActionFactory
-from services.database import DatabaseContext
-from utils.common import normalize_windows_path
+from ...services.database import DatabaseContext
+from ...utils.common import normalize_windows_path
 
 
 @ActionFactory.register("run", "Execute a remote file on the SQL Server")

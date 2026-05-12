@@ -10,8 +10,8 @@ from loguru import logger
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
+from ...utils.common import sid_bytes_to_string
 from ...utils.formatters import OutputFormatter
-from ...utils import common
 
 
 @ActionFactory.register(
@@ -71,7 +71,7 @@ class DomainSid(BaseAction):
             raw_sid_obj = next(iter(sid_result_table[0].values()))
 
             # Parse the binary SID
-            ad_domain_string = common.sid_bytes_to_string(raw_sid_obj)
+            ad_domain_string = sid_bytes_to_string(raw_sid_obj)
 
             if not ad_domain_string:
                 logger.error("Unable to parse domain SID from SUSER_SID() result.")

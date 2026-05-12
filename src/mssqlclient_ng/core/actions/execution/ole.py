@@ -7,10 +7,10 @@ from typing import List
 from loguru import logger
 
 # Local imports
+from ...services.database import DatabaseContext
+from ...utils.common import generate_random_string
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
-from services.database import DatabaseContext
-from utils import common
 
 
 @ActionFactory.register(
@@ -68,8 +68,8 @@ class ObjectLinkingEmbedding(BaseAction):
             return None
 
         # Generate two random variable names (6 characters each)
-        output = common.generate_random_string(6)
-        program = common.generate_random_string(6)
+        output = generate_random_string(6)
+        program = generate_random_string(6)
 
         # Construct the OLE Automation query
         query = (

@@ -3,6 +3,7 @@
 # Built-in imports
 import hashlib
 import os
+import re
 import urllib.request
 from typing import List
 
@@ -10,14 +11,14 @@ from typing import List
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction, Arg
-from ..factory import ActionFactory
-from services.database import DatabaseContext
-from utils.common import (
+from ...services.database import DatabaseContext
+from ...utils.common import (
     generate_random_string,
     get_hex_char,
     normalize_windows_path,
 )
+from ..base import BaseAction, Arg
+from ..factory import ActionFactory
 
 
 @ActionFactory.register(
@@ -134,11 +135,27 @@ class ClrExecution(BaseAction):
             database_context.query_service.execute_non_processing(drop_procedure)
             database_context.query_service.execute_non_processing(drop_assembly)
 
-            # Step 3: Create the assembly from the DLL bytes
+            # Step 3: Create the assembly from the DLL bytes, retrying once on MVID conflict
             logger.info("Creating the assembly from DLL bytes")
-            database_context.query_service.execute_non_processing(
-                f"CREATE ASSEMBLY [{assembly_name}] FROM 0x{library_hex_bytes} WITH PERMISSION_SET = UNSAFE;"
-            )
+            try:
+                database_context.query_service.execute_non_processing(
+                    f"CREATE ASSEMBLY [{assembly_name}] FROM 0x{library_hex_bytes} WITH PERMISSION_SET = UNSAFE;",
+                    silent=True,
+                )
+            except Exception as create_err:
+                conflicting = self._extract_mvid_conflict_name(str(create_err))
+                if conflicting:
+                    logger.warning(
+                        f"Dropping conflicting leftover assembly '{conflicting}' (MVID collision)"
+                    )
+                    database_context.query_service.execute_non_processing(
+                        f"DROP ASSEMBLY IF EXISTS [{conflicting}];"
+                    )
+                    database_context.query_service.execute_non_processing(
+                        f"CREATE ASSEMBLY [{assembly_name}] FROM 0x{library_hex_bytes} WITH PERMISSION_SET = UNSAFE;"
+                    )
+                else:
+                    raise
 
             if not database_context.config_service.check_assembly(assembly_name):
                 logger.error("Failed to create a new assembly")
@@ -199,6 +216,20 @@ class ClrExecution(BaseAction):
             "Function name to execute",
             "Function args (optional)",
         ]
+
+    @staticmethod
+    def _extract_mvid_conflict_name(error_message: str) -> str:
+        """
+        Extract the conflicting assembly name from an MVID collision error.
+        SQL Server message: "CREATE ASSEMBLY failed ... identical to an assembly
+        that is already registered under the name 'X'."
+        """
+        match = re.search(
+            r"already registered under the name ['\"]([^'\"]+)['\"]",
+            error_message,
+            re.IGNORECASE,
+        )
+        return match.group(1) if match else ""
 
     def _convert_dll_to_sql_bytes(self, dll: str) -> tuple[str, str]:
         """

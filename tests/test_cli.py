@@ -17,6 +17,7 @@ class TestCliTargetArguments:
 
     def test_host_required(self, parser):
         import argparse
+
         with pytest.raises((SystemExit, argparse.ArgumentError)):
             parser.parse_args([])
 
@@ -110,6 +111,7 @@ class TestCliActions:
 
     def test_output_format_invalid(self, parser):
         import argparse
+
         with pytest.raises((SystemExit, argparse.ArgumentError)):
             parser.parse_args(["SQL01", "-o", "xml"])
 
@@ -155,6 +157,7 @@ class TestCliAdvancedOptions:
 
     def test_log_level_invalid(self, parser):
         import argparse
+
         with pytest.raises((SystemExit, argparse.ArgumentError)):
             parser.parse_args(["SQL01", "--log-level", "VERBOSE"])
 
