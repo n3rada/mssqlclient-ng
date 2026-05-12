@@ -26,7 +26,7 @@ from pygments.styles.solarized import SolarizedLightStyle
 # Local library imports
 from .utils import logbook
 from .utils.common import yes_no_prompt
-from .utils.completions import ActionCompleter, SQLBuiltinCompleter
+from .utils.completions import ActionCompleter, SQLBuiltinCompleter, TSQL_STARTERS
 from .utils.formatters import OutputFormatter
 from .utils.storage import OutputCache
 
@@ -123,6 +123,7 @@ class Terminal:
         }
 
         self._output_cache = OutputCache()
+        self._prefix = "!"  # default; overwritten by start()
 
     # ── Helper Methods ──────────────────────────────────────────────────
 
@@ -337,6 +338,8 @@ class Terminal:
         history: bool = False,
     ) -> None:
 
+        self._prefix = prefix
+
         if history:
             # Store history in XDG_STATE_HOME (or platform equivalent)
             if os.name == "nt":
@@ -384,7 +387,12 @@ class Terminal:
 
         # Merge action completer and SQL builtin completer
         combined_completer = merge_completers(
-            [ActionCompleter(prefix=prefix, chain_loader=self._load_chain_completions), SQLBuiltinCompleter()]
+            [
+                ActionCompleter(
+                    prefix=prefix, chain_loader=self._load_chain_completions
+                ),
+                SQLBuiltinCompleter(),
+            ]
         )
 
         prompt_session = PromptSession(
@@ -461,6 +469,14 @@ class Terminal:
 
     def _execute_raw_query(self, user_input: str) -> None:
         """Execute a raw SQL query (input without prefix)."""
+        first = user_input.strip().split()[0].lower().rstrip(";")
+        if first not in TSQL_STARTERS:
+            logger.warning(
+                f"'{first}' is not a recognised T-SQL statement. "
+                f"Use '{self._prefix}' prefix for actions."
+            )
+            return
+
         query_action = query.Query()
 
         try:

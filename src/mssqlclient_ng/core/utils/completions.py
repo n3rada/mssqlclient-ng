@@ -11,126 +11,65 @@ from prompt_toolkit.document import Document
 from ..actions.factory import ActionFactory
 
 # SQL keywords and built-in functions for autocompletion
-SQL_KEYWORDS = [
-    "SELECT",
-    "FROM",
-    "WHERE",
-    "INSERT",
-    "UPDATE",
-    "DELETE",
-    "CREATE",
-    "DROP",
-    "ALTER",
-    "TABLE",
-    "DATABASE",
-    "INDEX",
-    "VIEW",
-    "PROCEDURE",
-    "FUNCTION",
-    "TRIGGER",
-    "SCHEMA",
-    "JOIN",
-    "INNER",
-    "LEFT",
-    "RIGHT",
-    "OUTER",
-    "FULL",
-    "CROSS",
-    "APPLY",
-    "ON",
-    "GROUP",
-    "BY",
-    "HAVING",
-    "ORDER",
-    "ASC",
-    "DESC",
-    "LIMIT",
-    "TOP",
-    "OFFSET",
-    "FETCH",
-    "NEXT",
-    "ROWS",
-    "ONLY",
-    "DISTINCT",
-    "AS",
-    "AND",
-    "OR",
-    "NOT",
-    "IN",
-    "BETWEEN",
-    "LIKE",
-    "IS",
-    "NULL",
-    "EXISTS",
-    "CASE",
-    "WHEN",
-    "THEN",
-    "ELSE",
-    "END",
-    "UNION",
-    "INTERSECT",
-    "EXCEPT",
-    "ALL",
-    "INTO",
-    "VALUES",
-    "SET",
-    "BEGIN",
-    "COMMIT",
-    "ROLLBACK",
-    "TRANSACTION",
-    "EXEC",
-    "EXECUTE",
-    "DECLARE",
-    "PRINT",
-    "IF",
-    "WHILE",
-    "RETURN",
-    "TRY",
-    "CATCH",
-    "THROW",
-    "RAISERROR",
-    "GO",
-    "USE",
-    "GRANT",
-    "REVOKE",
-    "DENY",
-    "WITH",
-    "NOLOCK",
-    "READPAST",
-    "UPDLOCK",
-    "ROWLOCK",
-    "TABLOCK",
-    "OPENQUERY",
-    "OPENROWSET",
-    "PIVOT",
-    "UNPIVOT",
-    "MERGE",
-    "OUTPUT",
-    "INSERTED",
-    "DELETED",
-    "WAITFOR",
-    "DELAY",
-    "TIME",
-    "BACKUP",
-    "RESTORE",
-    "RECONFIGURE",
-    "DBCC",
-    "CHECKPOINT",
-    "BULK",
-    "IDENTITY",
-    "PRIMARY",
-    "KEY",
-    "FOREIGN",
-    "REFERENCES",
-    "CONSTRAINT",
-    "CHECK",
-    "DEFAULT",
-    "UNIQUE",
-    "CLUSTERED",
-    "NONCLUSTERED",
-    "TRUNCATE",
+# Organised into semantic groups so SQL_KEYWORDS and TSQL_STARTERS are derived,
+# not duplicated.
+
+# DML/DDL/control-flow words that open a T-SQL statement
+_TSQL_STARTER_WORDS = [
+    "SELECT", "INSERT", "UPDATE", "DELETE", "MERGE", "TRUNCATE",
+    "CREATE", "DROP", "ALTER",
+    "EXEC", "EXECUTE", "WITH",
+    "USE", "DECLARE", "SET", "BEGIN", "COMMIT", "ROLLBACK",
+    "IF", "WHILE", "RETURN", "PRINT", "GOTO",
+    "GRANT", "REVOKE", "DENY",
+    "BACKUP", "RESTORE", "DBCC", "CHECKPOINT", "RECONFIGURE",
+    "BULK", "RAISERROR", "THROW",
+]
+
+# Clause / mid-statement keywords
+_TSQL_CLAUSE_WORDS = [
+    "FROM", "WHERE",
+    "JOIN", "INNER", "LEFT", "RIGHT", "OUTER", "FULL", "CROSS", "APPLY", "ON",
+    "GROUP", "BY", "HAVING", "ORDER", "ASC", "DESC",
+    "TOP", "OFFSET", "FETCH", "NEXT", "ROWS", "ONLY",
+    "DISTINCT", "AS", "ALL", "INTO", "VALUES", "OUTPUT", "INSERTED", "DELETED",
+    "AND", "OR", "NOT", "IN", "BETWEEN", "LIKE", "IS", "NULL", "EXISTS",
+    "CASE", "WHEN", "THEN", "ELSE", "END",
+    "UNION", "INTERSECT", "EXCEPT",
+    "TRANSACTION", "TRY", "CATCH", "GO",
+    "WAITFOR", "DELAY", "TIME",
+]
+
+# Table hints
+_TSQL_HINT_WORDS = [
+    "NOLOCK", "READPAST", "UPDLOCK", "ROWLOCK", "TABLOCK",
+]
+
+# DDL object types and column/constraint modifiers
+_TSQL_DDL_WORDS = [
+    "TABLE", "DATABASE", "INDEX", "VIEW", "PROCEDURE", "FUNCTION",
+    "TRIGGER", "SCHEMA",
+    "IDENTITY", "PRIMARY", "KEY", "FOREIGN", "REFERENCES",
+    "CONSTRAINT", "CHECK", "DEFAULT", "UNIQUE", "CLUSTERED", "NONCLUSTERED",
     "COLLATE",
 ]
+
+# Rowset / special functions used as table sources
+_TSQL_ROWSET_WORDS = [
+    "OPENQUERY", "OPENROWSET", "PIVOT", "UNPIVOT",
+]
+
+# SQL_KEYWORDS is the union of all groups (used for autocompletion)
+SQL_KEYWORDS: list = (
+    _TSQL_STARTER_WORDS
+    + _TSQL_CLAUSE_WORDS
+    + _TSQL_HINT_WORDS
+    + _TSQL_DDL_WORDS
+    + _TSQL_ROWSET_WORDS
+)
+
+# Fast lookup set for the terminal T-SQL guard (comment openers included)
+TSQL_STARTERS: frozenset = frozenset(w.lower() for w in _TSQL_STARTER_WORDS) | {"--", "/*"}
 
 SQL_FUNCTIONS = [
     "COUNT",
@@ -238,63 +177,6 @@ SQL_FUNCTIONS = [
     "IDENT_CURRENT",
     "IDENT_SEED",
     "IDENT_INCR",
-]
-
-SQL_SYSTEM_OBJECTS = [
-    "sys.databases",
-    "sys.tables",
-    "sys.columns",
-    "sys.views",
-    "sys.procedures",
-    "sys.objects",
-    "sys.indexes",
-    "sys.triggers",
-    "sys.schemas",
-    "sys.types",
-    "sys.server_principals",
-    "sys.database_principals",
-    "sys.database_permissions",
-    "sys.server_permissions",
-    "sys.database_role_members",
-    "sys.server_role_members",
-    "sys.dm_exec_sessions",
-    "sys.dm_exec_connections",
-    "sys.dm_exec_requests",
-    "sys.dm_exec_query_stats",
-    "sys.dm_exec_sql_text",
-    "sys.dm_exec_cached_plans",
-    "sys.configurations",
-    "sys.servers",
-    "sys.linked_logins",
-    "sys.syslogins",
-    "sys.sql_logins",
-    "sys.sysusers",
-    "sys.sysprocesses",
-    "sys.sysconfigures",
-    "sys.sysdatabases",
-    "master",
-    "tempdb",
-    "model",
-    "msdb",
-    "INFORMATION_SCHEMA.TABLES",
-    "INFORMATION_SCHEMA.COLUMNS",
-    "INFORMATION_SCHEMA.VIEWS",
-    "INFORMATION_SCHEMA.ROUTINES",
-    "sp_configure",
-    "sp_executesql",
-    "sp_addlinkedserver",
-    "sp_droplinkedserver",
-    "sp_serveroption",
-    "sp_linkedservers",
-    "sp_helptext",
-    "sp_who",
-    "sp_who2",
-    "sp_helprotect",
-    "xp_cmdshell",
-    "xp_dirtree",
-    "xp_fileexist",
-    "xp_regread",
-    "xp_regenumvalues",
 ]
 
 
@@ -465,9 +347,4 @@ class SQLBuiltinCompleter(Completer):
                     display_meta="function",
                 )
 
-        # Complete system objects (case-insensitive match)
-        for obj in SQL_SYSTEM_OBJECTS:
-            if obj.upper().startswith(word_upper):
-                yield Completion(
-                    obj, start_position=-len(word_before_cursor), display_meta="system"
-                )
+
