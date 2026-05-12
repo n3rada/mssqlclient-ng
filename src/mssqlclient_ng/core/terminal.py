@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 # External library imports
+from impacket.tds import SQLErrorException
 from loguru import logger
 
 from prompt_toolkit import PromptSession
@@ -388,6 +389,10 @@ class Terminal:
             logger.warning("Keyboard interruption received during action execution.")
             return None
         except Exception as e:
+            if isinstance(e, SQLErrorException):
+                # Already reported by the query layer via printReplies(); re-logging
+                # would produce a duplicate error line.
+                return None
             logger.error(f"Error executing action '{action_name}': {e}")
             return None
 
