@@ -6,7 +6,6 @@ import sys
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Set, Tuple
-import hashlib
 import time
 
 # Third party imports
@@ -18,6 +17,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...models.linked_servers import LinkedServers
 from ...models.server import Server
+from ...models.server_execution_state import ServerExecutionState
 from ...utils.formatters import OutputFormatter
 from ...utils.common import bracket_identifier
 from ...utils.storage import ChainStore
@@ -104,19 +104,6 @@ def _context_key(server: str, login: str) -> str:
 def _link_attempt_key(source_server: str, target_server: str, caller_login: str) -> str:
     """Canonical key for the negative link-attempt cache."""
     return f"{source_server}|{target_server}|{caller_login}".upper()
-
-
-def _compute_exploration_hash(
-    hostname: str, mapped_user: str, system_user: str, is_sysadmin: bool
-) -> str:
-    """Compute a SHA-256 hash for loop detection."""
-    state_string = (
-        f"{(hostname or '').upper()}|"
-        f"{(mapped_user or '').upper()}|"
-        f"{(system_user or '').upper()}|"
-        f"{is_sysadmin}"
-    )
-    return hashlib.sha256(state_string.encode("utf-8")).hexdigest()
 
 
 def _get_row_string(row: Dict[str, Any], column: str) -> str:
@@ -304,12 +291,12 @@ class LinkMap(BaseAction):
         )
 
         # Compute starting state hash for loop detection
-        starting_hash = _compute_exploration_hash(
-            database_context.server.hostname,
-            database_context.user_service.mapped_user or "",
-            database_context.user_service.system_user or "",
-            self._root_node.is_sysadmin,
-        )
+        starting_hash = ServerExecutionState(
+            hostname=database_context.server.hostname,
+            mapped_user=database_context.user_service.mapped_user or "",
+            system_user=database_context.user_service.system_user or "",
+            is_sysadmin=self._root_node.is_sysadmin,
+        ).get_state_hash()
 
         # Build complete map of reachable SQL links across all transitive impersonation chains
         force_impersonation_discovery = (
@@ -626,9 +613,12 @@ class LinkMap(BaseAction):
                 is_sysadmin = database_context.user_service.is_admin()
                 self._context_role_cache[context_key] = (node_roles, is_sysadmin)
 
-            state_hash = _compute_exploration_hash(
-                target_server, mapped_user, remote_logged_in_user, is_sysadmin
-            )
+            state_hash = ServerExecutionState(
+                hostname=target_server,
+                mapped_user=mapped_user,
+                system_user=remote_logged_in_user,
+                is_sysadmin=is_sysadmin,
+            ).get_state_hash()
 
             # Check for loop in THIS chain path
             if state_hash in visited_in_chain:

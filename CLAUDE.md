@@ -43,8 +43,9 @@ src/mssqlclient_ng/
 │   │   ├── filesystem/     # File read/write/upload/tree
 │   │   └── remote/         # Linked servers, RPC, data access
 │   ├── models/
-│   │   ├── server.py       # Server model with parse_server()
-│   │   └── linked_servers.py  # LinkedServers chain model
+│   │   ├── server.py                  # Server model with parse_server()
+│   │   ├── linked_servers.py          # LinkedServers chain model
+│   │   └── server_execution_state.py  # Runtime state: hostname+identity hash (loop detection, history filenames)
 │   ├── services/
 │   │   ├── database.py     # DatabaseContext facade
 │   │   ├── query.py        # QueryService (execute, prepare, chain wrapping)
@@ -60,7 +61,7 @@ src/mssqlclient_ng/
 │       ├── formatters/     # OutputFormatter (markdown, csv)
 │       ├── common.py       # yes_no_prompt, misc helpers
 │       ├── helper.py       # Byte/encoding/network utilities
-│       └── storage.py      # XDG-based data storage
+│       └── storage.py      # XDG-based data/state storage: get_data_dir(), ChainStore (saves/loads linkmap chains per server)
 tests/                      # pytest test suite
 ```
 
@@ -136,9 +137,10 @@ No manual registration in a dictionary — the decorator handles it.
 | `!add-link <spec>` | `!al` | Append server to chain |
 | `!impersonate <login>` | `!imp` | Impersonate a login |
 | `!revert` | `!rev` | Revert impersonation |
-| `!chain` | — | Display current chain with impersonation |
+| `!chain [id]` | — | Display current chain; apply saved linkmap chain by ID |
 | `!format [name]` | — | Show/change output format |
 | `!debug` | — | Toggle debug logging |
+| `!flush [--all]` | — | Flush cached action outputs (current context or all) |
 
 ## Logging
 

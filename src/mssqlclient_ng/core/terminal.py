@@ -460,7 +460,9 @@ class Terminal:
             # identity logging, and session construction.
             self._switch_history(self._database_context.query_service.execution_server)
         else:
-            self._prompt_session = self._make_session(ThreadedHistory(InMemoryHistory()))
+            self._prompt_session = self._make_session(
+                ThreadedHistory(InMemoryHistory())
+            )
 
         logger.info(
             f"Type SQL directly or use '{prefix}<action> [args]' to run an action."
