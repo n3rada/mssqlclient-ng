@@ -28,8 +28,8 @@ class FileRead(BaseAction):
                       Useful for binary files or files with characters that break the console.
     """
 
-    _file_path: str = Arg(position=0, required=True, description="Remote file path to read")  # type: ignore[assignment]
-    _base64: str = Arg(short_name="b", long_name="base64", default="", description="Output as base64")  # type: ignore[assignment]
+    _file_path = Arg(position=0, required=True, description="Remote file path to read")
+    _base64 = Arg(short_name="b", long_name="base64", default="", description="Output as base64")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

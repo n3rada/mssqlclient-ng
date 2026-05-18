@@ -23,11 +23,11 @@ class CMCollections(CMBaseAction):
     Filter by collection ID, name, or type (user/device).
     """
 
-    _collection_id: str = Arg(position=0, long_name="collection-id", default="", description="Filter by collection ID")  # type: ignore[assignment]
-    _name_filter: str = Arg(short_name="n", long_name="name", default="", description="Filter by name")  # type: ignore[assignment]
-    _collection_type: str = Arg(short_name="t", long_name="type", default="", description="Filter by type (user/device)")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
-    _with_members: bool = Arg(long_name="with-members", toggle=True, description="Include member count")  # type: ignore[assignment]
+    _collection_id = Arg(position=0, long_name="collection-id", default="", description="Filter by collection ID")
+    _name_filter = Arg(short_name="n", long_name="name", default="", description="Filter by name")
+    _collection_type = Arg(short_name="t", long_name="type", default="", description="Filter by type (user/device)")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
+    _with_members = Arg(long_name="with-members", toggle=True, description="Include member count")
 
     def __init__(self):
         super().__init__()

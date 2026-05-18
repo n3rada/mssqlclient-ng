@@ -21,8 +21,8 @@ class AdsiAdd(BaseAction):
     Auto-generates the server name if omitted.
     """
 
-    _server_name: str = Arg(position=0, default=None, description="ADSI linked server name")  # type: ignore[assignment]
-    _data_source: str = Arg(position=1, default="adsdatasource", description="OLE DB data source")  # type: ignore[assignment]
+    _server_name = Arg(position=0, default=None, description="ADSI linked server name")
+    _data_source = Arg(position=1, default="adsdatasource", description="OLE DB data source")
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         adsi_service = AdsiService(database_context)

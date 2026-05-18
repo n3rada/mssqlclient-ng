@@ -26,10 +26,10 @@ class RunExecutable(BaseAction):
     The action verifies the file exists before attempting execution.
     """
 
-    _file_path: str = Arg(position=0, required=True, description="Remote file path to execute")  # type: ignore[assignment]
-    _arguments: str = Arg(position=1, remainder=True, default="", description="Additional arguments to pass to the file")  # type: ignore[assignment]
-    _wait: bool = Arg(short_name="w", long_name="wait", toggle=True, description="Execute synchronously (wait for completion)")  # type: ignore[assignment]
-    _capture_output: bool = Arg(short_name="o", long_name="capture-output", toggle=True, description="Capture stdout/stderr via xp_cmdshell (implies --wait)")  # type: ignore[assignment]
+    _file_path = Arg(position=0, required=True, description="Remote file path to execute")
+    _arguments = Arg(position=1, remainder=True, default="", description="Additional arguments to pass to the file")
+    _wait = Arg(short_name="w", long_name="wait", toggle=True, description="Execute synchronously (wait for completion)")
+    _capture_output = Arg(short_name="o", long_name="capture-output", toggle=True, description="Capture stdout/stderr via xp_cmdshell (implies --wait)")
 
     def __init__(self):
         super().__init__()

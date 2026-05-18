@@ -51,9 +51,9 @@ class Jobs(BaseAction):
     Use --limit/-l to cap result count (default: 25).
     """
 
-    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by job name (substring match)")  # type: ignore[assignment]
-    _show_commands: bool = Arg(short_name="c", long_name="commands", toggle=True, description="Expand into per-step rows with full command text")  # type: ignore[assignment]
-    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _name = Arg(short_name="n", long_name="name", default="", description="Filter by job name (substring match)")
+    _show_commands = Arg(short_name="c", long_name="commands", toggle=True, description="Expand into per-step rows with full command text")
+    _limit = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

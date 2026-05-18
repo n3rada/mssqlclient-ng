@@ -23,9 +23,9 @@ class CMScriptAdd(CMBaseAction):
     Automatically sets script to approved state. Returns script GUID needed for cm-script-run.
     """
 
-    _script_content: str = Arg(position=0, long_name="content", required=True, description="PowerShell script content")  # type: ignore[assignment]
-    _script_name: str = Arg(short_name="n", long_name="name", default="", description="Script name (auto-generated if omitted)")  # type: ignore[assignment]
-    _script_guid: str = Arg(short_name="g", long_name="guid", default="", description="Script GUID (auto-generated if omitted)")  # type: ignore[assignment]
+    _script_content = Arg(position=0, long_name="content", required=True, description="PowerShell script content")
+    _script_name = Arg(short_name="n", long_name="name", default="", description="Script name (auto-generated if omitted)")
+    _script_guid = Arg(short_name="g", long_name="guid", default="", description="Script GUID (auto-generated if omitted)")
 
     def __init__(self):
         super().__init__()

@@ -25,7 +25,7 @@ class CMDeployment(CMBaseAction):
     Shows deployment settings, targeted collection, schedule, and execution behavior.
     """
 
-    _assignment_id: str = Arg(position=0, required=True, description="Assignment ID")  # type: ignore[assignment]
+    _assignment_id = Arg(position=0, required=True, description="Assignment ID")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving assignment details for: {self._assignment_id}")

@@ -45,8 +45,8 @@ class RemoteProcedureCall(BaseAction):
         "disable": RpcActionMode.DISABLE,
     }
 
-    _action_str: str = Arg(position=0, required=True, description="Action: enable/on/1/add or disable/off/0/del")  # type: ignore[assignment]
-    _linked_server_name: str = Arg(position=1, required=True, description="Linked server name")  # type: ignore[assignment]
+    _action_str = Arg(position=0, required=True, description="Action: enable/on/1/add or disable/off/0/del")
+    _linked_server_name = Arg(position=1, required=True, description="Linked server name")
 
     def __init__(self):
         super().__init__()

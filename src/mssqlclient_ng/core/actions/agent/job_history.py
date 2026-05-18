@@ -25,9 +25,9 @@ class JobHistory(BaseAction):
     Use --failed/-f to show only failed runs.
     """
 
-    _name: str = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by job name (substring match)")  # type: ignore[assignment]
-    _failed_only: bool = Arg(short_name="f", long_name="failed", toggle=True, description="Show only failed runs")  # type: ignore[assignment]
-    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _name = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by job name (substring match)")
+    _failed_only = Arg(short_name="f", long_name="failed", toggle=True, description="Show only failed runs")
+    _limit = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

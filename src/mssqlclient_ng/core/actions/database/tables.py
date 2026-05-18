@@ -36,12 +36,12 @@ class Tables(BaseAction):
         -p, --permissions  Show permissions (slower)
     """
 
-    _database: str = Arg(position=0, long_name="database", default="", description="Target database (default: current)")  # type: ignore[assignment]
-    _name_filter: str = Arg(short_name="n", long_name="name", default="", description="Filter tables by name pattern")  # type: ignore[assignment]
-    _show_columns: bool = Arg(short_name="C", long_name="columns", toggle=True, description="Show column names with types")  # type: ignore[assignment]
-    _column_filter: str = Arg(short_name="c", long_name="column", default="", description="Filter tables containing a column name pattern")  # type: ignore[assignment]
-    _with_rows: bool = Arg(short_name="r", long_name="rows", toggle=True, description="Filter out tables with 0 rows")  # type: ignore[assignment]
-    _show_permissions: bool = Arg(short_name="p", long_name="permissions", toggle=True, description="Show permissions (slower)")  # type: ignore[assignment]
+    _database = Arg(position=0, long_name="database", default="", description="Target database (default: current)")
+    _name_filter = Arg(short_name="n", long_name="name", default="", description="Filter tables by name pattern")
+    _show_columns = Arg(short_name="C", long_name="columns", toggle=True, description="Show column names with types")
+    _column_filter = Arg(short_name="c", long_name="column", default="", description="Filter tables containing a column name pattern")
+    _with_rows = Arg(short_name="r", long_name="rows", toggle=True, description="Filter out tables with 0 rows")
+    _show_permissions = Arg(short_name="p", long_name="permissions", toggle=True, description="Show permissions (slower)")
 
     def __init__(self):
         super().__init__()

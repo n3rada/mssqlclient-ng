@@ -31,7 +31,7 @@ class CMLogTrace(CMBaseAction):
     - GUID only: "xxx-xxx-xxx-xxx-xxx"
     """
 
-    _guid: str = Arg(position=0, required=True, description="Deployment type GUID (full ScopeId_, partial DeploymentType_, or bare UUID)")  # type: ignore[assignment]
+    _guid = Arg(position=0, required=True, description="Deployment type GUID (full ScopeId_, partial DeploymentType_, or bare UUID)")
 
     def __init__(self):
         super().__init__()

@@ -23,8 +23,8 @@ class CMCollection(CMBaseAction):
     Supports lookup by Collection ID or name pattern.
     """
 
-    _collection_id: str = Arg(position=0, default="", description="Collection ID")  # type: ignore[assignment]
-    _collection_name: str = Arg(short_name="n", long_name="name", default="", description="Collection name pattern")  # type: ignore[assignment]
+    _collection_id = Arg(position=0, default="", description="Collection ID")
+    _collection_name = Arg(short_name="n", long_name="name", default="", description="Collection name pattern")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

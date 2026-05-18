@@ -25,7 +25,7 @@ class CMAadApps(CMBaseAction):
     Shows AAD tenant IDs, application (client) IDs, and encrypted secret key blobs.
     """
 
-    _filter: str = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by application name")  # type: ignore[assignment]
+    _filter = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by application name")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         filter_msg = f" (filter: {self._filter})" if self._filter else ""

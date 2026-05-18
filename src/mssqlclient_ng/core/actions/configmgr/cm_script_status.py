@@ -21,7 +21,7 @@ class CMScriptStatus(CMBaseAction):
     Shows task state (Pending/Success/Failed), execution time, script output, and errors.
     """
 
-    _task_id: str = Arg(position=0, short_name="t", long_name="taskid", required=True, description="Task ID returned by cm-script-run")  # type: ignore[assignment]
+    _task_id = Arg(position=0, short_name="t", long_name="taskid", required=True, description="Task ID returned by cm-script-run")
 
     def __init__(self):
         super().__init__()

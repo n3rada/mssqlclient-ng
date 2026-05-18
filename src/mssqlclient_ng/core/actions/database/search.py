@@ -37,9 +37,9 @@ class Search(BaseAction):
     - search email -c: Find columns containing 'email' (fast)
     """
 
-    _keyword: str = Arg(position=0, required=True, description="Keyword to search for")  # type: ignore[assignment]
-    _columns_only: bool = Arg(short_name="c", long_name="columns", toggle=True, description="Search column names only (fast)")  # type: ignore[assignment]
-    _target: str = Arg(position=1, default="", description="Optional: database or schema.table or database.schema.table")  # type: ignore[assignment]
+    _keyword = Arg(position=0, required=True, description="Keyword to search for")
+    _columns_only = Arg(short_name="c", long_name="columns", toggle=True, description="Search column names only (fast)")
+    _target = Arg(position=1, default="", description="Optional: database or schema.table or database.schema.table")
 
     def __init__(self):
         super().__init__()

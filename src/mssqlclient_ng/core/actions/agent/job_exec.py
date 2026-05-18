@@ -26,10 +26,10 @@ class JobExec(BaseAction):
 
     VALID_SUBSYSTEMS = ("CmdExec", "PowerShell", "TSQL", "VBScript")
 
-    _command: str = Arg(position=0, remainder=True, required=True, description="Command to execute")  # type: ignore[assignment]
-    _subsystem: str = Arg(short_name="s", long_name="subsystem", default="PowerShell", description="Subsystem: CmdExec, PowerShell, TSQL, VBScript")  # type: ignore[assignment]
-    _wait: bool = Arg(short_name="w", long_name="wait", toggle=True, description="Poll for completion and retrieve output from sysjobhistory")  # type: ignore[assignment]
-    _timeout: int = Arg(short_name="t", long_name="timeout", default=30, description="Polling timeout in seconds")  # type: ignore[assignment]
+    _command = Arg(position=0, remainder=True, required=True, description="Command to execute")
+    _subsystem = Arg(short_name="s", long_name="subsystem", default="PowerShell", description="Subsystem: CmdExec, PowerShell, TSQL, VBScript")
+    _wait = Arg(short_name="w", long_name="wait", toggle=True, description="Poll for completion and retrieve output from sysjobhistory")
+    _timeout = Arg(short_name="t", long_name="timeout", default=30, description="Polling timeout in seconds")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

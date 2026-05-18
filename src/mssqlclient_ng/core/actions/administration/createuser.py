@@ -24,9 +24,9 @@ class CreateUser(BaseAction):
     creation, but custom credentials can be specified.
     """
 
-    _username: str = Arg(position=0, short_name="u", long_name="username", default="backup_usr", description="SQL login username")  # type: ignore[assignment]
-    _password: str = Arg(position=1, short_name="p", long_name="password", default="$ap3rlip0pe//e", description="SQL login password")  # type: ignore[assignment]
-    _role: str = Arg(position=2, short_name="r", long_name="role", default="sysadmin", description="Server role")  # type: ignore[assignment]
+    _username = Arg(position=0, short_name="u", long_name="username", default="backup_usr", description="SQL login username")
+    _password = Arg(position=1, short_name="p", long_name="password", default="$ap3rlip0pe//e", description="SQL login password")
+    _role = Arg(position=2, short_name="r", long_name="role", default="sysadmin", description="Server role")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

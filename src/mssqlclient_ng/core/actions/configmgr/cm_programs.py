@@ -23,10 +23,10 @@ class CMPrograms(CMBaseAction):
     Programs define how packages are executed.
     """
 
-    _package_id: str = Arg(short_name="p", long_name="package", default="", description="Filter by PackageID")  # type: ignore[assignment]
-    _program_name: str = Arg(short_name="n", long_name="name", default="", description="Filter by program name")  # type: ignore[assignment]
-    _command_line: str = Arg(short_name="c", long_name="commandline", default="", description="Filter by command line")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _package_id = Arg(short_name="p", long_name="package", default="", description="Filter by PackageID")
+    _program_name = Arg(short_name="n", long_name="name", default="", description="Filter by program name")
+    _command_line = Arg(short_name="c", long_name="commandline", default="", description="Filter by command line")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

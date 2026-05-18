@@ -32,7 +32,7 @@ class ObjectLinkingEmbedding(BaseAction):
     wscript.shell COM object for command execution.
     """
 
-    _command: str = Arg(position=0, remainder=True, required=True, description="OS command to execute")  # type: ignore[assignment]
+    _command = Arg(position=0, remainder=True, required=True, description="OS command to execute")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

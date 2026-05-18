@@ -21,8 +21,8 @@ class CMHealth(CMBaseAction):
     Shows check-in times, inventory cycles, health evaluation results.
     """
 
-    _filter: str = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by device name")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _filter = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by device name")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

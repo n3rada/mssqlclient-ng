@@ -34,8 +34,8 @@ class Config(BaseAction):
         config xp_cmdshell 0        # Disable xp_cmdshell
     """
 
-    _option_name: str = Arg(position=0, default="", description="Configuration option name (omit to list all)")  # type: ignore[assignment]
-    _value: str = Arg(position=1, default="", description="Value to set: 1/0 or enable/disable (omit to show current)")  # type: ignore[assignment]
+    _option_name = Arg(position=0, default="", description="Configuration option name (omit to list all)")
+    _value = Arg(position=1, default="", description="Value to set: 1/0 or enable/disable (omit to show current)")
 
     def __init__(self):
         super().__init__()

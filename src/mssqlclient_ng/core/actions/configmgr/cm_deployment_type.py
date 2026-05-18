@@ -25,7 +25,7 @@ class CMDeploymentType(CMBaseAction):
     Shows install/uninstall commands, detection methods, content location, and execution context.
     """
 
-    _ci_id: str = Arg(position=0, required=True, description="Deployment type CI_ID integer")  # type: ignore[assignment]
+    _ci_id = Arg(position=0, required=True, description="Deployment type CI_ID integer")
 
     def __init__(self):
         super().__init__()

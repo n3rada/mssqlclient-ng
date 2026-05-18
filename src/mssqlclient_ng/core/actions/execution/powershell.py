@@ -26,7 +26,7 @@ class PowerShell(XpCmd):
     and handles special characters properly.
     """
 
-    _script: str = Arg(position=0, remainder=True, required=True, description="PowerShell script to execute")  # type: ignore[assignment]
+    _script = Arg(position=0, remainder=True, required=True, description="PowerShell script to execute")
 
     def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
         """

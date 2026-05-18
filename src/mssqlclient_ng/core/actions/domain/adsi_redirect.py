@@ -40,8 +40,8 @@ class AdsiRedirect(BaseAction):
     Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
     """
 
-    _listener_address: str = Arg(position=0, required=True, description="Listener IP[:port] for LDAP capture")  # type: ignore[assignment]
-    _target_server: str = Arg(position=1, default="", description="ADSI server name to redirect")  # type: ignore[assignment]
+    _listener_address = Arg(position=0, required=True, description="Listener IP[:port] for LDAP capture")
+    _target_server = Arg(position=1, default="", description="ADSI server name to redirect")
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         adsi_service = AdsiService(database_context)

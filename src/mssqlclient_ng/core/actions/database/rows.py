@@ -27,8 +27,8 @@ class Rows(BaseAction):
     - -l/--limit: Maximum number of rows to retrieve (default: 25, 0 = unlimited)
     """
 
-    _fqtn: str = Arg(position=0, required=True, description="Table name or FQTN (database.schema.table)")  # type: ignore[assignment]
-    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Max rows to retrieve (0 = unlimited)")  # type: ignore[assignment]
+    _fqtn = Arg(position=0, required=True, description="Table name or FQTN (database.schema.table)")
+    _limit = Arg(short_name="l", long_name="limit", default=25, description="Max rows to retrieve (0 = unlimited)")
 
     def __init__(self):
         super().__init__()

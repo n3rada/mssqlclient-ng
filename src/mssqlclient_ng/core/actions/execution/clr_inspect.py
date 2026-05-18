@@ -22,7 +22,7 @@ class ClrInspect(BaseAction):
     the mapped .NET class and method name for each.
     """
 
-    _assembly_name: str = Arg(position=0, required=True, description="Assembly name to inspect")  # type: ignore[assignment]
+    _assembly_name = Arg(position=0, required=True, description="Assembly name to inspect")
 
     def execute(self, database_context: DatabaseContext) -> object:
         logger.info(f"Inspecting assembly '{self._assembly_name}'")

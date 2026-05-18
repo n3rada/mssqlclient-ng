@@ -33,7 +33,7 @@ class SmbCoerce(BaseAction):
     3. xp_fileexist - Checks if file exists (last resort)
     """
 
-    _unc_path: str = Arg(position=0, remainder=True, required=True, description="Target UNC path")  # type: ignore[assignment]
+    _unc_path = Arg(position=0, remainder=True, required=True, description="Target UNC path")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

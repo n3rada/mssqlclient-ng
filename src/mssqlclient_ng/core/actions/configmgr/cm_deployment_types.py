@@ -25,11 +25,11 @@ class CMDeploymentTypes(CMBaseAction):
     Shows technology type, install commands, content paths, and detection methods.
     """
 
-    _technology: str = Arg(long_name="tech", default="", description="Filter by technology type")  # type: ignore[assignment]
-    _content_path: str = Arg(long_name="content", default="", description="Filter by content path")  # type: ignore[assignment]
-    _install_command: str = Arg(long_name="install", default="", description="Filter by install command")  # type: ignore[assignment]
-    _application: str = Arg(long_name="app", default="", description="Filter by application name")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _technology = Arg(long_name="tech", default="", description="Filter by technology type")
+    _content_path = Arg(long_name="content", default="", description="Filter by content path")
+    _install_command = Arg(long_name="install", default="", description="Filter by install command")
+    _application = Arg(long_name="app", default="", description="Filter by application name")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

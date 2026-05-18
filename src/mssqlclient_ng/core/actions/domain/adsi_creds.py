@@ -120,8 +120,8 @@ class AdsiCredentialExtractor(BaseAction):
     Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
     """
 
-    _target_server: str = Arg(position=0, default="", description="ADSI server name")  # type: ignore[assignment]
-    _use_temporary_server: str = Arg(short_name="t", long_name="temp", default="", description="Use temporary server")  # type: ignore[assignment]
+    _target_server = Arg(position=0, default="", description="ADSI server name")
+    _use_temporary_server = Arg(short_name="t", long_name="temp", default="", description="Use temporary server")
 
     def execute(self, database_context: DatabaseContext) -> Optional[Tuple[str, str]]:
         adsi_service = AdsiService(database_context)

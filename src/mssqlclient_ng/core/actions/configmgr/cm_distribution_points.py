@@ -25,9 +25,9 @@ class CMDistributionPoints(CMBaseAction):
     Distribution points store all deployed content.
     """
 
-    _server: str = Arg(short_name="s", long_name="server", default="", description="Filter by server name")  # type: ignore[assignment]
-    _active_only: bool = Arg(short_name="a", long_name="active", toggle=True, description="Show only active distribution points")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _server = Arg(short_name="s", long_name="server", default="", description="Filter by server name")
+    _active_only = Arg(short_name="a", long_name="active", toggle=True, description="Show only active distribution points")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def __init__(self):
         super().__init__()

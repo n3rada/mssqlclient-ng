@@ -24,7 +24,7 @@ class CMRbacAdd(CMBaseAction):
     Queries existing admins, selects a template, and creates a new admin with matching patterns.
     """
 
-    _account_name: str = Arg(position=0, required=True, description="Account to add as CM admin (DOMAIN\\user)")  # type: ignore[assignment]
+    _account_name = Arg(position=0, required=True, description="Account to add as CM admin (DOMAIN\\user)")
 
     def __init__(self):
         super().__init__()

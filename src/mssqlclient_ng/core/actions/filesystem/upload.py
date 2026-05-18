@@ -29,8 +29,8 @@ class Upload(BaseAction):
     2. xp_cmdshell with PowerShell -EncodedCommand (if OLE is disabled)
     """
 
-    _local_path_str: str = Arg(position=0, required=True, description="Local file path to upload")  # type: ignore[assignment]
-    _remote_path: str = Arg(position=1, default="", description="Remote destination path (default: C:\\Windows\\Tasks\\)")  # type: ignore[assignment]
+    _local_path_str = Arg(position=0, required=True, description="Local file path to upload")
+    _remote_path = Arg(position=1, default="", description="Remote destination path (default: C:\\Windows\\Tasks\\)")
 
     def __init__(self):
         super().__init__()

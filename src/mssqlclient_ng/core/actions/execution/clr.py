@@ -40,10 +40,10 @@ class ClrExecution(BaseAction):
     6. Cleanup (drop procedure, assembly, and hash)
     """
 
-    _dll_path: str = Arg(position=0, required=True, description="Path to the DLL (local file)")  # type: ignore[assignment]
-    _class_name: str = Arg(position=1, required=True, default="StoredProcedures", description="Class name containing the function")  # type: ignore[assignment]
-    _function: str = Arg(position=2, required=True, default="Main", description="Function name to execute")  # type: ignore[assignment]
-    _args: str = Arg(position=3, remainder=True, default="", description="Function args")  # type: ignore[assignment]
+    _dll_path = Arg(position=0, required=True, description="Path to the DLL (local file)")
+    _class_name = Arg(position=1, required=True, default="StoredProcedures", description="Class name containing the function")
+    _function = Arg(position=2, required=True, default="Main", description="Function name to execute")
+    _args = Arg(position=3, remainder=True, default="", description="Function args")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

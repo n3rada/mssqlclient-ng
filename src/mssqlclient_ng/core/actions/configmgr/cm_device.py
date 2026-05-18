@@ -23,7 +23,7 @@ class CMDevice(CMBaseAction):
     Shows device details, collection memberships, deployments, and targeted content.
     """
 
-    _device_name: str = Arg(position=0, short_name="n", long_name="name", required=True, description="Device name")  # type: ignore[assignment]
+    _device_name = Arg(position=0, short_name="n", long_name="name", required=True, description="Device name")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving device information for: {self._device_name}")

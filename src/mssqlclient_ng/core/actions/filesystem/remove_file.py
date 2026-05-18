@@ -28,7 +28,7 @@ class RemoveFile(BaseAction):
     Requires OLE Automation Procedures to be enabled (or ALTER SETTINGS to enable them).
     """
 
-    _file_path: str = Arg(position=0, required=True, description="Remote file path to delete")  # type: ignore[assignment]
+    _file_path = Arg(position=0, required=True, description="Remote file path to delete")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

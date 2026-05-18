@@ -25,8 +25,8 @@ class CMScriptRun(CMBaseAction):
     Returns Task ID for monitoring with cm-script-status.
     """
 
-    _resource_id: str = Arg(short_name="r", long_name="resourceid", required=True, description="Target device ResourceID (from cm-devices)")  # type: ignore[assignment]
-    _script_guid: str = Arg(short_name="g", long_name="scriptguid", required=True, description="Script GUID (from cm-scripts)")  # type: ignore[assignment]
+    _resource_id = Arg(short_name="r", long_name="resourceid", required=True, description="Target device ResourceID (from cm-devices)")
+    _script_guid = Arg(short_name="g", long_name="scriptguid", required=True, description="Script GUID (from cm-scripts)")
 
     def __init__(self):
         super().__init__()

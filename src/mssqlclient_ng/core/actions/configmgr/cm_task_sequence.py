@@ -23,7 +23,7 @@ class CMTaskSequence(CMBaseAction):
     including all referenced content (packages, drivers, applications, OS images, boot images).
     """
 
-    _package_id: str = Arg(position=0, required=True, description="Task Sequence PackageID")  # type: ignore[assignment]
+    _package_id = Arg(position=0, required=True, description="Task Sequence PackageID")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving task sequence details for: {self._package_id}")

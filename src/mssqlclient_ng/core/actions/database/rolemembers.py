@@ -20,7 +20,7 @@ class RoleMembers(BaseAction):
     processadmin, diskadmin, dbcreator, bulkadmin, public
     """
 
-    _role_name: str = Arg(position=0, required=True, description="Server role name (e.g., sysadmin)")  # type: ignore[assignment]
+    _role_name = Arg(position=0, required=True, description="Server role name (e.g., sysadmin)")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
         """

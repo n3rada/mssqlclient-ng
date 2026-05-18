@@ -23,10 +23,10 @@ class CMPackages(CMBaseAction):
     Packages are the legacy deployment model.
     """
 
-    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by package name")  # type: ignore[assignment]
-    _source_path: str = Arg(short_name="s", long_name="source", default="", description="Filter by source path")  # type: ignore[assignment]
-    _manufacturer: str = Arg(short_name="m", long_name="manufacturer", default="", description="Filter by manufacturer")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _name = Arg(short_name="n", long_name="name", default="", description="Filter by package name")
+    _source_path = Arg(short_name="s", long_name="source", default="", description="Filter by source path")
+    _manufacturer = Arg(short_name="m", long_name="manufacturer", default="", description="Filter by manufacturer")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def __init__(self):
         super().__init__()

@@ -28,8 +28,8 @@ class RidCycle(BaseAction):
     Enumerates domain objects (users and groups), not group membership.
     """
 
-    _max_rid: int = Arg(position=0, default=10000, description="Maximum RID to enumerate (default: 10000)")  # type: ignore[assignment]
-    _format: str = Arg(long_name="format", default="", description="Output format: bash, python, table")  # type: ignore[assignment]
+    _max_rid = Arg(position=0, default=10000, description="Maximum RID to enumerate (default: 10000)")
+    _format = Arg(long_name="format", default="", description="Output format: bash, python, table")
 
     def __init__(self):
         super().__init__()

@@ -41,9 +41,9 @@ class Procedures(BaseAction):
     - create <file_path> [database_name]: Creates a stored procedure from a SQL file
     """
 
-    _mode: str = Arg(position=0, default="list", description="Mode: list, exec, read, search, create")  # type: ignore[assignment]
-    _procedure_name: str = Arg(position=1, default="", description="Procedure name (schema.procedure) for exec/read")  # type: ignore[assignment]
-    _procedure_args: str = Arg(position=2, remainder=True, default="", description="Arguments for exec mode")  # type: ignore[assignment]
+    _mode = Arg(position=0, default="list", description="Mode: list, exec, read, search, create")
+    _procedure_name = Arg(position=1, default="", description="Procedure name (schema.procedure) for exec/read")
+    _procedure_args = Arg(position=2, remainder=True, default="", description="Arguments for exec mode")
 
     def __init__(self):
         super().__init__()

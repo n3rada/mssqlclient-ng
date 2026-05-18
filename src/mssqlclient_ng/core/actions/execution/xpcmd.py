@@ -21,7 +21,7 @@ class XpCmd(BaseAction):
     provided command, and returns the output line by line.
     """
 
-    _command: str = Arg(position=0, remainder=True, required=True, description="OS command to execute")  # type: ignore[assignment]
+    _command = Arg(position=0, remainder=True, required=True, description="OS command to execute")
 
     def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
         """

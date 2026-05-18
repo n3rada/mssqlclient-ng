@@ -163,7 +163,7 @@ class LinkMap(BaseAction):
     DEFAULT_MAX_DEPTH = 7
     MAX_ALLOWED_DEPTH = 15
 
-    _limit: int = Arg(position=0, default=7, description=f"Maximum recursion depth (1-15, default: 7)")  # type: ignore[assignment]
+    _limit = Arg(position=0, default=7, description=f"Maximum recursion depth (1-15, default: 7)")
 
     def __init__(self):
         super().__init__()

@@ -21,7 +21,7 @@ class CMScripts(CMBaseAction):
     Use 'cm-script <GUID>' to view full details and script content.
     """
 
-    _name: str = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by script name")  # type: ignore[assignment]
+    _name = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by script name")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info("Enumerating ConfigMgr scripts")

@@ -20,7 +20,7 @@ class Kill(BaseAction):
     Can target a specific session ID or use 'all' to kill all active sessions.
     """
 
-    _target: str = Arg(position=0, required=True, description="Session ID or 'all'")  # type: ignore[assignment]
+    _target = Arg(position=0, required=True, description="Session ID or 'all'")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         self._bind_arguments(additional_arguments)

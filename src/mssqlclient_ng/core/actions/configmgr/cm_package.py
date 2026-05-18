@@ -18,7 +18,7 @@ from ...utils.formatters import OutputFormatter
 class CMPackage(CMBaseAction):
     """Display detailed information about a specific ConfigMgr package including its programs."""
 
-    _package_id: str = Arg(position=0, required=True, description="Package ID to inspect")  # type: ignore[assignment]
+    _package_id = Arg(position=0, required=True, description="Package ID to inspect")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving package details for: {self._package_id}")

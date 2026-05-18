@@ -25,11 +25,11 @@ class CMDeployments(CMBaseAction):
     Filter by name, collection, type, or intent.
     """
 
-    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by software name")  # type: ignore[assignment]
-    _collection: str = Arg(short_name="c", long_name="collection", default="", description="Filter by collection name or ID")  # type: ignore[assignment]
-    _feature_type: str = Arg(short_name="t", long_name="type", default="", description="Filter by feature type (app/package/ts/...)")  # type: ignore[assignment]
-    _intent: str = Arg(short_name="i", long_name="intent", default="", description="Filter by intent (required/available)")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _name = Arg(short_name="n", long_name="name", default="", description="Filter by software name")
+    _collection = Arg(short_name="c", long_name="collection", default="", description="Filter by collection name or ID")
+    _feature_type = Arg(short_name="t", long_name="type", default="", description="Filter by feature type (app/package/ts/...)")
+    _intent = Arg(short_name="i", long_name="intent", default="", description="Filter by intent (required/available)")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def __init__(self):
         super().__init__()

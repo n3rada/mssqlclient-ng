@@ -24,7 +24,7 @@ class CMScript(CMBaseAction):
     including full content and parameters.
     """
 
-    _script_guid: str = Arg(position=0, required=True, description="Script GUID")  # type: ignore[assignment]
+    _script_guid = Arg(position=0, required=True, description="Script GUID")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving ConfigMgr script: {self._script_guid}")

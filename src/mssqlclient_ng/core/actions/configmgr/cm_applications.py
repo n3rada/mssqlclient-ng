@@ -25,9 +25,9 @@ class CMApplications(CMBaseAction):
     Applications are the modern deployment model (since ConfigMgr 2012).
     """
 
-    _display_name: str = Arg(short_name="n", long_name="displayname", default="", description="Filter by display name")  # type: ignore[assignment]
-    _model_name: str = Arg(short_name="m", long_name="modelname", default="", description="Filter by model name")  # type: ignore[assignment]
-    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _display_name = Arg(short_name="n", long_name="displayname", default="", description="Filter by display name")
+    _model_name = Arg(short_name="m", long_name="modelname", default="", description="Filter by model name")
+    _limit = Arg(long_name="limit", default=25, description="Cap result count")
 
     def __init__(self):
         super().__init__()

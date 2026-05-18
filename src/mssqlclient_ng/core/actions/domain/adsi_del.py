@@ -21,7 +21,7 @@ class AdsiDel(BaseAction):
     Deletes an ADSI linked server by name.
     """
 
-    _server_name: str = Arg(position=0, required=True, description="ADSI linked server name to delete")  # type: ignore[assignment]
+    _server_name = Arg(position=0, required=True, description="ADSI linked server name to delete")
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         adsi_service = AdsiService(database_context)

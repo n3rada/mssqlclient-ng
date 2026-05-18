@@ -30,7 +30,7 @@ class Permissions(BaseAction):
     Schema defaults to the user's default schema if not explicitly specified.
     """
 
-    _fqtn: str = Arg(position=0, default="", description="[database.]schema.table (omit for server/db-level permissions)")  # type: ignore[assignment]
+    _fqtn = Arg(position=0, default="", description="[database.]schema.table (omit for server/db-level permissions)")
 
     def __init__(self):
         super().__init__()

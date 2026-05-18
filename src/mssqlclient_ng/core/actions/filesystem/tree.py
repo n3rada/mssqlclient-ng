@@ -39,10 +39,10 @@ class Tree(BaseAction):
         tree C:\Windows 2 --files false
     """
 
-    _path: str = Arg(position=0, default=".", description="Directory path to enumerate")  # type: ignore[assignment]
-    _depth: int = Arg(position=1, short_name="d", long_name="depth", default=3, description="Recursion depth (1-255, default: 3)")  # type: ignore[assignment]
-    _show_files: bool = Arg(long_name="files", short_name="f", toggle=True, default=True, description="Include files (default: on)")  # type: ignore[assignment]
-    _use_unicode: bool = Arg(long_name="unicode", short_name="u", toggle=True, default=True, description="Use Unicode box-drawing characters (default: on)")  # type: ignore[assignment]
+    _path = Arg(position=0, default=".", description="Directory path to enumerate")
+    _depth = Arg(position=1, short_name="d", long_name="depth", default=3, description="Recursion depth (1-255, default: 3)")
+    _show_files = Arg(long_name="files", short_name="f", toggle=True, default=True, description="Include files (default: on)")
+    _use_unicode = Arg(long_name="unicode", short_name="u", toggle=True, default=True, description="Use Unicode box-drawing characters (default: on)")
 
     def __init__(self):
         super().__init__()

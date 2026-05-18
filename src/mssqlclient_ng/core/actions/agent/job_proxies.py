@@ -30,7 +30,7 @@ class JobProxies(BaseAction):
       3. Proxy -> Login mappings (which logins can use the proxy)
     """
 
-    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _limit = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)
