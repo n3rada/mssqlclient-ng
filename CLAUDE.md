@@ -32,7 +32,7 @@ src/mssqlclient_ng/
 ├── core/
 │   ├── terminal.py         # Interactive shell (prompt_toolkit)
 │   ├── actions/
-│   │   ├── base.py         # BaseAction ABC
+│   │   ├── base.py         # BaseAction ABC, ActionResult type alias, @dataclass Arg descriptor
 │   │   ├── factory.py      # ActionFactory with @register decorator
 │   │   ├── administration/ # Server management, sessions, config
 │   │   ├── agent/          # SQL Server Agent jobs
@@ -60,8 +60,7 @@ src/mssqlclient_ng/
 │       ├── completions.py  # Tab completers (actions + SQL keywords)
 │       ├── formatters/     # OutputFormatter (markdown, csv)
 │       ├── common.py       # yes_no_prompt, misc helpers
-│       ├── helper.py       # Byte/encoding/network utilities
-│       └── storage.py      # XDG-based data/state storage: get_data_dir(), ChainStore (saves/loads linkmap chains per server)
+│       └── storage.py      # XDG-based data/state storage: get_data_dir(), ChainStore (chains per server), OutputCache (format-agnostic JSON cache with put_rows/get_rows/get_mtime and text fallback)
 tests/                      # pytest test suite
 ```
 
@@ -74,35 +73,32 @@ tests/                      # pytest test suite
 ```python
 # src/mssqlclient_ng/core/actions/<category>/my_action.py
 
-from typing import Optional
 from loguru import logger
 
-from ..base import BaseAction          # src/mssqlclient_ng/core/actions/base.py
-from ..factory import ActionFactory    # src/mssqlclient_ng/core/actions/factory.py
-from ...services.database import DatabaseContext  # src/mssqlclient_ng/core/services/database.py
-from ...utils.formatters import OutputFormatter   # src/mssqlclient_ng/core/utils/formatters/
+from ..base import ActionResult, BaseAction, Arg
+from ..factory import ActionFactory
+from ...services.database import DatabaseContext
+from ...utils.formatters import OutputFormatter
 
 
 @ActionFactory.register("my-action", "One-line description for help", aliases=["ma"])
 class MyAction(BaseAction):
     """Detailed docstring shown in !help my-action."""
 
-    def validate_arguments(self, additional_arguments: str = "", argument_list=None) -> None:
-        # Parse with self.parse_arguments(additional_arguments) or argparse
-        named, positional = self.parse_arguments(additional_arguments)
-        self._target = positional[0] if positional else None
-        if not self._target:
-            raise ValueError("Target argument is required")
+    # Declare arguments as class-level Arg() descriptors.
+    # validate_arguments() / _bind_arguments() wires them automatically.
+    _target = Arg(position=0, required=True, description="Table name fragment")
+    _limit = Arg(short_name="l", long_name="limit", default="25")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[object]:
-        query = f"SELECT name FROM sys.tables WHERE name LIKE '%{self._target}%'"
+    def execute(self, database_context: DatabaseContext) -> ActionResult:
+        query = f"SELECT TOP {self._limit} name FROM sys.tables WHERE name LIKE '%{self._target}%'"
         rows = database_context.query_service.execute_table(query)
 
         if not rows:
             logger.warning("No results.")
             return None
 
-        print(OutputFormatter.format_rows(rows))
+        print(OutputFormatter.convert_list_of_dicts(rows))
         logger.success(f"{len(rows)} row(s) returned.")
         return rows
 ```
@@ -137,7 +133,7 @@ No manual registration in a dictionary — the decorator handles it.
 | `!add-link <spec>` | `!al` | Append server to chain |
 | `!impersonate <login>` | `!imp` | Impersonate a login |
 | `!revert` | `!rev` | Revert impersonation |
-| `!chain [id]` | — | Display current chain; apply saved linkmap chain by ID |
+| `!chain [id]` | `!ch` | Display current chain; apply saved linkmap chain by ID |
 | `!format [name]` | — | Show/change output format |
 | `!debug` | — | Toggle debug logging |
 | `!flush [--all]` | — | Flush cached action outputs (current context or all) |
