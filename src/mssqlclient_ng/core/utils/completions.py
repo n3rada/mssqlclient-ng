@@ -282,26 +282,6 @@ SQL_FUNCTIONS = [
 ]
 
 
-# Category short labels shown in display_meta (right column of completion menu)
-_CATEGORY_LABEL: dict = {
-    "administration": "admin",
-    "agent": "agent",
-    "configmgr": "cm",
-    "database": "db",
-    "domain": "domain",
-    "execution": "exec",
-    "filesystem": "fs",
-    "remote": "remote",
-}
-
-
-def _meta(action_name: str, description: str) -> str:
-    """Return '[label] description' string for the display_meta (right) column."""
-    cat = ActionFactory.get_action_category(action_name)
-    label = _CATEGORY_LABEL.get(cat, cat)
-    return f"[{label}] {description}" if description else f"[{label}]"
-
-
 class ActionCompleter(Completer):
     """
     Auto-completer for action commands.
@@ -385,11 +365,8 @@ class ActionCompleter(Completer):
                     yield from self._help_completions(arg_prefix)
                     return
 
-            # Get all available actions, sorted by category then name
-            actions = sorted(
-                ActionFactory.list_actions(),
-                key=lambda n: (ActionFactory.get_action_category(n), n),
-            )
+            # Get all available actions
+            actions = ActionFactory.list_actions()
 
             # Filter actions that match what the user has typed
             for action_name in actions:
@@ -398,34 +375,19 @@ class ActionCompleter(Completer):
                     description = (
                         ActionFactory.get_action_description(action_name) or ""
                     )
-                    yield Completion(
-                        completion_text,
-                        start_position=0,
-                        display=action_name,
-                        display_meta=_meta(action_name, description),
-                    )
+                    yield Completion(completion_text, 0, display_meta=description)
 
             # Also suggest action aliases
             for alias, canonical in ActionFactory.list_aliases().items():
                 if alias.startswith(command_part.lower()):
                     completion_text = alias[len(command_part) :]
-                    yield Completion(
-                        completion_text,
-                        start_position=0,
-                        display=alias,
-                        display_meta=f"→ {canonical}",
-                    )
+                    yield Completion(completion_text, 0, display_meta=f"→ {canonical}")
 
             # Also suggest built-in commands
             for builtin_name, builtin_desc in self.builtins.items():
                 if builtin_name.startswith(command_part.lower()):
                     completion_text = builtin_name[len(command_part) :]
-                    yield Completion(
-                        completion_text,
-                        start_position=0,
-                        display=builtin_name,
-                        display_meta=f"[builtin] {builtin_desc}",
-                    )
+                    yield Completion(completion_text, 0, display_meta=builtin_desc)
 
             # Also suggest built-in command aliases
             for alias, canonical in self.aliases.items():
@@ -434,7 +396,6 @@ class ActionCompleter(Completer):
                     yield Completion(
                         completion_text,
                         start_position=0,
-                        display=alias,
                         display_meta=f"→ !{canonical}",
                     )
 
