@@ -15,7 +15,9 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 
 
-@ActionFactory.register("cm-script-run", "Execute a ConfigMgr script on a target device")
+@ActionFactory.register(
+    "cm-script-run", "Execute a ConfigMgr script on a target device"
+)
 class CMScriptRun(CMBaseAction):
     """
     Execute a PowerShell script on a target device through ConfigMgr's BGB notification channel.
@@ -93,7 +95,9 @@ WHERE sys.ResourceID = {self._resource_id};"""
                     f"<ParameterGroupHash ParameterHashAlg='SHA256'></ParameterGroupHash>"
                     f"</ScriptContent>"
                 )
-                task_param_b64 = base64.b64encode(task_param.encode("utf-8")).decode("ascii")
+                task_param_b64 = base64.b64encode(task_param.encode("utf-8")).decode(
+                    "ascii"
+                )
                 task_guid = str(uuid.uuid4()).upper()
 
                 # Step 4: Insert BGB_Task
@@ -126,7 +130,9 @@ VALUES ({self._resource_id}, 15, {task_id}, '{task_param_b64}');"""
                 logger.success("Script execution queued successfully")
                 logger.info(f"  Use 'cm-script-status {task_id}' to monitor execution")
 
-                return [{"TaskID": task_id, "TaskGUID": task_guid, "Device": device_name}]
+                return [
+                    {"TaskID": task_id, "TaskGUID": task_guid, "Device": device_name}
+                ]
 
             except Exception as ex:
                 logger.error(f"Failed to execute script: {ex}")

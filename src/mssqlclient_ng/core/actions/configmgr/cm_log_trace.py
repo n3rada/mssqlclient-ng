@@ -42,8 +42,7 @@ class CMLogTrace(CMBaseAction):
         self._guid = self.get_positional_argument(positional, 0, "")
         if not self._guid:
             raise ValueError(
-                "Deployment Type GUID is required. "
-                "Usage: cm-trace <GUID>"
+                "Deployment Type GUID is required. " "Usage: cm-trace <GUID>"
             )
 
         self._guid = self._guid.strip()
@@ -53,7 +52,11 @@ class CMLogTrace(CMBaseAction):
             pass  # Full identifier, keep as-is
         elif self._guid.startswith("DeploymentType_"):
             pass  # Already has prefix
-        elif re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", self._guid, re.IGNORECASE):
+        elif re.match(
+            r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            self._guid,
+            re.IGNORECASE,
+        ):
             self._guid = f"DeploymentType_{self._guid}"
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
@@ -93,7 +96,9 @@ WHERE ci.CI_UniqueID LIKE '%{self._guid}%';"""
 
                 dt = dt_results[0]
                 dt_ci_id = dt["CI_ID"]
-                logger.success(f"Deployment Type: {dt.get('Title', 'Unknown')} (CI_ID: {dt_ci_id})")
+                logger.success(
+                    f"Deployment Type: {dt.get('Title', 'Unknown')} (CI_ID: {dt_ci_id})"
+                )
 
                 # Step 2: Find parent application via CI relations
                 parent_query = f"""
@@ -115,7 +120,9 @@ WHERE rel.ToCI_ID = {dt_ci_id} AND ci.CIType_ID = 10;"""
                 if parent_results:
                     app = parent_results[0]
                     app_ci_id = app["AppCI_ID"]
-                    logger.success(f"Parent Application: {app.get('ApplicationName', 'Unknown')} (CI_ID: {app_ci_id})")
+                    logger.success(
+                        f"Parent Application: {app.get('ApplicationName', 'Unknown')} (CI_ID: {app_ci_id})"
+                    )
 
                     # Step 3: Find assignments for this application
                     assign_query = f"""

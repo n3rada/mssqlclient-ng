@@ -57,7 +57,9 @@ class CMDeployments(CMBaseAction):
             filters.append(f"type: {self._feature_type}")
         if self._intent:
             filters.append(f"intent: {self._intent}")
-        logger.info(f"Enumerating ConfigMgr deployments{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Enumerating ConfigMgr deployments{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:
@@ -73,7 +75,15 @@ class CMDeployments(CMBaseAction):
             if self._collection:
                 where += f" AND (c.Name LIKE '%{self._collection}%' OR ds.CollectionID LIKE '%{self._collection}%')"
             if self._feature_type:
-                type_map = {"application": 1, "app": 1, "program": 2, "package": 2, "script": 4, "task-sequence": 7, "ts": 7}
+                type_map = {
+                    "application": 1,
+                    "app": 1,
+                    "program": 2,
+                    "package": 2,
+                    "script": 4,
+                    "task-sequence": 7,
+                    "ts": 7,
+                }
                 ft_val = type_map.get(self._feature_type.lower())
                 if ft_val:
                     where += f" AND ds.FeatureType = {ft_val}"
@@ -110,9 +120,15 @@ ORDER BY ds.StartTime DESC;"""
                     # Decode feature types and intents
                     for row in results:
                         if "FeatureType" in row:
-                            row["FeatureType"] = CMService.decode_feature_type(row["FeatureType"])
+                            row["FeatureType"] = CMService.decode_feature_type(
+                                row["FeatureType"]
+                            )
                         if "DeploymentIntent" in row:
-                            row["DeploymentIntent"] = CMService.decode_deployment_intent(row["DeploymentIntent"])
+                            row["DeploymentIntent"] = (
+                                CMService.decode_deployment_intent(
+                                    row["DeploymentIntent"]
+                                )
+                            )
                     logger.success(f"Found {len(results)} deployment(s)")
                     print(OutputFormatter.convert_list_of_dicts(results))
                 else:

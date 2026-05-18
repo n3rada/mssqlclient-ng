@@ -3,7 +3,7 @@
 # Built-in imports
 import shlex
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, overload
 
 # Third party imports
 from loguru import logger
@@ -41,6 +41,24 @@ class Arg:
         self.toggle = toggle
         self.description = description
         self.default = default
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self._attr_name = name
+
+    @overload
+    def __get__(self, obj: None, objtype: type) -> "Arg": ...
+    @overload
+    def __get__(self, obj: object, objtype: type) -> Any: ...
+    def __get__(self, obj: Optional[object], objtype: Optional[type] = None) -> Any:
+        if obj is None:
+            return self
+        try:
+            return obj.__dict__[self._attr_name]
+        except KeyError:
+            return self.default
+
+    def __set__(self, obj: object, value: Any) -> None:
+        obj.__dict__[self._attr_name] = value
 
 
 class BaseAction(ABC):

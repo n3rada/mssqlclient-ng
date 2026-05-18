@@ -77,7 +77,9 @@ WHERE ci.CI_ID = {self._ci_id};"""
                 row = results[0]
                 xml_content = row.pop("SDMPackageDigest", "")
                 if xml_content:
-                    info = CMService.parse_sdm_package_digest(str(xml_content), detailed=True)
+                    info = CMService.parse_sdm_package_digest(
+                        str(xml_content), detailed=True
+                    )
                     for k, v in info.items():
                         row[k] = v
 

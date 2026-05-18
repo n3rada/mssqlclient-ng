@@ -44,7 +44,9 @@ class CMDevices(CMBaseAction):
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
-        self._name = named.get("name", named.get("n", "")) or self.get_positional_argument(positional, 0, "")
+        self._name = named.get(
+            "name", named.get("n", "")
+        ) or self.get_positional_argument(positional, 0, "")
         self._domain = named.get("domain", named.get("d", ""))
         self._username = named.get("user", named.get("u", ""))
         self._ip = named.get("ip", named.get("i", ""))
@@ -64,7 +66,9 @@ class CMDevices(CMBaseAction):
             filters.append(f"user: {self._username}")
         if self._online_only:
             filters.append("online only")
-        logger.info(f"Enumerating ConfigMgr devices{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Enumerating ConfigMgr devices{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:
@@ -104,7 +108,9 @@ LEFT JOIN [{db}].dbo.BGB_ResStatus bgb ON sys.ResourceID = bgb.ResourceID
                 try:
                     results = database_context.query_service.execute(count_query)
                     if results:
-                        logger.success(f"Device count: {results[0].get('DeviceCount', 0)}")
+                        logger.success(
+                            f"Device count: {results[0].get('DeviceCount', 0)}"
+                        )
                 except Exception as ex:
                     logger.error(f"Count failed: {ex}")
                 continue

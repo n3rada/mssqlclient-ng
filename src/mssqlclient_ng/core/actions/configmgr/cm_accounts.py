@@ -13,7 +13,9 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-accounts", "Enumerate ConfigMgr user accounts (NAA, Client Push, etc.)")
+@ActionFactory.register(
+    "cm-accounts", "Enumerate ConfigMgr user accounts (NAA, Client Push, etc.)"
+)
 class CMAccounts(CMBaseAction):
     """
     Enumerate ConfigMgr user accounts including Network Access Accounts (NAA),
@@ -21,7 +23,9 @@ class CMAccounts(CMBaseAction):
     """
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
-        logger.info("Enumerating ConfigMgr user accounts (NAA, Client Push, Task Sequence)")
+        logger.info(
+            "Enumerating ConfigMgr user accounts (NAA, Client Push, Task Sequence)"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:
@@ -36,7 +40,9 @@ class CMAccounts(CMBaseAction):
             try:
                 results = database_context.query_service.execute(query)
                 if results:
-                    logger.success(f"Found {len(results)} user account(s) with encrypted credentials")
+                    logger.success(
+                        f"Found {len(results)} user account(s) with encrypted credentials"
+                    )
                     print(OutputFormatter.convert_list_of_dicts(results))
                 else:
                     logger.warning("No user accounts found")

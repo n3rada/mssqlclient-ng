@@ -47,7 +47,9 @@ class CMApplications(CMBaseAction):
             filters.append(f"displayname: {self._display_name}")
         if self._model_name:
             filters.append(f"modelname: {self._model_name}")
-        logger.info(f"Enumerating ConfigMgr applications{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Enumerating ConfigMgr applications{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:

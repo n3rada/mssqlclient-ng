@@ -14,7 +14,9 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-packages", "Enumerate ConfigMgr packages (legacy deployment)")
+@ActionFactory.register(
+    "cm-packages", "Enumerate ConfigMgr packages (legacy deployment)"
+)
 class CMPackages(CMBaseAction):
     """
     Enumerate ConfigMgr packages with their properties, source locations, and program details.
@@ -46,7 +48,9 @@ class CMPackages(CMBaseAction):
             filters.append(f"name: {self._name}")
         if self._source_path:
             filters.append(f"source: {self._source_path}")
-        logger.info(f"Enumerating ConfigMgr packages{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Enumerating ConfigMgr packages{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:
@@ -86,7 +90,9 @@ ORDER BY p.Name;"""
                 if results:
                     for row in results:
                         if "PackageType" in row:
-                            row["PackageType"] = CMService.decode_package_type(row["PackageType"])
+                            row["PackageType"] = CMService.decode_package_type(
+                                row["PackageType"]
+                            )
                     logger.success(f"Found {len(results)} package(s)")
                     print(OutputFormatter.convert_list_of_dicts(results))
                 else:
