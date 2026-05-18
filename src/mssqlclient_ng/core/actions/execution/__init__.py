@@ -5,6 +5,7 @@ from .xpcmd import XpCmd
 from .powershell import PowerShell
 from .ole import ObjectLinkingEmbedding
 from .clr import ClrExecution
+from .clr_list import ClrList
 from .run import RunExecutable
 
 __all__ = [
@@ -13,5 +14,6 @@ __all__ = [
     "PowerShell",
     "ObjectLinkingEmbedding",
     "ClrExecution",
+    "ClrList",
     "RunExecutable",
 ]
