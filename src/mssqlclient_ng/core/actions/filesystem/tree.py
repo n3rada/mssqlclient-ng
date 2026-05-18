@@ -41,8 +41,8 @@ class Tree(BaseAction):
 
     _path: str = Arg(position=0, default=".", description="Directory path to enumerate")  # type: ignore[assignment]
     _depth: int = Arg(position=1, short_name="d", long_name="depth", default=3, description="Recursion depth (1-255, default: 3)")  # type: ignore[assignment]
-    _show_files: bool = Arg(long_name="files", short_name="f", toggle=True, description="Include files (default: on)")  # type: ignore[assignment]
-    _use_unicode: bool = Arg(long_name="unicode", short_name="u", toggle=True, description="Use Unicode box-drawing characters (default: on)")  # type: ignore[assignment]
+    _show_files: bool = Arg(long_name="files", short_name="f", toggle=True, default=True, description="Include files (default: on)")  # type: ignore[assignment]
+    _use_unicode: bool = Arg(long_name="unicode", short_name="u", toggle=True, default=True, description="Use Unicode box-drawing characters (default: on)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
@@ -52,70 +52,17 @@ class Tree(BaseAction):
         self._use_unicode: bool = True
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        """
-        Validate arguments for the tree action.
-
-        Args:
-            additional_arguments: The argument string to parse (deprecated)
-            argument_list: Pre-split list of arguments (preferred)
-
-        Raises:
-            ValueError: If the path is empty or depth is invalid
-        """
-        named_args, positional_args = self._parse_action_arguments(
-            additional_arguments=additional_arguments, argument_list=argument_list
-        )
-
-        # Get path from positional argument or use current directory
-        if len(positional_args) >= 1:
-            self._path = positional_args[0]
-        else:
-            self._path = "."
-
-        if not self._path or not self._path.strip():
-            self._path = "."
-
-        # Get depth from named argument or positional argument
-        depth_str = named_args.get(
-            "depth",
-            named_args.get(
-                "d", positional_args[1] if len(positional_args) > 1 else "3"
-            ),
-        )
-
+        super().validate_arguments(additional_arguments)
         try:
-            self._depth = int(depth_str)
-        except ValueError:
+            self._depth = int(self._depth)
+        except (TypeError, ValueError):
             logger.warning(
-                f"Invalid depth value '{depth_str}', using default depth of 3. "
-                f'If your path contains spaces, enclose it in quotes (e.g., "C:\\Program Files")'
+                f"Invalid depth value '{self._depth}', using default depth of 3. "
+                f'If your path contains spaces, enclose them in quotes (e.g., "C:\\Program Files")'
             )
             self._depth = 3
-
         if self._depth < 1 or self._depth > 255:
             raise ValueError("Depth must be between 1 and 255")
-
-        # Get show files flag from named argument or positional argument
-        files_str = named_args.get(
-            "files",
-            named_args.get(
-                "f", positional_args[2] if len(positional_args) > 2 else "true"
-            ),
-        )
-
-        files_lower = files_str.strip().lower()
-        self._show_files = files_lower in ["1", "true", "yes"]
-
-        # Get Unicode mode flag from named argument or positional argument
-        unicode_str = named_args.get(
-            "unicode",
-            named_args.get(
-                "u", positional_args[3] if len(positional_args) > 3 else "true"
-            ),
-        )
-
-        unicode_lower = unicode_str.strip().lower()
-        self._use_unicode = unicode_lower in ["1", "true", "yes"]
 
     def execute(self, database_context: DatabaseContext) -> Optional[str]:
         """
