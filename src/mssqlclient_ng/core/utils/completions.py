@@ -291,6 +291,9 @@ class ActionCompleter(Completer):
     # Commands that accept a chain ID as their first argument
     _CHAIN_ID_COMMANDS = {"chain", "ch", "tunnel", "linkmap", "linksmap", "chains"}
 
+    # Commands that accept an action/builtin name as their first argument
+    _HELP_COMMANDS = {"help", "h"}
+
     def __init__(
         self,
         prefix: str = "!",
@@ -307,9 +310,11 @@ class ActionCompleter(Completer):
 
         # Built-in commands with descriptions
         self.builtins = {
-            "exit": "Exit the terminal",
+            "help": "List actions or show help for a specific action/command",
             "debug": "Toggle debug mode on/off",
             "chain": "Display full connection chain with impersonation context",
+            "format": "Show or change the output table format",
+            "flush": "Flush cached action outputs for current or all contexts",
             "link": "Set linked server chain (e.g. SQL02/user;SQL03@db)",
             "unlink": "Remove last server from chain",
             "unlink-all": "Clear entire linked server chain",
@@ -320,11 +325,13 @@ class ActionCompleter(Completer):
 
         # Aliases mapping to canonical command names
         self.aliases = {
+            "h": "help",
             "imp": "impersonate",
             "rev": "revert",
             "ul": "unlink",
             "ula": "unlink-all",
             "al": "add-link",
+            "ch": "chain",
         }
 
     def get_completions(self, document: Document, complete_event):
@@ -353,6 +360,9 @@ class ActionCompleter(Completer):
                 arg_prefix = parts[1] if len(parts) == 2 else ""
                 if cmd in self._CHAIN_ID_COMMANDS and self._chain_loader is not None:
                     yield from self._chain_id_completions(arg_prefix)
+                    return
+                if cmd in self._HELP_COMMANDS:
+                    yield from self._help_completions(arg_prefix)
                     return
 
             # Get all available actions
@@ -387,6 +397,37 @@ class ActionCompleter(Completer):
                 if alias.startswith(command_part.lower()):
                     completion_text = alias[len(command_part) :]
                     yield Completion(completion_text, 0, display_meta=f"→ !{canonical}")
+
+    def _help_completions(self, arg_prefix: str):
+        """Yield completions for !help <name>: actions + built-in commands."""
+        prefix_lower = arg_prefix.lower()
+
+        # Registered actions
+        for name in ActionFactory.list_actions():
+            if name.startswith(prefix_lower):
+                desc = ActionFactory.get_action_description(name) or ""
+                yield Completion(name[len(arg_prefix) :], 0, display_meta=desc)
+
+        # Action aliases
+        for alias, canonical in ActionFactory.list_aliases().items():
+            if alias.startswith(prefix_lower):
+                yield Completion(
+                    alias[len(arg_prefix) :], 0, display_meta=f"→ {canonical}"
+                )
+
+        # Built-in commands
+        for name, desc in self.builtins.items():
+            if name.startswith(prefix_lower):
+                yield Completion(
+                    name[len(arg_prefix) :], 0, display_meta=f"[builtin] {desc}"
+                )
+
+        # Built-in aliases
+        for alias, canonical in self.aliases.items():
+            if alias.startswith(prefix_lower):
+                yield Completion(
+                    alias[len(arg_prefix) :], 0, display_meta=f"→ !{canonical}"
+                )
 
     def _chain_id_completions(self, arg_prefix: str):
         """Yield chain ID completions from the chain loader."""
