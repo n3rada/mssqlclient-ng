@@ -84,7 +84,7 @@ class Permissions(BaseAction):
                 "'schema.table', or nothing to return current server permissions."
             )
 
-    def execute(self, database_context: DatabaseContext) -> None:
+    def execute(self, database_context: DatabaseContext) -> Optional[list]:
         """
         Execute the permissions enumeration.
 
@@ -124,7 +124,7 @@ class Permissions(BaseAction):
             )
             print(OutputFormatter.convert_list_of_dicts(accessible_dbs))
 
-            return None
+            return [sorted_server_perms, sorted_db_perms, accessible_dbs]
 
         # Use the execution database if no database is specified
         if not self._database:
@@ -164,7 +164,7 @@ class Permissions(BaseAction):
         sorted_table = self._sort_permissions_by_importance(data_table)
 
         print(OutputFormatter.convert_list_of_dicts(sorted_table))
-        return None
+        return sorted_table
 
     def _sort_permissions_by_importance(self, permissions: List[Dict]) -> List[Dict]:
         """

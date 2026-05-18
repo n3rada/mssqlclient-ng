@@ -26,7 +26,7 @@ class Roles(BaseAction):
     For server-level logins and instance-wide privileges, use the 'users' action instead.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[dict]:
+    def execute(self, database_context: DatabaseContext) -> Optional[list]:
         """
         Executes the roles enumeration.
 
@@ -40,7 +40,7 @@ class Roles(BaseAction):
             "Enumerating server-level and database-level roles with their members"
         )
 
-        # ========== SERVER-LEVEL ROLES ==========
+        tables = []
 
         server_roles_query = """
             SELECT
@@ -127,6 +127,7 @@ class Roles(BaseAction):
                     for role in fixed_server_roles
                 ]
                 print(OutputFormatter.convert_list_of_dicts(filtered_fixed))
+                tables.append(filtered_fixed)
 
             # Display Custom Server Roles (with IsMember)
             if custom_server_roles:
@@ -145,6 +146,7 @@ class Roles(BaseAction):
                     for role in custom_server_roles
                 ]
                 print(OutputFormatter.convert_list_of_dicts(filtered_custom))
+                tables.append(filtered_custom)
 
         # ========== DATABASE-LEVEL ROLES ==========
 
@@ -165,7 +167,7 @@ class Roles(BaseAction):
 
         if not all_roles:
             logger.warning("No database roles found in current database.")
-            return None
+            return tables if tables else None
 
         # Get all role members in a single query for performance
         all_members_query = """
@@ -232,6 +234,7 @@ class Roles(BaseAction):
                 for role in fixed_roles_data
             ]
             print(OutputFormatter.convert_list_of_dicts(filtered_fixed))
+            tables.append(filtered_fixed)
 
         # Display Custom Roles
         if custom_roles_data:
@@ -248,7 +251,8 @@ class Roles(BaseAction):
                 for role in custom_roles_data
             ]
             print(OutputFormatter.convert_list_of_dicts(filtered_custom))
+            tables.append(filtered_custom)
         else:
             logger.info("No custom database roles found in current database.")
 
-        return None
+        return tables if tables else None

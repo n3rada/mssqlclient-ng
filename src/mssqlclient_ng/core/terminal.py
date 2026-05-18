@@ -391,7 +391,13 @@ class Terminal:
             )
             if cached_rows is not None:
                 logger.debug(f"Cache hit for '{canonical_name}' on {server_name}")
-                print(OutputFormatter.convert_list_of_dicts(cached_rows))
+                if cached_rows and isinstance(cached_rows[0], list):
+                    # Multi-table: re-render each sub-table with the current formatter
+                    for table in cached_rows:
+                        if table:
+                            print(OutputFormatter.convert_list_of_dicts(table))
+                else:
+                    print(OutputFormatter.convert_list_of_dicts(cached_rows))
                 logger.warning("Cached output. Use --force to re-execute.")
                 return None
             # Fall back to text cache (unstructured output)
@@ -421,14 +427,11 @@ class Terminal:
             finally:
                 sys.stdout = original_stdout
 
-            # Cache the result — prefer raw JSON when the action returns row data
+            # Cache the result — prefer raw JSON when the action returns row data.
+            # Supports list[dict] (single table) and list[list[dict]] (multi-table).
             if cacheable:
                 ctx = self._cache_context()
-                if (
-                    result is not None
-                    and isinstance(result, list)
-                    and all(isinstance(r, dict) for r in result)
-                ):
+                if result is not None and isinstance(result, list) and result:
                     self._output_cache.put_rows(
                         ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str, result
                     )

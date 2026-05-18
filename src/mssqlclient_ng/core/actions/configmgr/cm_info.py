@@ -29,6 +29,8 @@ class CMInfo(CMBaseAction):
         if not databases:
             return None
 
+        tables = []
+
         for db in databases:
             site_code = CMService.get_site_code(db)
             logger.info(
@@ -44,6 +46,7 @@ FROM [{db}].dbo.Sites;"""
                 if results:
                     logger.success("Site Information")
                     print(OutputFormatter.convert_list_of_dicts(results))
+                    tables.append(results)
             except Exception as ex:
                 logger.debug(f"Failed to query site info: {ex}")
 
@@ -54,6 +57,7 @@ FROM [{db}].dbo.Sites;"""
                 if results:
                     logger.success("ConfigMgr Components")
                     print(OutputFormatter.convert_list_of_dicts(results))
+                    tables.append(results)
             except Exception:
                 try:
                     comp_query = f"""
@@ -64,6 +68,7 @@ FROM [{db}].dbo.SC_Component ORDER BY ComponentName;"""
                     if results:
                         logger.success("ConfigMgr Components")
                         print(OutputFormatter.convert_list_of_dicts(results))
+                        tables.append(results)
                 except Exception as ex:
                     logger.debug(f"Could not query components: {ex}")
 
@@ -74,6 +79,7 @@ FROM [{db}].dbo.SC_Component ORDER BY ComponentName;"""
                 if results:
                     logger.success("Site System Roles")
                     print(OutputFormatter.convert_list_of_dicts(results))
+                    tables.append(results)
             except Exception:
                 try:
                     roles_query = f"""
@@ -89,7 +95,8 @@ FROM [{db}].dbo.SC_SysResUse sr ORDER BY sr.NALPath;"""
                     if results:
                         logger.success("Site System Roles")
                         print(OutputFormatter.convert_list_of_dicts(results))
+                        tables.append(results)
                 except Exception as ex:
                     logger.debug(f"Could not query roles: {ex}")
 
-        return None
+        return tables if tables else None
