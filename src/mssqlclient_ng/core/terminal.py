@@ -512,7 +512,13 @@ class Terminal:
                 # Dispatch to built-in handler if matched
                 handler = self._match_command(command_line)
                 if handler:
-                    handler(command_line)
+                    # Check for --help / -h before dispatching
+                    _parts = command_line.split()
+                    if len(_parts) > 1 and _parts[1] in ("--help", "-h"):
+                        doc = (handler.__doc__ or "No description available.").strip()
+                        print(f"  {doc}")
+                    else:
+                        handler(command_line)
                     continue
 
                 # Otherwise dispatch to action system
