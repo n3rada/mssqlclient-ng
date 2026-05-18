@@ -6,7 +6,6 @@ from typing import Callable, List, Optional, Tuple
 # External library imports
 from prompt_toolkit.completion import Completer, Completion
 from prompt_toolkit.document import Document
-from prompt_toolkit.formatted_text import HTML
 
 # Local library imports
 from ..actions.factory import ActionFactory
@@ -283,26 +282,24 @@ SQL_FUNCTIONS = [
 ]
 
 
-# Category display colours (ANSI dim colour via HTML tag)
-_CATEGORY_STYLE: dict = {
-    "administration": "#d08770",
-    "agent":          "#ebcb8b",
-    "configmgr":      "#a3be8c",
-    "database":       "#88c0d0",
-    "domain":         "#b48ead",
-    "execution":      "#bf616a",
-    "filesystem":     "#8fbcbb",
-    "remote":         "#5e81ac",
+# Category short labels shown in display_meta (right column of completion menu)
+_CATEGORY_LABEL: dict = {
+    "administration": "admin",
+    "agent": "agent",
+    "configmgr": "cm",
+    "database": "db",
+    "domain": "domain",
+    "execution": "exec",
+    "filesystem": "fs",
+    "remote": "remote",
 }
-_CATEGORY_DEFAULT_COLOUR = "#aaaaaa"
 
 
-def _category_display(action_name: str, colour: str) -> HTML:
-    """Return an HTML-formatted display string: [category] action-name."""
+def _meta(action_name: str, description: str) -> str:
+    """Return '[label] description' string for the display_meta (right) column."""
     cat = ActionFactory.get_action_category(action_name)
-    return HTML(
-        f'<style fg="{colour}">[{cat}]</style> {action_name}'
-    )
+    label = _CATEGORY_LABEL.get(cat, cat)
+    return f"[{label}] {description}" if description else f"[{label}]"
 
 
 class ActionCompleter(Completer):
@@ -397,49 +394,47 @@ class ActionCompleter(Completer):
             # Filter actions that match what the user has typed
             for action_name in actions:
                 if action_name.startswith(command_part.lower()):
-                    completion_text = action_name[len(command_part):]
-                    description = ActionFactory.get_action_description(action_name) or ""
-                    cat = ActionFactory.get_action_category(action_name)
-                    colour = _CATEGORY_STYLE.get(cat, _CATEGORY_DEFAULT_COLOUR)
+                    completion_text = action_name[len(command_part) :]
+                    description = (
+                        ActionFactory.get_action_description(action_name) or ""
+                    )
                     yield Completion(
                         completion_text,
                         start_position=0,
-                        display=_category_display(action_name, colour),
-                        display_meta=description,
+                        display=action_name,
+                        display_meta=_meta(action_name, description),
                     )
 
             # Also suggest action aliases
             for alias, canonical in ActionFactory.list_aliases().items():
                 if alias.startswith(command_part.lower()):
-                    completion_text = alias[len(command_part):]
-                    cat = ActionFactory.get_action_category(canonical)
-                    colour = _CATEGORY_STYLE.get(cat, _CATEGORY_DEFAULT_COLOUR)
+                    completion_text = alias[len(command_part) :]
                     yield Completion(
                         completion_text,
                         start_position=0,
-                        display=HTML(f'<style fg="{colour}">[{cat}]</style> {alias}'),
+                        display=alias,
                         display_meta=f"→ {canonical}",
                     )
 
             # Also suggest built-in commands
             for builtin_name, builtin_desc in self.builtins.items():
                 if builtin_name.startswith(command_part.lower()):
-                    completion_text = builtin_name[len(command_part):]
+                    completion_text = builtin_name[len(command_part) :]
                     yield Completion(
                         completion_text,
                         start_position=0,
-                        display=HTML(f'<style fg="#4c566a">[builtin]</style> {builtin_name}'),
-                        display_meta=builtin_desc,
+                        display=builtin_name,
+                        display_meta=f"[builtin] {builtin_desc}",
                     )
 
             # Also suggest built-in command aliases
             for alias, canonical in self.aliases.items():
                 if alias.startswith(command_part.lower()):
-                    completion_text = alias[len(command_part):]
+                    completion_text = alias[len(command_part) :]
                     yield Completion(
                         completion_text,
                         start_position=0,
-                        display=HTML(f'<style fg="#4c566a">[builtin]</style> {alias}'),
+                        display=alias,
                         display_meta=f"→ !{canonical}",
                     )
 
