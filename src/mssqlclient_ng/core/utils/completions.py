@@ -294,6 +294,9 @@ class ActionCompleter(Completer):
     # Commands that accept an action/builtin name as their first argument
     _HELP_COMMANDS = {"help", "h"}
 
+    # Commands that accept an output format name as their first argument
+    _FORMAT_COMMANDS = {"format"}
+
     def __init__(
         self,
         prefix: str = "!",
@@ -364,6 +367,9 @@ class ActionCompleter(Completer):
                 if cmd in self._HELP_COMMANDS:
                     yield from self._help_completions(arg_prefix)
                     return
+                if cmd in self._FORMAT_COMMANDS:
+                    yield from self._format_completions(arg_prefix)
+                    return
 
             # Get all available actions
             actions = ActionFactory.list_actions()
@@ -428,6 +434,20 @@ class ActionCompleter(Completer):
             if alias.startswith(prefix_lower):
                 yield Completion(
                     alias[len(arg_prefix) :], 0, display_meta=f"→ !{canonical}"
+                )
+
+    def _format_completions(self, arg_prefix: str):
+        """Yield available output format names for !format <name>."""
+        from .formatters import OutputFormatter
+
+        prefix_lower = arg_prefix.lower()
+        for fmt in OutputFormatter.get_available_formats():
+            if fmt.startswith(prefix_lower):
+                yield Completion(
+                    fmt[len(arg_prefix) :],
+                    start_position=0,
+                    display=fmt,
+                    display_meta="output format",
                 )
 
     def _chain_id_completions(self, arg_prefix: str):
