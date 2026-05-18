@@ -398,7 +398,9 @@ class Terminal:
                             print(OutputFormatter.convert_list_of_dicts(table))
                 else:
                     print(OutputFormatter.convert_list_of_dicts(cached_rows))
-                logger.warning("Cached output. Use --force to re-execute.")
+                mtime = self._output_cache.get_mtime(ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str)
+                ts = mtime.strftime("%Y-%m-%d %H:%M:%S UTC") if mtime else "unknown"
+                logger.warning(f"Cached output from {ts}. Use --force to re-execute.")
                 return None
             # Fall back to text cache (unstructured output)
             cached = self._output_cache.get(
@@ -407,7 +409,9 @@ class Terminal:
             if cached is not None:
                 logger.debug(f"Cache hit for '{canonical_name}' on {server_name}")
                 print(cached, end="")
-                logger.warning("Cached output. Use --force to re-execute.")
+                mtime = self._output_cache.get_mtime(ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str)
+                ts = mtime.strftime("%Y-%m-%d %H:%M:%S UTC") if mtime else "unknown"
+                logger.warning(f"Cached output from {ts}. Use --force to re-execute.")
                 return None
 
         logger.info(f"Executing action '{action_name}' against {server_name}")

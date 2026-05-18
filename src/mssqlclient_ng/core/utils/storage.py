@@ -346,6 +346,24 @@ class OutputCache:
         except Exception as ex:
             logger.debug(f"Failed to cache output: {ex}")
 
+    def get_mtime(
+        self,
+        execution_server: str,
+        system_user: str,
+        chain_spec: str,
+        database: str,
+        action_name: str,
+        args: str,
+    ) -> Optional[datetime]:
+        """Return the modification time (UTC) of the cache file, or None if absent."""
+        ctx = self._context_hash(execution_server, system_user, chain_spec, database)
+        key = self._action_key(action_name, args)
+        for ext in (".json", ".txt"):
+            cache_file = self._cache_dir / ctx / f"{key}{ext}"
+            if cache_file.is_file():
+                return datetime.fromtimestamp(cache_file.stat().st_mtime, tz=timezone.utc)
+        return None
+
     def flush(
         self,
         execution_server: str = "",
