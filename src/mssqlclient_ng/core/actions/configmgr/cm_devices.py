@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -19,6 +20,15 @@ class CMDevices(CMBaseAction):
     Enumerate ConfigMgr-managed devices with filtering by name, domain, user, IP, or collection.
     """
 
+    _name: str = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by device name")  # type: ignore[assignment]
+    _domain: str = Arg(short_name="d", long_name="domain", default="", description="Filter by domain")  # type: ignore[assignment]
+    _username: str = Arg(short_name="u", long_name="user", default="", description="Filter by last logged-in user")  # type: ignore[assignment]
+    _ip: str = Arg(short_name="i", long_name="ip", default="", description="Filter by IP address")  # type: ignore[assignment]
+    _collection: str = Arg(short_name="c", long_name="collection", default="", description="Filter by collection name")  # type: ignore[assignment]
+    _online_only: bool = Arg(short_name="o", long_name="online", toggle=True, description="Show only online devices")  # type: ignore[assignment]
+    _client_only: bool = Arg(long_name="client-only", toggle=True, description="Show only devices with CM client")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _count_only: bool = Arg(long_name="count", toggle=True, description="Return only device count")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

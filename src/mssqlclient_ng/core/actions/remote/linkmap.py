@@ -11,7 +11,7 @@ import time
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..database.impersonation_map import ImpersonationMap
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
@@ -162,6 +162,8 @@ class LinkMap(BaseAction):
 
     DEFAULT_MAX_DEPTH = 7
     MAX_ALLOWED_DEPTH = 15
+
+    _limit: int = Arg(position=0, default=7, description=f"Maximum recursion depth (1-15, default: 7)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

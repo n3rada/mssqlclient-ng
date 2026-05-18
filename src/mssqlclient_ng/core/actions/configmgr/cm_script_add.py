@@ -10,6 +10,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -22,6 +23,9 @@ class CMScriptAdd(CMBaseAction):
     Automatically sets script to approved state. Returns script GUID needed for cm-script-run.
     """
 
+    _script_content: str = Arg(position=0, long_name="content", required=True, description="PowerShell script content")  # type: ignore[assignment]
+    _script_name: str = Arg(short_name="n", long_name="name", default="", description="Script name (auto-generated if omitted)")  # type: ignore[assignment]
+    _script_guid: str = Arg(short_name="g", long_name="guid", default="", description="Script GUID (auto-generated if omitted)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
@@ -33,7 +37,9 @@ class CMScriptAdd(CMBaseAction):
         named, positional = self._parse_action_arguments(additional_arguments)
 
         # Script content is required - can be passed as positional or --content
-        self._script_content = named.get("content", "") or self.get_positional_argument(positional, 0, "")
+        self._script_content = named.get("content", "") or self.get_positional_argument(
+            positional, 0, ""
+        )
         if not self._script_content:
             raise ValueError(
                 "Script content is required. "
@@ -81,9 +87,15 @@ VALUES
                 logger.info(f"  GUID: {self._script_guid}")
                 logger.info(f"  Name: {self._script_name}")
                 logger.info(f"  Hash: {script_hash}")
-                logger.info("Use 'cm-script-run --resourceid <ID> --scriptguid " + self._script_guid + "' to execute")
+                logger.info(
+                    "Use 'cm-script-run --resourceid <ID> --scriptguid "
+                    + self._script_guid
+                    + "' to execute"
+                )
 
-                return [{"ScriptGuid": self._script_guid, "ScriptName": self._script_name}]
+                return [
+                    {"ScriptGuid": self._script_guid, "ScriptName": self._script_name}
+                ]
 
             except Exception as ex:
                 logger.error(f"Failed to add script: {ex}")

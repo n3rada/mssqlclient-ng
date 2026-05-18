@@ -7,7 +7,7 @@ from typing import List, Dict
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..domain.addomain import DomainSid
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
@@ -27,6 +27,9 @@ class RidCycle(BaseAction):
     RID enumeration via cycling through RIDs using SUSER_SNAME(SID_BINARY('S-...-RID')).
     Enumerates domain objects (users and groups), not group membership.
     """
+
+    _max_rid: int = Arg(position=0, default=10000, description="Maximum RID to enumerate (default: 10000)")  # type: ignore[assignment]
+    _format: str = Arg(long_name="format", default="", description="Output format: bash, python, table")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

@@ -22,9 +22,6 @@ class CMInfo(CMBaseAction):
     database server, and management point details.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info("Detecting ConfigMgr databases")
 

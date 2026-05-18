@@ -7,7 +7,7 @@ from typing import Optional, List
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
@@ -26,12 +26,17 @@ class RunExecutable(BaseAction):
     The action verifies the file exists before attempting execution.
     """
 
+    _file_path: str = Arg(position=0, required=True, description="Remote file path to execute")  # type: ignore[assignment]
+    _arguments: str = Arg(position=1, remainder=True, default="", description="Additional arguments to pass to the file")  # type: ignore[assignment]
+    _wait: bool = Arg(short_name="w", long_name="wait", toggle=True, description="Execute synchronously (wait for completion)")  # type: ignore[assignment]
+    _capture_output: bool = Arg(short_name="o", long_name="capture-output", toggle=True, description="Capture stdout/stderr via xp_cmdshell (implies --wait)")  # type: ignore[assignment]
+
     def __init__(self):
         super().__init__()
         self._file_path: str = ""
         self._arguments: str = ""
-        self._async_mode: bool = True  # Default to async (non-blocking)
-        self._capture_output: bool = False  # Force xp_cmdshell for output capture
+        self._async_mode: bool = True
+        self._capture_output: bool = False
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -347,17 +352,3 @@ class RunExecutable(BaseAction):
         except Exception as e:
             logger.error(f"Failed to execute via xp_cmdshell: {e}")
             return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "Remote file path to execute",
-            "Optional: --wait or -w to execute synchronously (returns exit code)",
-            "Optional: --capture-output or -o to capture stdout/stderr (forces xp_cmdshell)",
-            "Optional: additional command-line arguments to pass to the file",
-        ]

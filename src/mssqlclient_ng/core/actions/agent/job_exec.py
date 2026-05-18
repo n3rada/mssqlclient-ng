@@ -9,7 +9,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
@@ -26,47 +26,29 @@ class JobExec(BaseAction):
 
     VALID_SUBSYSTEMS = ("CmdExec", "PowerShell", "TSQL", "VBScript")
 
-    def __init__(self):
-        super().__init__()
-        self._command: str = ""
-        self._subsystem: str = "PowerShell"
-        self._wait: bool = False
-        self._timeout: int = 30
+    _command: str = Arg(position=0, remainder=True, required=True, description="Command to execute")  # type: ignore[assignment]
+    _subsystem: str = Arg(short_name="s", long_name="subsystem", default="PowerShell", description="Subsystem: CmdExec, PowerShell, TSQL, VBScript")  # type: ignore[assignment]
+    _wait: bool = Arg(short_name="w", long_name="wait", toggle=True, description="Poll for completion and retrieve output from sysjobhistory")  # type: ignore[assignment]
+    _timeout: int = Arg(short_name="t", long_name="timeout", default=30, description="Polling timeout in seconds")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        if not additional_arguments or not additional_arguments.strip():
+        super().validate_arguments(additional_arguments)
+        self._timeout = int(self._timeout)
+        if self._timeout < 1:
+            raise ValueError("Timeout must be at least 1 second")
+        matched = next(
+            (
+                s
+                for s in self.VALID_SUBSYSTEMS
+                if s.lower() == str(self._subsystem).lower()
+            ),
+            None,
+        )
+        if not matched:
             raise ValueError(
-                "Missing command to execute. "
-                "Usage: job-exec <command> [--subsystem CmdExec|PowerShell|TSQL|VBScript] [--wait] [--timeout N]"
+                f"Invalid subsystem: {self._subsystem}. Valid: {', '.join(self.VALID_SUBSYSTEMS)}"
             )
-
-        named_args, positional = self._parse_action_arguments(additional_arguments)
-
-        if not positional:
-            raise ValueError("Missing command to execute.")
-
-        self._command = " ".join(positional)
-
-        if "subsystem" in named_args or "s" in named_args:
-            sub = named_args.get("subsystem", named_args.get("s", "PowerShell"))
-            # Case-insensitive match
-            matched = next(
-                (s for s in self.VALID_SUBSYSTEMS if s.lower() == sub.lower()), None
-            )
-            if not matched:
-                raise ValueError(
-                    f"Invalid subsystem: {sub}. Valid: {', '.join(self.VALID_SUBSYSTEMS)}"
-                )
-            self._subsystem = matched
-
-        if "wait" in named_args or "w" in named_args:
-            self._wait = True
-
-        if "timeout" in named_args or "t" in named_args:
-            t = named_args.get("timeout", named_args.get("t", "30"))
-            self._timeout = int(t)
-            if self._timeout < 1:
-                raise ValueError("Timeout must be at least 1 second")
+        self._subsystem = matched
 
     def execute(self, database_context: DatabaseContext) -> Optional[bool]:
         # Check agent is running
@@ -184,11 +166,3 @@ class JobExec(BaseAction):
             )
         except Exception:
             pass
-
-    def get_arguments(self) -> list:
-        return [
-            "<command>",
-            "[--subsystem CmdExec|PowerShell|TSQL|VBScript]",
-            "[--wait]",
-            "[--timeout N]",
-        ]

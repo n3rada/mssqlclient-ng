@@ -20,9 +20,6 @@ class CMAccounts(CMBaseAction):
     Client Push accounts, and Task Sequence accounts.
     """
 
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        pass
-
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info("Enumerating ConfigMgr user accounts (NAA, Client Push, Task Sequence)")
 

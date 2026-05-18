@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -30,22 +30,11 @@ class JobProxies(BaseAction):
       3. Proxy -> Login mappings (which logins can use the proxy)
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._limit: int = 25
+    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            return
-
-        named, _ = self._parse_action_arguments(additional_arguments)
-        limit_str = named.get("limit", named.get("l", ""))
-        if limit_str:
-            try:
-                self._limit = int(limit_str)
-            except ValueError:
-                raise ValueError(f"Invalid limit value: {limit_str}")
+        super().validate_arguments(additional_arguments)
+        self._limit = int(self._limit)
 
     def execute(
         self, database_context: DatabaseContext
@@ -121,6 +110,3 @@ ORDER BY p.name;"""
             logger.success(f"Found {len(logins)} login mapping(s)")
 
         return proxies
-
-    def get_arguments(self) -> List[str]:
-        return ["[-l|--limit <n>]"]

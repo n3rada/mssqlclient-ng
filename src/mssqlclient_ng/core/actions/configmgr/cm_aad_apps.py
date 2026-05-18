@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -24,14 +25,7 @@ class CMAadApps(CMBaseAction):
     Shows AAD tenant IDs, application (client) IDs, and encrypted secret key blobs.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._filter: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._filter = named.get("filter", named.get("f", "")) or self.get_positional_argument(positional, 0, "")
+    _filter: str = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by application name")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         filter_msg = f" (filter: {self._filter})" if self._filter else ""

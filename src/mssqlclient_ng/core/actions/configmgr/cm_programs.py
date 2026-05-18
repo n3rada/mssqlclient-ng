@@ -7,33 +7,30 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-programs", "Enumerate ConfigMgr programs with command lines")
+@ActionFactory.register(
+    "cm-programs", "Enumerate ConfigMgr programs with command lines"
+)
 class CMPrograms(CMBaseAction):
     """
     Enumerate ConfigMgr programs (legacy package execution configurations) with command lines.
     Programs define how packages are executed.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._package_id: str = ""
-        self._program_name: str = ""
-        self._command_line: str = ""
-        self._limit: int = 25
+    _package_id: str = Arg(short_name="p", long_name="package", default="", description="Filter by PackageID")  # type: ignore[assignment]
+    _program_name: str = Arg(short_name="n", long_name="name", default="", description="Filter by program name")  # type: ignore[assignment]
+    _command_line: str = Arg(short_name="c", long_name="commandline", default="", description="Filter by command line")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._package_id = named.get("package", named.get("p", ""))
-        self._program_name = named.get("name", named.get("n", ""))
-        self._command_line = named.get("commandline", named.get("c", ""))
-        self._limit = int(named.get("limit", "25"))
+        super().validate_arguments(additional_arguments)
+        self._limit = int(self._limit)
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         filters = []
@@ -43,7 +40,9 @@ class CMPrograms(CMBaseAction):
             filters.append(f"name: {self._program_name}")
         if self._command_line:
             filters.append(f"commandline: {self._command_line}")
-        logger.info(f"Enumerating ConfigMgr programs{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Enumerating ConfigMgr programs{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:
@@ -84,7 +83,9 @@ ORDER BY pr.PackageID, pr.ProgramName;"""
                 if results:
                     for row in results:
                         if "ProgramFlags" in row and row["ProgramFlags"] is not None:
-                            row["ProgramFlags"] = CMService.decode_program_flags(row["ProgramFlags"])
+                            row["ProgramFlags"] = CMService.decode_program_flags(
+                                row["ProgramFlags"]
+                            )
                     logger.success(f"Found {len(results)} program(s)")
                     print(OutputFormatter.convert_list_of_dicts(results))
                 else:

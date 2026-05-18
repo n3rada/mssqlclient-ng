@@ -9,6 +9,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -22,6 +23,8 @@ class CMScriptRun(CMBaseAction):
     Returns Task ID for monitoring with cm-script-status.
     """
 
+    _resource_id: str = Arg(short_name="r", long_name="resourceid", required=True, description="Target device ResourceID (from cm-devices)")  # type: ignore[assignment]
+    _script_guid: str = Arg(short_name="g", long_name="scriptguid", required=True, description="Script GUID (from cm-scripts)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

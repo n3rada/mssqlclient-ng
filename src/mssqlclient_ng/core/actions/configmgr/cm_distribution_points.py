@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -24,6 +25,9 @@ class CMDistributionPoints(CMBaseAction):
     Distribution points store all deployed content.
     """
 
+    _server: str = Arg(short_name="s", long_name="server", default="", description="Filter by server name")  # type: ignore[assignment]
+    _active_only: bool = Arg(short_name="a", long_name="active", toggle=True, description="Show only active distribution points")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

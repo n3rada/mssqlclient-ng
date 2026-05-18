@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -25,32 +25,13 @@ class JobHistory(BaseAction):
     Use --failed/-f to show only failed runs.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._name: str = ""
-        self._limit: int = 25
-        self._failed_only: bool = False
+    _name: str = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by job name (substring match)")  # type: ignore[assignment]
+    _failed_only: bool = Arg(short_name="f", long_name="failed", toggle=True, description="Show only failed runs")  # type: ignore[assignment]
+    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            return
-
-        named, positional = self._parse_action_arguments(additional_arguments)
-
-        if positional:
-            self._name = positional[0]
-        self._name = named.get("name", named.get("n", self._name))
-
-        if "failed" in named or "f" in named:
-            self._failed_only = True
-
-        limit_str = named.get("limit", named.get("l", ""))
-        if limit_str:
-            try:
-                self._limit = int(limit_str)
-            except ValueError:
-                raise ValueError(f"Invalid limit value: {limit_str}")
+        super().validate_arguments(additional_arguments)
+        self._limit = int(self._limit)
 
     def execute(
         self, database_context: DatabaseContext
@@ -104,10 +85,3 @@ ORDER BY h.run_date DESC, h.run_time DESC;"""
         print(OutputFormatter.convert_list_of_dicts(result))
         logger.success(f"Found {len(result)} history record(s)")
         return result
-
-    def get_arguments(self) -> List[str]:
-        return [
-            "[-n|--name <filter>]",
-            "[-f|--failed]",
-            "[-l|--limit <n>]",
-        ]

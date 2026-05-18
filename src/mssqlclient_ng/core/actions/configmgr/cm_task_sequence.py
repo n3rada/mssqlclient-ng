@@ -7,29 +7,23 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-tasksequence", "Display details of a specific task sequence")
+@ActionFactory.register(
+    "cm-tasksequence", "Display details of a specific task sequence"
+)
 class CMTaskSequence(CMBaseAction):
     """
     Display detailed information about a specific ConfigMgr Task Sequence
     including all referenced content (packages, drivers, applications, OS images, boot images).
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._package_id: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._package_id = self.get_positional_argument(positional, 0, "")
-        if not self._package_id:
-            raise ValueError("Task Sequence PackageID is required. Usage: cm-tasksequence <PackageID>")
+    _package_id: str = Arg(position=0, required=True, description="Task Sequence PackageID")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving task sequence details for: {self._package_id}")
@@ -74,7 +68,9 @@ ORDER BY ref.PackageID;"""
                     if refs:
                         for r in refs:
                             if "PackageType" in r:
-                                r["PackageType"] = CMService.decode_package_type(r["PackageType"])
+                                r["PackageType"] = CMService.decode_package_type(
+                                    r["PackageType"]
+                                )
                         logger.success(f"Referenced Content ({len(refs)})")
                         print(OutputFormatter.convert_list_of_dicts(refs))
                 except Exception:

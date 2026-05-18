@@ -162,3 +162,82 @@ class TestBuiltinActionsRegistered:
 
     def test_impersonate_registered(self):
         assert ActionFactory.action_exists("impersonate")
+
+
+class TestArgDescriptorConvention:
+    """
+    Enforce that every registered action declaring arguments uses Arg descriptors.
+
+    Any action class that overrides validate_arguments() MUST declare at least
+    one Arg class-level descriptor so that display_action_help() can render a
+    proper argparse-style usage / options section.  Zero-argument actions that
+    inherit the base no-op validate_arguments() are exempt.
+    """
+
+    def _collect_violations(self) -> list[str]:
+        from mssqlclient_ng.core.actions import (
+            agent,
+            administration,
+            configmgr,
+            database,
+            domain,
+            execution,
+            filesystem,
+            remote,
+        )
+
+        violations = []
+        for name in sorted(ActionFactory.list_actions()):
+            action = ActionFactory.get_action(name)
+            if action is None:
+                continue
+            cls = type(action)
+            has_override = "validate_arguments" in vars(cls)
+            has_arg_fields = bool(cls._get_arg_fields())
+            if has_override and not has_arg_fields:
+                violations.append(f"{name} ({cls.__name__})")
+        return violations
+
+    def test_all_actions_with_validate_override_have_arg_descriptors(self):
+        """Every action overriding validate_arguments() must have at least one Arg field."""
+        violations = self._collect_violations()
+        assert violations == [], (
+            "Actions override validate_arguments() without any Arg descriptor.\n"
+            "Declare arguments using Arg() class-level descriptors:\n"
+            + "\n".join(f"  - {v}" for v in violations)
+        )
+
+    @pytest.mark.parametrize(
+        "action_name",
+        sorted(
+            name
+            for name in ActionFactory.list_actions()
+        ),
+    )
+    def test_action_arg_descriptor_convention(self, action_name: str):
+        """Each action is checked individually for the Arg descriptor convention."""
+        from mssqlclient_ng.core.actions import (
+            agent,
+            administration,
+            configmgr,
+            database,
+            domain,
+            execution,
+            filesystem,
+            remote,
+        )
+
+        action = ActionFactory.get_action(action_name)
+        if action is None:
+            pytest.skip(f"Action {action_name!r} could not be instantiated")
+
+        cls = type(action)
+        has_override = "validate_arguments" in vars(cls)
+        has_arg_fields = bool(cls._get_arg_fields())
+
+        if has_override and not has_arg_fields:
+            pytest.fail(
+                f"{action_name!r} ({cls.__name__}) overrides validate_arguments() "
+                f"but declares no Arg descriptors. "
+                f"Add Arg() class-level fields or remove the empty override."
+            )

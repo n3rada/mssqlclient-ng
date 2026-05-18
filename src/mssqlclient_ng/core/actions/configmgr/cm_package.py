@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -17,16 +18,7 @@ from ...utils.formatters import OutputFormatter
 class CMPackage(CMBaseAction):
     """Display detailed information about a specific ConfigMgr package including its programs."""
 
-
-    def __init__(self):
-        super().__init__()
-        self._package_id: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._package_id = self.get_positional_argument(positional, 0, "")
-        if not self._package_id:
-            raise ValueError("PackageID is required. Usage: cm-package <PackageID>")
+    _package_id: str = Arg(position=0, required=True, description="Package ID to inspect")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving package details for: {self._package_id}")
@@ -59,7 +51,9 @@ WHERE PackageID = '{self._package_id}';"""
                 if programs:
                     for prog in programs:
                         if "ProgramFlags" in prog and prog["ProgramFlags"] is not None:
-                            prog["ProgramFlags"] = CMService.decode_program_flags(prog["ProgramFlags"])
+                            prog["ProgramFlags"] = CMService.decode_program_flags(
+                                prog["ProgramFlags"]
+                            )
                     logger.success(f"Programs ({len(programs)})")
                     print(OutputFormatter.convert_list_of_dicts(programs))
 

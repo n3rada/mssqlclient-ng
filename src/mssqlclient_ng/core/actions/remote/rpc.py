@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters.formatter import OutputFormatter
@@ -44,6 +44,9 @@ class RemoteProcedureCall(BaseAction):
         "false": RpcActionMode.DISABLE,
         "disable": RpcActionMode.DISABLE,
     }
+
+    _action_str: str = Arg(position=0, required=True, description="Action: enable/on/1/add or disable/off/0/del")  # type: ignore[assignment]
+    _linked_server_name: str = Arg(position=1, required=True, description="Linked server name")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
@@ -138,15 +141,3 @@ class RemoteProcedureCall(BaseAction):
                 f"Failed to execute RPC {self._action.value} on '{self._linked_server_name}': {e}"
             )
             raise
-
-    def get_arguments(self) -> List[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List of argument descriptions.
-        """
-        return [
-            "Action: add/on/1/true/enable to enable RPC Out, del/off/0/false/disable to disable",
-            "Linked server name",
-        ]

@@ -7,10 +7,10 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
-
 
 BUILT_IN_CMPIVOT_GUID = "7DC6B6F1-E7F6-43C1-96E0-E1D16BC25C14"
 
@@ -22,16 +22,10 @@ class CMScriptDelete(CMBaseAction):
     Blocks deletion of built-in CMPivot script.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._script_guid: str = ""
+    _script_guid: str = Arg(position=0, short_name="g", long_name="guid", required=True, description="Script GUID to delete")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._script_guid = named.get("guid", named.get("g", "")) or self.get_positional_argument(positional, 0, "")
-        if not self._script_guid:
-            raise ValueError("Script GUID is required. Usage: cm-script-delete <GUID>")
+        super().validate_arguments(additional_arguments)
         if self._script_guid.upper() == BUILT_IN_CMPIVOT_GUID:
             raise ValueError("Cannot delete the built-in CMPivot script")
 
@@ -48,10 +42,14 @@ class CMScriptDelete(CMBaseAction):
 
             try:
                 delete_query = f"DELETE FROM [{db}].dbo.Scripts WHERE ScriptGuid = '{self._script_guid}';"
-                rows_affected = database_context.query_service.execute_non_processing(delete_query)
+                rows_affected = database_context.query_service.execute_non_processing(
+                    delete_query
+                )
 
                 if rows_affected and rows_affected > 0:
-                    logger.success(f"Script deleted successfully ({rows_affected} row(s) affected)")
+                    logger.success(
+                        f"Script deleted successfully ({rows_affected} row(s) affected)"
+                    )
                 else:
                     logger.warning(f"No script found with GUID: {self._script_guid}")
             except Exception as ex:

@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -27,31 +27,12 @@ class Job(BaseAction):
     Accepts job name or job_id GUID as identifier.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._job_identifier: str = ""
-        self._history_limit: int = 25
+    _job_identifier: str = Arg(position=0, required=True, description="Job name or job_id GUID")  # type: ignore[assignment]
+    _history_limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap history record count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            raise ValueError(
-                "Job name or job_id is required. Example: job 'Full Backup'"
-            )
-
-        named, positional = self._parse_action_arguments(additional_arguments)
-
-        if positional:
-            self._job_identifier = positional[0]
-        else:
-            raise ValueError("Job name or job_id is required.")
-
-        limit_str = named.get("limit", named.get("l", ""))
-        if limit_str:
-            try:
-                self._history_limit = int(limit_str)
-            except ValueError:
-                raise ValueError(f"Invalid limit value: {limit_str}")
+        super().validate_arguments(additional_arguments)
+        self._history_limit = int(self._history_limit)
 
     def execute(
         self, database_context: DatabaseContext
@@ -220,6 +201,3 @@ ORDER BY h.run_date DESC, h.run_time DESC;"""
             logger.success(f"Found {len(history)} history record(s)")
 
         return job_info
-
-    def get_arguments(self) -> List[str]:
-        return ["<job_name|job_id>", "[-l|--limit <n>]"]

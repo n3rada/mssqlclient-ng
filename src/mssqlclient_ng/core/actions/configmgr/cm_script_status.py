@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -20,6 +21,7 @@ class CMScriptStatus(CMBaseAction):
     Shows task state (Pending/Success/Failed), execution time, script output, and errors.
     """
 
+    _task_id: str = Arg(position=0, short_name="t", long_name="taskid", required=True, description="Task ID returned by cm-script-run")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

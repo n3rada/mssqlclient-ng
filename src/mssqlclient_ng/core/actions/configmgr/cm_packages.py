@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -20,6 +21,10 @@ class CMPackages(CMBaseAction):
     Packages are the legacy deployment model.
     """
 
+    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by package name")  # type: ignore[assignment]
+    _source_path: str = Arg(short_name="s", long_name="source", default="", description="Filter by source path")  # type: ignore[assignment]
+    _manufacturer: str = Arg(short_name="m", long_name="manufacturer", default="", description="Filter by manufacturer")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

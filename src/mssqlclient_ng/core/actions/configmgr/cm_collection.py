@@ -7,35 +7,36 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-collection", "Display details of a specific ConfigMgr collection")
+@ActionFactory.register(
+    "cm-collection", "Display details of a specific ConfigMgr collection"
+)
 class CMCollection(CMBaseAction):
     """
     Display comprehensive information about a specific ConfigMgr collection including all members.
     Supports lookup by Collection ID or name pattern.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._collection_id: str = ""
-        self._collection_name: str = ""
+    _collection_id: str = Arg(position=0, default="", description="Collection ID")  # type: ignore[assignment]
+    _collection_name: str = Arg(short_name="n", long_name="name", default="", description="Collection name pattern")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._collection_id = self.get_positional_argument(positional, 0, "") or ""
-        self._collection_name = named.get("name", named.get("n", ""))
-
+        super().validate_arguments(additional_arguments)
         if not self._collection_id and not self._collection_name:
             raise ValueError("Collection ID or --name is required.")
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
-        search_msg = f"ID: {self._collection_id}" if self._collection_id else f"name: {self._collection_name}"
+        search_msg = (
+            f"ID: {self._collection_id}"
+            if self._collection_id
+            else f"name: {self._collection_name}"
+        )
         logger.info(f"Retrieving collection information for {search_msg}")
 
         databases = self._get_databases(database_context)

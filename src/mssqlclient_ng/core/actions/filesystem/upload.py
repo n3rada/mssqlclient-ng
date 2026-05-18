@@ -9,7 +9,7 @@ from typing import Optional, List
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
@@ -29,6 +29,8 @@ class Upload(BaseAction):
     2. xp_cmdshell with PowerShell -EncodedCommand (if OLE is disabled)
     """
 
+    _local_path_str: str = Arg(position=0, required=True, description="Local file path to upload")  # type: ignore[assignment]
+    _remote_path: str = Arg(position=1, default="", description="Remote destination path (default: C:\\Windows\\Tasks\\)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
@@ -51,7 +53,7 @@ class Upload(BaseAction):
         _, positional_args = self._parse_action_arguments(
             additional_arguments=additional_arguments
         )
-        
+
         if len(positional_args) < 1:
             raise ValueError(
                 "Upload action requires at least one argument: <local_path> [remote_path]"

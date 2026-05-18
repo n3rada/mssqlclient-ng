@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -24,22 +25,15 @@ class CMDeploymentTypes(CMBaseAction):
     Shows technology type, install commands, content paths, and detection methods.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._technology: str = ""
-        self._content_path: str = ""
-        self._install_command: str = ""
-        self._application: str = ""
-        self._limit: int = 25
+    _technology: str = Arg(long_name="tech", default="", description="Filter by technology type")  # type: ignore[assignment]
+    _content_path: str = Arg(long_name="content", default="", description="Filter by content path")  # type: ignore[assignment]
+    _install_command: str = Arg(long_name="install", default="", description="Filter by install command")  # type: ignore[assignment]
+    _application: str = Arg(long_name="app", default="", description="Filter by application name")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._technology = named.get("tech", "")
-        self._content_path = named.get("content", "")
-        self._install_command = named.get("install", "")
-        self._application = named.get("app", "")
-        self._limit = int(named.get("limit", "25"))
+        super().validate_arguments(additional_arguments)
+        self._limit = int(self._limit)
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         filters = []
@@ -49,7 +43,9 @@ class CMDeploymentTypes(CMBaseAction):
             filters.append(f"content: {self._content_path}")
         if self._application:
             filters.append(f"app: {self._application}")
-        logger.info(f"Retrieving deployment types{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Retrieving deployment types{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:
@@ -112,11 +108,22 @@ ORDER BY ci.DateCreated DESC;"""
                         row["DetectionType"] = ""
 
                     # Apply post-query filters
-                    if self._technology and self._technology.lower() not in row["Technology"].lower():
+                    if (
+                        self._technology
+                        and self._technology.lower() not in row["Technology"].lower()
+                    ):
                         continue
-                    if self._content_path and self._content_path.lower() not in row.get("ContentLocation", "").lower():
+                    if (
+                        self._content_path
+                        and self._content_path.lower()
+                        not in row.get("ContentLocation", "").lower()
+                    ):
                         continue
-                    if self._install_command and self._install_command.lower() not in row.get("InstallCommand", "").lower():
+                    if (
+                        self._install_command
+                        and self._install_command.lower()
+                        not in row.get("InstallCommand", "").lower()
+                    ):
                         continue
 
                     display_results.append(row)

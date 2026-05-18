@@ -7,29 +7,23 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-device", "Display detailed info about a specific ConfigMgr device")
+@ActionFactory.register(
+    "cm-device", "Display detailed info about a specific ConfigMgr device"
+)
 class CMDevice(CMBaseAction):
     """
     Display comprehensive information about a specific ConfigMgr-managed device.
     Shows device details, collection memberships, deployments, and targeted content.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._device_name: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._device_name = named.get("name", named.get("n", "")) or self.get_positional_argument(positional, 0, "")
-        if not self._device_name:
-            raise ValueError("Device name is required. Usage: cm-device <device_name>")
+    _device_name: str = Arg(position=0, short_name="n", long_name="name", required=True, description="Device name")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving device information for: {self._device_name}")
@@ -73,7 +67,9 @@ WHERE sys.Name0 = '{self._device_name}';"""
 
                 device = results[0]
                 resource_id = device.get("ResourceID")
-                logger.success(f"Device: {device.get('DeviceName')} (ResourceID: {resource_id})")
+                logger.success(
+                    f"Device: {device.get('DeviceName')} (ResourceID: {resource_id})"
+                )
                 print(OutputFormatter.convert_list_of_dicts(results))
 
                 # Collection memberships

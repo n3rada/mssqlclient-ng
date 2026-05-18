@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -23,6 +24,7 @@ class CMRbacAdd(CMBaseAction):
     Queries existing admins, selects a template, and creates a new admin with matching patterns.
     """
 
+    _account_name: str = Arg(position=0, required=True, description="Account to add as CM admin (DOMAIN\\user)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

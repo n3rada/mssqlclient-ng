@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
@@ -29,6 +29,9 @@ class DataAccess(BaseAction):
     Enable aliases:  add, on, 1, true, enable
     Disable aliases: del, off, 0, false, disable
     """
+
+    _action: str = Arg(position=0, required=True, description="Action: enable/on/1/add or disable/off/0/del")  # type: ignore[assignment]
+    _linked_server_name: str = Arg(position=1, required=True, description="Linked server name")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
@@ -91,6 +94,3 @@ EXEC sp_serveroption
         else:
             logger.info("OPENQUERY operations are no longer available for this server.")
         return True
-
-    def get_arguments(self) -> list:
-        return ["<enable|disable|on|off|1|0>", "<linked-server-name>"]

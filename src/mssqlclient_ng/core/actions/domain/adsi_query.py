@@ -11,7 +11,7 @@ from ...utils.formatters import OutputFormatter
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
 
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 
 
@@ -26,6 +26,9 @@ class AdsiQuery(BaseAction):
     Allows querying Active Directory objects through SQL Server's OPENQUERY.
     """
 
+    _domain_fqdn: str = Arg(position=0, required=True, description="Domain FQDN (e.g. domain.local)")  # type: ignore[assignment]
+    _adsi_server_name: str = Arg(position=1, default="", description="ADSI linked server name (auto-creates temp if omitted)")  # type: ignore[assignment]
+    _preset: str = Arg(position=2, default="users", description="Preset: users, computers, groups, admins, ou, all — or a raw LDAP filter")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

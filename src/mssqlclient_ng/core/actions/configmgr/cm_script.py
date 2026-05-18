@@ -8,29 +8,23 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 
-@ActionFactory.register("cm-script", "Display details and content of a specific ConfigMgr script")
+@ActionFactory.register(
+    "cm-script", "Display details and content of a specific ConfigMgr script"
+)
 class CMScript(CMBaseAction):
     """
     Display detailed information for a specific ConfigMgr PowerShell script
     including full content and parameters.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._script_guid: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._script_guid = self.get_positional_argument(positional, 0, "")
-        if not self._script_guid:
-            raise ValueError("Script GUID is required. Usage: cm-script <GUID>")
+    _script_guid: str = Arg(position=0, required=True, description="Script GUID")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info(f"Retrieving ConfigMgr script: {self._script_guid}")
@@ -68,7 +62,9 @@ class CMScript(CMBaseAction):
                     try:
                         if isinstance(script_blob, bytes):
                             # Script stored as UTF-16LE with BOM
-                            script_content = script_blob.decode("utf-16-le", errors="replace")
+                            script_content = script_blob.decode(
+                                "utf-16-le", errors="replace"
+                            )
                         else:
                             script_content = str(script_blob)
 

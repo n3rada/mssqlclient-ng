@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -24,6 +25,7 @@ class CMDeploymentType(CMBaseAction):
     Shows install/uninstall commands, detection methods, content location, and execution context.
     """
 
+    _ci_id: str = Arg(position=0, required=True, description="Deployment type CI_ID integer")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

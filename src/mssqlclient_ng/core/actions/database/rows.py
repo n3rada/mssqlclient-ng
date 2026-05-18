@@ -7,7 +7,7 @@ from typing import Optional
 from loguru import logger
 
 # Local imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -26,6 +26,9 @@ class Rows(BaseAction):
     Optional arguments:
     - -l/--limit: Maximum number of rows to retrieve (default: 25, 0 = unlimited)
     """
+
+    _fqtn: str = Arg(position=0, required=True, description="Table name or FQTN (database.schema.table)")  # type: ignore[assignment]
+    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Max rows to retrieve (0 = unlimited)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

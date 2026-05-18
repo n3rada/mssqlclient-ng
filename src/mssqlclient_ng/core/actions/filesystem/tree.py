@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
@@ -38,6 +38,11 @@ class Tree(BaseAction):
         tree "C:\My Documents" --depth 5
         tree C:\Windows 2 --files false
     """
+
+    _path: str = Arg(position=0, default=".", description="Directory path to enumerate")  # type: ignore[assignment]
+    _depth: int = Arg(position=1, short_name="d", long_name="depth", default=3, description="Recursion depth (1-255, default: 3)")  # type: ignore[assignment]
+    _show_files: bool = Arg(long_name="files", short_name="f", toggle=True, description="Include files (default: on)")  # type: ignore[assignment]
+    _use_unicode: bool = Arg(long_name="unicode", short_name="u", toggle=True, description="Use Unicode box-drawing characters (default: on)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

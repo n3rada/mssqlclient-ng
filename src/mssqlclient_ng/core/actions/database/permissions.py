@@ -7,7 +7,7 @@ from typing import Optional, List, Dict
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -30,12 +30,13 @@ class Permissions(BaseAction):
     Schema defaults to the user's default schema if not explicitly specified.
     """
 
+    _fqtn: str = Arg(position=0, default="", description="[database.]schema.table (omit for server/db-level permissions)")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
         self._fqtn: str = ""
-        self._database: Optional[str] = None
-        self._schema: Optional[str] = None  # Let SQL Server use user's default schema
+        self._database = None
+        self._schema = None
         self._table: str = ""
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
@@ -265,12 +266,3 @@ class Permissions(BaseAction):
 
         # Default for unknown permissions
         return 100
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["[database.schema.table or schema.table]"]

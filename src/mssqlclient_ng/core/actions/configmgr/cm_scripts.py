@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -20,14 +21,7 @@ class CMScripts(CMBaseAction):
     Use 'cm-script <GUID>' to view full details and script content.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._name: str = ""
-
-    def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._name = named.get("name", named.get("n", "")) or self.get_positional_argument(positional, 0, "")
+    _name: str = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by script name")  # type: ignore[assignment]
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         logger.info("Enumerating ConfigMgr scripts")
@@ -59,7 +53,9 @@ ORDER BY LastUpdateTime DESC;"""
                 if results:
                     logger.success(f"Found {len(results)} script(s)")
                     print(OutputFormatter.convert_list_of_dicts(results))
-                    logger.info("Use 'cm-script <GUID>' to view full content and details")
+                    logger.info(
+                        "Use 'cm-script <GUID>' to view full content and details"
+                    )
                 else:
                     logger.warning("No scripts found")
             except Exception as ex:

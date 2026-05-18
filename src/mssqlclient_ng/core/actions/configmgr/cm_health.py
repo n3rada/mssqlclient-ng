@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -20,16 +21,12 @@ class CMHealth(CMBaseAction):
     Shows check-in times, inventory cycles, health evaluation results.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._filter: str = ""
-        self._limit: int = 25
+    _filter: str = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by device name")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._filter = named.get("filter", named.get("f", "")) or self.get_positional_argument(positional, 0, "")
-        self._limit = int(named.get("limit", "25"))
+        super().validate_arguments(additional_arguments)
+        self._limit = int(self._limit)
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         filter_msg = f" (filter: {self._filter})" if self._filter else ""

@@ -7,7 +7,7 @@ from typing import Optional, List
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -34,10 +34,13 @@ class Config(BaseAction):
         config xp_cmdshell 0        # Disable xp_cmdshell
     """
 
+    _option_name: str = Arg(position=0, default="", description="Configuration option name (omit to list all)")  # type: ignore[assignment]
+    _value: str = Arg(position=1, default="", description="Value to set: 1/0 or enable/disable (omit to show current)")  # type: ignore[assignment]
+
     def __init__(self):
         super().__init__()
-        self._option_name: Optional[str] = None
-        self._value: int = -1
+        self._option_name = None
+        self._value_int: int = -1
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -70,7 +73,7 @@ class Config(BaseAction):
             value_str = named_args.get("value", named_args.get("v", "-1"))
 
         try:
-            self._value = int(value_str)
+            self._value_int = int(value_str)
         except ValueError:
             # Support enable/disable text toggles
             toggle_map = {
@@ -89,17 +92,16 @@ class Config(BaseAction):
             }
             lower_val = value_str.lower()
             if lower_val in toggle_map:
-                self._value = toggle_map[lower_val]
+                self._value_int = toggle_map[lower_val]
             else:
                 raise ValueError(
                     f"Invalid value: {value_str}. Must be a number or enable/disable."
                 )
 
-        # Validation
-        if self._value < -1:
+        if self._value_int < -1:
             raise ValueError("Invalid value for configuration option")
 
-        if self._option_name and self._value >= 0 and self._value not in [0, 1]:
+        if self._option_name and self._value_int >= 0 and self._value_int not in [0, 1]:
             raise ValueError("Invalid value. Use 1 to enable or 0 to disable.")
 
     def execute(self, database_context: DatabaseContext) -> Optional[object]:
@@ -113,15 +115,15 @@ class Config(BaseAction):
             Status or list of configurations
         """
         # Mode 1: Set configuration option
-        if self._value >= 0 and self._option_name:
-            logger.info(f"Setting {self._option_name} to {self._value}")
+        if self._value_int >= 0 and self._option_name:
+            logger.info(f"Setting {self._option_name} to {self._value_int}")
             database_context.config_service.set_configuration_option(
-                self._option_name, self._value
+                self._option_name, self._value_int
             )
             return None
 
         # Mode 2: Show specific option status
-        if self._option_name and self._value < 0:
+        if self._option_name and self._value_int < 0:
             logger.info(f"Checking status of '{self._option_name}'")
             status = database_context.config_service.get_configuration_status(
                 self._option_name
@@ -217,12 +219,3 @@ class Config(BaseAction):
             results: List of configuration dictionaries
         """
         print(OutputFormatter.convert_list_of_dicts(results))
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["[option_name] [value]"]

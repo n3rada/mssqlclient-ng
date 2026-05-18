@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -24,18 +25,13 @@ class CMTaskSequences(CMBaseAction):
     Task Sequences are used for OS deployment and complex automation workflows.
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._name: str = ""
-        self._package_id: str = ""
-        self._limit: int = 25
+    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by name")  # type: ignore[assignment]
+    _package_id: str = Arg(short_name="i", long_name="packageid", default="", description="Filter by PackageID")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        named, positional = self._parse_action_arguments(additional_arguments)
-        self._name = named.get("name", named.get("n", ""))
-        self._package_id = named.get("packageid", named.get("i", ""))
-        self._limit = int(named.get("limit", "25"))
+        super().validate_arguments(additional_arguments)
+        self._limit = int(self._limit)
 
     def execute(self, database_context: DatabaseContext) -> Optional[list]:
         filters = []
@@ -43,7 +39,9 @@ class CMTaskSequences(CMBaseAction):
             filters.append(f"name: {self._name}")
         if self._package_id:
             filters.append(f"packageid: {self._package_id}")
-        logger.info(f"Enumerating ConfigMgr task sequences{' (' + ', '.join(filters) + ')' if filters else ''}")
+        logger.info(
+            f"Enumerating ConfigMgr task sequences{' (' + ', '.join(filters) + ')' if filters else ''}"
+        )
 
         databases = self._get_databases(database_context)
         if not databases:

@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -24,6 +25,11 @@ class CMDeployments(CMBaseAction):
     Filter by name, collection, type, or intent.
     """
 
+    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by software name")  # type: ignore[assignment]
+    _collection: str = Arg(short_name="c", long_name="collection", default="", description="Filter by collection name or ID")  # type: ignore[assignment]
+    _feature_type: str = Arg(short_name="t", long_name="type", default="", description="Filter by feature type (app/package/ts/...)")  # type: ignore[assignment]
+    _intent: str = Arg(short_name="i", long_name="intent", default="", description="Filter by intent (required/available)")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()

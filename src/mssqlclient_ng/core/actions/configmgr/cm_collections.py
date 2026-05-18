@@ -7,6 +7,7 @@ from typing import Optional
 from loguru import logger
 
 from .cm_base import CMBaseAction
+from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
@@ -22,6 +23,11 @@ class CMCollections(CMBaseAction):
     Filter by collection ID, name, or type (user/device).
     """
 
+    _collection_id: str = Arg(position=0, long_name="collection-id", default="", description="Filter by collection ID")  # type: ignore[assignment]
+    _name_filter: str = Arg(short_name="n", long_name="name", default="", description="Filter by name")  # type: ignore[assignment]
+    _collection_type: str = Arg(short_name="t", long_name="type", default="", description="Filter by type (user/device)")  # type: ignore[assignment]
+    _limit: int = Arg(long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
+    _with_members: bool = Arg(long_name="with-members", toggle=True, description="Include member count")  # type: ignore[assignment]
 
     def __init__(self):
         super().__init__()
