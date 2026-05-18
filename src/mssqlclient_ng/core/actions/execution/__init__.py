@@ -6,6 +6,7 @@ from .powershell import PowerShell
 from .ole import ObjectLinkingEmbedding
 from .clr import ClrExecution
 from .clr_list import ClrList
+from .clr_inspect import ClrInspect
 from .run import RunExecutable
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "ObjectLinkingEmbedding",
     "ClrExecution",
     "ClrList",
+    "ClrInspect",
     "RunExecutable",
 ]
