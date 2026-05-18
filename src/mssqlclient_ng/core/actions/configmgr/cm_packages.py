@@ -100,4 +100,4 @@ ORDER BY p.Name;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate packages: {ex}")
 
-        return None
+        return results

@@ -68,4 +68,4 @@ ORDER BY a.LastUpdateTime DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate AAD apps: {ex}")
 
-        return None
+        return results

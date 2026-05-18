@@ -57,4 +57,4 @@ ORDER BY sd.SiteCode, sd.SiteServerName;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate servers: {ex}")
 
-        return None
+        return results

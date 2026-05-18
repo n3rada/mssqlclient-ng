@@ -93,4 +93,4 @@ ORDER BY pr.PackageID, pr.ProgramName;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate programs: {ex}")
 
-        return None
+        return results

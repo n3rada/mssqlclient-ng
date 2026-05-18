@@ -108,4 +108,4 @@ ORDER BY MemberCount DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate collections: {ex}")
 
-        return None
+        return results

@@ -85,4 +85,4 @@ ORDER BY ServerName;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate distribution points: {ex}")
 
-        return None
+        return results

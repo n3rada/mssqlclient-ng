@@ -61,4 +61,4 @@ ORDER BY LastUpdateTime DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate scripts: {ex}")
 
-        return None
+        return results

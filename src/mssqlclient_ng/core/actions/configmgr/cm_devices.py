@@ -145,4 +145,4 @@ ORDER BY bgb.LastOnlineTime DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate devices: {ex}")
 
-        return None
+        return results

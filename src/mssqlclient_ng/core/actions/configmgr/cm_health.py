@@ -77,4 +77,4 @@ ORDER BY ch.LastActiveTime DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to query health data: {ex}")
 
-        return None
+        return results

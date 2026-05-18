@@ -51,4 +51,4 @@ class Sessions(BaseAction):
         result = database_context.query_service.execute_table(sessions_query)
         print(OutputFormatter.convert_list_of_dicts(result))
 
-        return None
+        return result

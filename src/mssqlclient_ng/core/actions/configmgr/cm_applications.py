@@ -103,4 +103,4 @@ ORDER BY ci.IsDeployed DESC, ci.DateCreated DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate applications: {ex}")
 
-        return None
+        return results

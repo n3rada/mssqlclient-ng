@@ -49,4 +49,4 @@ class CMAccounts(CMBaseAction):
             except Exception as ex:
                 logger.error(f"Failed to enumerate accounts: {ex}")
 
-        return None
+        return results

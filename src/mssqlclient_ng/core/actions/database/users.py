@@ -101,4 +101,4 @@ class Users(BaseAction):
             )
         )
 
-        return None
+        return raw_table

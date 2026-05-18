@@ -78,4 +78,4 @@ ORDER BY ts.Name;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate task sequences: {ex}")
 
-        return None
+        return results

@@ -136,4 +136,4 @@ ORDER BY ds.StartTime DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to enumerate deployments: {ex}")
 
-        return None
+        return results

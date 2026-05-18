@@ -62,4 +62,4 @@ class RoleMembers(BaseAction):
 
         print(OutputFormatter.convert_list_of_dicts(result))
 
-        return None
+        return result

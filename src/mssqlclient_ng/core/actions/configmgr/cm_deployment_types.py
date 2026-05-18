@@ -137,4 +137,4 @@ ORDER BY ci.DateCreated DESC;"""
             except Exception as ex:
                 logger.error(f"Failed to query deployment types: {ex}")
 
-        return None
+        return display_results
