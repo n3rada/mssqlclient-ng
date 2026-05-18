@@ -154,38 +154,95 @@ class ActionFactory:
 
     @classmethod
     def display_action_help(cls, action_name: str) -> None:
-        """
-        Display help information for an action.
+        """Display argparse-style help for an action."""
+        from .base import Arg
 
-        Args:
-            action_name: The action name
-        """
         action = cls.get_action(action_name)
         if action is None:
             print(f"Unknown action: {action_name}")
             return
 
-        # Get description from factory
-        description = cls.get_action_description(action_name)
+        description = cls.get_action_description(action_name) or ""
+        canonical = cls.resolve_alias(action_name)
+        aliases = [a for a, c in cls._aliases.items() if c == canonical]
+
+        # Build usage line from Arg descriptors
+        arg_fields = sorted(
+            action._get_arg_fields().items(),
+            key=lambda kv: (kv[1].position if kv[1].position >= 0 else 999),
+        )
+
+        usage_tokens = [f"!{action_name}"]
+        positional_args = []
+        option_args = []
+
+        for name, arg in arg_fields:
+            label = (arg.long_name or arg.short_name or name.lstrip("_")).upper()
+            if arg.position >= 0 and not arg.short_name and not arg.long_name:
+                # Pure positional
+                token = label if arg.required else f"[{label}]"
+                if arg.remainder:
+                    token = f"[{label} ...]" if not arg.required else f"{label} ..."
+                usage_tokens.append(token)
+                positional_args.append((label, arg))
+            else:
+                # Named / flag
+                if arg.toggle:
+                    flag = (
+                        f"-{arg.short_name}" if arg.short_name else f"--{arg.long_name}"
+                    )
+                    token = f"[{flag}]"
+                else:
+                    parts = []
+                    if arg.short_name:
+                        parts.append(f"-{arg.short_name}")
+                    if arg.long_name:
+                        parts.append(f"--{arg.long_name}")
+                    flag = ", ".join(parts) if parts else f"--{name.lstrip('_')}"
+                    token = f"[{flag} {label}]"
+                usage_tokens.append(token)
+                option_args.append((label, flag, arg))
 
         print()
-        print(f"Action: {action_name}")
-        print(f"Description: {description}")
+        print(f"usage: {' '.join(usage_tokens)}")
+        if aliases:
+            print(f"aliases: {', '.join(aliases)}")
+        print()
+        print(description)
 
-        # Get docstring if available
-        if action.__class__.__doc__:
-            doc = action.__class__.__doc__.strip()
-            if doc and doc != description:
-                print()
-                print(doc)
+        # Class docstring (skip if same as description)
+        doc = (action.__class__.__doc__ or "").strip()
+        if doc and doc != description:
+            print()
+            for line in doc.splitlines():
+                print(f"  {line}" if line.strip() else "")
 
-        # Get arguments if available
-        if hasattr(action, "get_arguments"):
-            arguments = action.get_arguments()
-            if arguments:
-                print()
-                print("Arguments:")
-                for i, arg in enumerate(arguments, 1):
-                    print(f"  {i}. {arg}")
+        # Positional arguments section
+        if positional_args:
+            print()
+            print("positional arguments:")
+            col = max(len(label) for label, _ in positional_args) + 4
+            for label, arg in positional_args:
+                desc = arg.description or ""
+                if arg.default is not None and arg.default != "":
+                    desc += f" (default: {arg.default})"
+                print(f"  {label:<{col}}{desc}")
+
+        # Options section
+        if option_args:
+            print()
+            print("options:")
+            col = max(len(f"{flag} {label}") for label, flag, _ in option_args) + 4
+            for label, flag, arg in option_args:
+                if arg.toggle:
+                    entry = flag
+                else:
+                    entry = f"{flag} {label}"
+                desc = arg.description or ""
+                if arg.required:
+                    desc += " (required)"
+                elif arg.default is not None and arg.default != "" and not arg.toggle:
+                    desc += f" (default: {arg.default})"
+                print(f"  {entry:<{col}}{desc}")
 
         print()
