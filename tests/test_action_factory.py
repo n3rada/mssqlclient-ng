@@ -16,7 +16,7 @@ class DummyAction(BaseAction):
     def validate_arguments(self, additional_arguments: str = "") -> None:
         pass
 
-    def execute(self, database_context=None) -> None:
+    def execute(self, database_context=None):
         return "dummy_result"
 
 
