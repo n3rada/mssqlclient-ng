@@ -18,7 +18,7 @@ from prompt_toolkit.history import ThreadedHistory, InMemoryHistory, FileHistory
 from prompt_toolkit.cursor_shapes import CursorShape
 from prompt_toolkit.completion import merge_completers
 from prompt_toolkit.styles import style_from_pygments_cls
-from prompt_toolkit.lexers import PygmentsLexer
+from prompt_toolkit.lexers import Lexer, PygmentsLexer
 
 from pygments.lexers.sql import SqlLexer
 from pygments.styles import get_style_by_name
@@ -45,6 +45,30 @@ from .actions.factory import ActionFactory
 from .actions.execution import query
 
 SQL_STYLE = style_from_pygments_cls(get_style_by_name("one-dark"))
+
+
+class _PrefixAwareLexer(Lexer):
+    """Apply SQL highlighting only to non-prefixed lines.
+
+    Lines starting with the action prefix (e.g. "!") are returned as plain
+    unstyled text so the SQL lexer does not fragment action names like
+    '!impersonation-map' into multiple colours.
+    """
+
+    def __init__(self, prefix: str = "!"):
+        self._prefix = prefix
+        self._sql_lexer = PygmentsLexer(SqlLexer)
+
+    def lex_document(self, document):
+        sql_lex = self._sql_lexer.lex_document(document)
+
+        def get_line(lineno):
+            line = document.lines[lineno]
+            if line.startswith(self._prefix):
+                return [("", line)]
+            return sql_lex(lineno)
+
+        return get_line
 
 
 class _TeeWriter:
@@ -451,7 +475,7 @@ class Terminal:
             "enable_history_search": True,
             "wrap_lines": True,
             "completer": combined_completer,
-            "lexer": PygmentsLexer(SqlLexer),
+            "lexer": _PrefixAwareLexer(prefix=prefix),
             "style": SQL_STYLE,
         }
 
