@@ -122,7 +122,7 @@ class BaseAction(ABC):
         for name, arg in arg_fields.items():
             if arg.default is not None:
                 setattr(self, name, arg.default)
-            elif not hasattr(self, name):
+            else:
                 setattr(self, name, "" if arg.position >= 0 else None)
 
         if not additional_arguments or not additional_arguments.strip():

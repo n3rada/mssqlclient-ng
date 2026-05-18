@@ -468,7 +468,7 @@ class Terminal:
             f"Type SQL directly or use '{prefix}<action> [args]' to run an action."
         )
         logger.info(
-            f"'{prefix}help' lists all actions, '{prefix}<action> --help' shows usage."
+            f"'{prefix}help' lists all actions, '{prefix}help <action>' shows usage."
         )
 
         assert self._prompt_session is not None
