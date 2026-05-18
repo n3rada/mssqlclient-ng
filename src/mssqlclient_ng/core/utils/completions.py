@@ -376,6 +376,9 @@ class ActionCompleter(Completer):
                 if cmd in self._FLUSH_COMMANDS:
                     yield from self._flush_completions(arg_prefix)
                     return
+                # Fall back to the action's own Arg descriptors
+                yield from self._action_arg_completions(cmd, arg_prefix)
+                return
 
             # Get all available actions
             actions = ActionFactory.list_actions()
@@ -442,9 +445,53 @@ class ActionCompleter(Completer):
                     alias[len(arg_prefix) :], 0, display_meta=f"→ !{canonical}"
                 )
 
+    def _action_arg_completions(self, action_name: str, arg_prefix: str):
+        """Yield flag completions derived from an action's Arg descriptors.
+
+        Always includes --help/-h. For cacheable actions the caller also gets
+        --force/-f (included unconditionally here since cacheability is not
+        visible from this layer). Positional-only arguments are skipped because
+        there is nothing useful to suggest for free-form values.
+        """
+        # Resolve alias so e.g. '!dbs' finds the same args as '!databases'
+        canonical = ActionFactory.resolve_alias(action_name) or action_name
+        action = ActionFactory.get_action(canonical)
+
+        candidates: list[tuple[str, str]] = [
+            ("--help", "show usage"),
+            ("-h", "show usage"),
+            ("--force", "bypass output cache"),
+            ("-f", "bypass output cache"),
+        ]
+
+        if action is not None:
+            for _name, arg in type(action)._get_arg_fields().items():
+                # Skip purely positional args — no flag to suggest
+                if arg.short_name is None and arg.long_name is None:
+                    continue
+                desc = arg.description or ""
+                meta = f"{desc} (required)" if arg.required else desc
+                if arg.long_name:
+                    candidates.append((f"--{arg.long_name}", meta))
+                if arg.short_name:
+                    candidates.append((f"-{arg.short_name}", meta))
+
+        prefix_lower = arg_prefix.lower()
+        for flag, desc in candidates:
+            if flag.startswith(prefix_lower):
+                yield Completion(
+                    flag[len(arg_prefix) :],
+                    start_position=0,
+                    display=flag,
+                    display_meta=desc,
+                )
+
     def _flush_completions(self, arg_prefix: str):
         """Yield flag completions for !flush."""
-        for flag, desc in (("--all", "flush all contexts"), ("-a", "flush all contexts")):
+        for flag, desc in (
+            ("--all", "flush all contexts"),
+            ("-a", "flush all contexts"),
+        ):
             if flag.startswith(arg_prefix):
                 yield Completion(
                     flag[len(arg_prefix) :],
