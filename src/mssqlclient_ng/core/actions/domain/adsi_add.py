@@ -24,7 +24,7 @@ class AdsiAdd(BaseAction):
     _server_name = Arg(position=0, default=None, description="ADSI linked server name")
     _data_source = Arg(position=1, default="adsdatasource", description="OLE DB data source")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> None:
         adsi_service = AdsiService(database_context)
 
         if not self._server_name:
@@ -32,15 +32,15 @@ class AdsiAdd(BaseAction):
 
         if adsi_service.adsi_server_exists(self._server_name):
             logger.error(f"ADSI linked server '{self._server_name}' already exists.")
-            return False
+            return None
 
         success = adsi_service.create_adsi_linked_server(
             self._server_name, self._data_source
         )
 
         if not success:
-            return False
+            return None
 
         logger.success(f"ADSI linked server '{self._server_name}' created successfully")
         logger.info(f"Data source: {self._data_source}")
-        return True
+        return None

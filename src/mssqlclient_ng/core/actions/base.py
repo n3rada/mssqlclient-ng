@@ -11,7 +11,7 @@ from loguru import logger
 
 class Arg:
     """
-    Argument descriptor for declarative argument binding (like C# ArgumentMetadata).
+    Argument descriptor for declarative argument binding.
 
     Declare fields as class variables:
         _dll_path = Arg(position=0, required=True, description="Path to DLL")

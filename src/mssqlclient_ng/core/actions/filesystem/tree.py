@@ -57,7 +57,7 @@ class Tree(BaseAction):
         if self._depth < 1 or self._depth > 255:
             raise ValueError("Depth must be between 1 and 255")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[str]:
+    def execute(self, database_context: DatabaseContext) -> None:
         """
         Execute the tree action to display directory structure.
 
@@ -140,7 +140,7 @@ DROP TABLE #TreeResults;
                 stats += f", {file_count} files"
             print(stats)
 
-            return tree_output
+            return None
 
         except Exception as ex:
             logger.error(f"Failed to generate tree for '{self._path}': {ex}")

@@ -41,7 +41,7 @@ class CreateUser(BaseAction):
                 f"Using default credentials: {self._username} with role: {self._role}"
             )
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> None:
         """
         Create a SQL Server login with the specified server role.
 
@@ -84,14 +84,14 @@ class CreateUser(BaseAction):
                     logger.success(f"Password updated for '{self._username}'.")
                 except Exception as ex2:
                     logger.error(f"Failed to update password for existing login: {ex2}")
-                    return False
+                    return None
             else:
                 logger.error(f"Failed to create SQL login: {ex}")
                 if "permission" in msg or "denied" in msg:
                     logger.warning(
                         "You may not have sufficient privileges to create logins or assign server roles"
                     )
-                return False
+                return None
 
         logger.success(f"Password set to: '{self._password}'")
 
@@ -105,7 +105,7 @@ class CreateUser(BaseAction):
             logger.success(
                 f"'{self._username}' added to {self._role} role successfully"
             )
-            return True
+            return None
         except Exception as ex:
             msg = str(ex).lower()
             # Already a member
@@ -113,11 +113,11 @@ class CreateUser(BaseAction):
                 logger.info(
                     f"'{self._username}' is already a member of {self._role} role."
                 )
-                return True
+                return None
 
             if "permission" in msg or "denied" in msg:
                 logger.error(f"Insufficient privileges: {ex}")
             else:
                 logger.error(f"Failed to add user to role: {ex}")
 
-            return False
+            return None

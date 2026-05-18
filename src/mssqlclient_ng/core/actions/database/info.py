@@ -62,7 +62,7 @@ class Info(BaseAction):
     built-in functions (no registry access required).
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[Dict[str, str]]:
+    def execute(self, database_context: DatabaseContext) -> None:
         """
         Execute information gathering queries.
 
@@ -169,4 +169,4 @@ class Info(BaseAction):
         # Display results
         print(OutputFormatter.convert_dict(results, "Information", "Value"))
 
-        return results
+        return None
