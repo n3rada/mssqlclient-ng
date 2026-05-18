@@ -57,8 +57,8 @@ class _PrefixAwareLexer(Lexer):
     the normal SQL lexer.
     """
 
-    _PREFIX_STYLE = "fg:#5c6370"   # one-dark grey  — prefix character
-    _ACTION_STYLE = "fg:#61afef"   # one-dark blue  — action name
+    _PREFIX_STYLE = "fg:#e06c75"  # one-dark red    — prefix character
+    _ACTION_STYLE = "fg:#98c379"  # one-dark green  — action name
 
     def __init__(self, prefix: str = "!"):
         self._prefix = prefix
@@ -70,7 +70,7 @@ class _PrefixAwareLexer(Lexer):
         def get_line(lineno: int) -> StyleAndTextTuples:
             line = document.lines[lineno]
             if line.startswith(self._prefix):
-                rest = line[len(self._prefix):]
+                rest = line[len(self._prefix) :]
                 words = rest.split(maxsplit=1)
                 action = words[0] if words else ""
                 args = (" " + words[1]) if len(words) > 1 else ""
