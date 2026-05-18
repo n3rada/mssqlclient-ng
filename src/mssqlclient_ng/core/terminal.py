@@ -515,8 +515,7 @@ class Terminal:
                     # Check for --help / -h before dispatching
                     _parts = command_line.split()
                     if len(_parts) > 1 and _parts[1] in ("--help", "-h"):
-                        doc = (handler.__doc__ or "No description available.").strip()
-                        print(f"  {doc}")
+                        self._display_builtin_help(_parts[0])
                     else:
                         handler(command_line)
                     continue
@@ -567,12 +566,45 @@ class Terminal:
 
     # ── Built-in Command Handlers ───────────────────────────────────────
 
+    def _display_builtin_help(self, cmd_name: str) -> None:
+        """Display formatted help for a built-in terminal command."""
+        handler = self._command_handlers.get(cmd_name)
+        if not handler:
+            logger.error(f"Unknown built-in command: {cmd_name}")
+            return
+
+        doc = (handler.__doc__ or "No description available.").strip()
+        lines = doc.splitlines()
+        # First line is the summary, remaining lines are detail
+        summary = lines[0]
+        detail = "\n".join(line for line in lines[1:] if line.strip())
+
+        # Find aliases for this command
+        aliases = [k for k, v in self._BUILTIN_ALIASES.items() if v == cmd_name]
+
+        print()
+        print(f"Command: {cmd_name}")
+        if aliases:
+            print(f"Aliases: {', '.join(aliases)}")
+        print(f"Description: {summary}")
+        if detail:
+            print()
+            print(detail)
+        print()
+
     def _handle_help(self, command_line: str) -> None:
         """List actions or show help for a specific one: !help [action|term]"""
         parts = command_line.split(maxsplit=1)
         term = parts[1].strip() if len(parts) > 1 else None
 
-        # Exact action name match → delegate to per-action detailed help
+        # Built-in command match (check before actions)
+        if term:
+            resolved = self._BUILTIN_ALIASES.get(term, term)
+            if resolved in self._command_handlers:
+                self._display_builtin_help(resolved)
+                return
+
+        # Exact action name match
         if term and ActionFactory.action_exists(term):
             ActionFactory.display_action_help(term)
             return
@@ -606,7 +638,9 @@ class Terminal:
         logger.info(f"{len(all_actions)} action(s) — use !<action> --help for details")
 
     def _handle_debug(self, _command_line: str) -> None:
-        """Toggle debug mode."""
+        """Toggle debug logging on/off.
+        Usage: !debug
+        Switches between DEBUG and INFO log levels for the current session."""
         if self._log_level == "DEBUG":
             self._log_level = "INFO"
             logbook.setup_logging(self._log_level)
@@ -617,7 +651,10 @@ class Terminal:
             logger.info("🔊 Debug mode enabled")
 
     def _handle_flush(self, command_line: str) -> None:
-        """Flush cached action outputs: !flush [--all]"""
+        """Flush cached action outputs.
+        Usage: !flush [--all|-a]
+        Without arguments, flushes cached outputs for the current execution context.
+        With --all, flushes all cached outputs across all server contexts."""
         parts = command_line.split()
         if len(parts) > 1 and parts[1] in ("--all", "-a"):
             deleted = self._output_cache.flush()
@@ -629,7 +666,11 @@ class Terminal:
             logger.success(f"Flushed {deleted} cached output(s) for {server}")
 
     def _handle_chain(self, command_line: str) -> None:
-        """Display current chain, or apply a saved linkmap chain by ID: !chain [id]"""
+        """Display current chain or apply a saved linkmap chain by ID.
+        Usage: !chain [#id]
+        Without arguments, displays the full current linked server chain.
+        With a numeric ID (e.g. !chain 3 or !chain #3), applies a previously
+        saved chain from the linkmap store."""
         parts = command_line.split(maxsplit=1)
         if len(parts) > 1:
             id_str = parts[1].strip().lstrip("#")
@@ -638,7 +679,10 @@ class Terminal:
         self._display_chain()
 
     def _handle_format(self, command_line: str) -> None:
-        """Handle format command: !format [format_name]"""
+        """Change the output table format.
+        Usage: !format [markdown|csv|grid]
+        Without arguments, shows the current format and available options.
+        With a format name, switches output rendering to that format."""
         parts = command_line.split(maxsplit=1)
         if len(parts) == 1:
             available_formats = ", ".join(OutputFormatter.get_available_formats())
@@ -655,7 +699,11 @@ class Terminal:
                 logger.error(str(e))
 
     def _handle_link(self, command_line: str) -> None:
-        """Hop to a directly linked server: !link [server_spec]"""
+        """Set or display the linked server chain.
+        Usage: !link [server[/user1[/user2]][@db][;server2/user@db2;...]]
+        Without arguments, shows the current linked server chain.
+        With a server spec, replaces the chain and hops to the target.
+        Supports impersonation (/user), database (@db), and multi-hop (;) syntax."""
         parts = command_line.split(maxsplit=1)
         if len(parts) == 1:
             # No server specified, show current linked server chain
@@ -781,7 +829,9 @@ class Terminal:
             logger.error(f"Failed to apply chain #{chain_id}: {e}")
 
     def _handle_unlink_all(self, _command_line: str) -> None:
-        """Clear entire linked server chain and revert impersonations."""
+        """Clear the entire linked server chain and revert all impersonations.
+        Usage: !unlink-all
+        Returns to the original directly-connected server context."""
         if self._database_context.query_service.linked_servers.is_empty:
             logger.info("No linked servers to remove")
         else:
@@ -790,7 +840,10 @@ class Terminal:
             self._log_server_context()
 
     def _handle_impersonate(self, command_line: str) -> None:
-        """Impersonate a login on the current connection: !impersonate <login>"""
+        """Impersonate a SQL login on the current server.
+        Usage: !impersonate <login>
+        Executes EXECUTE AS LOGIN on the current connection.
+        Use !revert to restore the original identity."""
         parts = command_line.split(maxsplit=1)
         if len(parts) < 2:
             logger.error("Usage: !impersonate <login>")
@@ -813,7 +866,9 @@ class Terminal:
             logger.error(f"Error during impersonation: {e}")
 
     def _handle_revert(self, _command_line: str) -> None:
-        """Revert impersonation on the current connection."""
+        """Revert impersonation on the current connection.
+        Usage: !revert
+        Executes REVERT to restore the pre-impersonation login identity."""
         try:
             self._database_context.user_service.revert_impersonation()
             self._refresh_user_info()
@@ -822,7 +877,10 @@ class Terminal:
             logger.error(f"Error reverting impersonation: {e}")
 
     def _handle_add_link(self, command_line: str) -> None:
-        """Add a server to the existing chain: !add-link <server>[/user][@db]"""
+        """Append a server to the existing linked server chain.
+        Usage: !add-link <server>[/user1[/user2]][@db]
+        Adds one hop to the current chain without replacing it.
+        Supports impersonation (/user) and database (@db) on the new hop."""
         parts = command_line.split(maxsplit=1)
         if len(parts) < 2:
             logger.error("Usage: !add-link <server>[/user1[/user2]][@db]")
@@ -865,7 +923,10 @@ class Terminal:
             logger.error(f"Failed to add linked server: {e}")
 
     def _handle_unlink(self, _command_line: str) -> None:
-        """Pop the last server from the linked server chain."""
+        """Remove the last server from the linked server chain.
+        Usage: !unlink
+        Pops the most recently added hop, moving back one step in the chain.
+        If only one hop remains, reverts to the original server entirely."""
         linked = self._database_context.query_service.linked_servers
 
         if linked.is_empty:

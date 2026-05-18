@@ -199,8 +199,23 @@ Once a connection is relayed, you land in the interactive shell authenticated as
 # Show all available options
 mssqlclient-ng --help
 
-# Show help for a specific action
+# Show help for a specific action (without connecting)
 mssqlclient-ng <host> -u sa -p password --action whoami --help
+```
+
+Inside the interactive shell:
+
+```
+# List all actions
+!help
+
+# Show help for an action
+!help whoami
+!whoami --help
+
+# Show help for a built-in command
+!help chain
+!link --help
 ```
 
 ## 📸 Clean Output for Clean Reports
