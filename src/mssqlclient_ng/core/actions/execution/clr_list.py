@@ -49,6 +49,8 @@ ORDER BY a.create_date DESC
 
         print(OutputFormatter.convert_list_of_dicts(rows))
         count = len(rows)
-        logger.success(f"Found {count} user-defined {'assembly' if count == 1 else 'assemblies'}")
+        logger.success(
+            f"Found {count} user-defined {'assembly' if count == 1 else 'assemblies'}"
+        )
 
         return rows

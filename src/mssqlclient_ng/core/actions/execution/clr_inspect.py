@@ -60,7 +60,9 @@ WHERE a.name = '{safe_name}'
 """)
 
         if not modules:
-            logger.warning("No stored procedures or functions registered for this assembly")
+            logger.warning(
+                "No stored procedures or functions registered for this assembly"
+            )
             return meta
 
         print(OutputFormatter.convert_list_of_dicts(modules))

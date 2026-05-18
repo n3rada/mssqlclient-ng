@@ -7,7 +7,7 @@ from typing import Optional, List, Dict, Any
 from loguru import logger
 
 # Local library imports
-from ..base import BaseAction
+from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
@@ -51,35 +51,17 @@ class Jobs(BaseAction):
     Use --limit/-l to cap result count (default: 25).
     """
 
-
-    def __init__(self):
-        super().__init__()
-        self._name: str = ""
-        self._show_commands: bool = False
-        self._limit: int = 25
+    _name: str = Arg(short_name="n", long_name="name", default="", description="Filter by job name (substring match)")  # type: ignore[assignment]
+    _show_commands: bool = Arg(short_name="c", long_name="commands", toggle=True, description="Expand into per-step rows with full command text")  # type: ignore[assignment]
+    _limit: int = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")  # type: ignore[assignment]
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
-        if not additional_arguments or not additional_arguments.strip():
-            return
-
-        named, positional = self._parse_action_arguments(additional_arguments)
-
-        # Name filter
-        if positional:
-            self._name = positional[0]
-        self._name = named.get("name", named.get("n", self._name))
-
-        # Show commands flag
-        if "commands" in named or "c" in named:
-            self._show_commands = True
-
-        # Limit
-        limit_str = named.get("limit", named.get("l", ""))
-        if limit_str:
+        super().validate_arguments(additional_arguments)
+        if self._limit is not None:
             try:
-                self._limit = int(limit_str)
-            except ValueError:
-                raise ValueError(f"Invalid limit value: {limit_str}")
+                self._limit = int(self._limit)
+            except (TypeError, ValueError):
+                raise ValueError(f"Invalid limit value: {self._limit}")
 
     def execute(
         self, database_context: DatabaseContext
@@ -151,11 +133,3 @@ ORDER BY j.name;"""
         print(OutputFormatter.convert_list_of_dicts(result))
         logger.success(f"Found {len(result)} row(s)")
         return result
-
-    def get_arguments(self) -> List[str]:
-        return [
-            "[job_name]",
-            "[-n|--name <filter>]",
-            "[-c|--commands]",
-            "[-l|--limit <n>]",
-        ]
