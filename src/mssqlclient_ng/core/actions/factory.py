@@ -148,6 +148,27 @@ class ActionFactory:
         return dict(cls._aliases)
 
     @classmethod
+    def get_action_category(cls, action_name: str) -> str:
+        """
+        Derive the category for an action from its module path.
+
+        E.g. mssqlclient_ng.core.actions.database.whoami -> "database"
+        Falls back to "other" when the module structure is unexpected.
+        """
+        key = cls._aliases.get(action_name.lower(), action_name.lower())
+        if key not in cls._registry:
+            return "other"
+        action_class, _ = cls._registry[key]
+        parts = action_class.__module__.split(".")
+        try:
+            idx = parts.index("actions")
+            if idx + 1 < len(parts):
+                return parts[idx + 1]
+        except ValueError:
+            pass
+        return "other"
+
+    @classmethod
     def clear_registry(cls) -> None:
         """Clear all registered actions. Mainly for testing."""
         cls._registry.clear()
