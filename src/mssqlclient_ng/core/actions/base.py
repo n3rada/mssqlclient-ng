@@ -3,12 +3,14 @@
 # Built-in imports
 import shlex
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, Any, Union, overload
 
 # Third party imports
 from loguru import logger
 
 
+@dataclass
 class Arg:
     """
     Argument descriptor for declarative argument binding.
@@ -22,25 +24,16 @@ class Arg:
     The base class _bind_arguments() introspects these and auto-binds values.
     """
 
-    def __init__(
-        self,
-        position: int = -1,
-        short_name: Optional[str] = None,
-        long_name: Optional[str] = None,
-        required: bool = False,
-        remainder: bool = False,
-        toggle: bool = False,
-        description: Optional[str] = None,
-        default: Any = None,
-    ):
-        self.position = position
-        self.short_name = short_name
-        self.long_name = long_name
-        self.required = required
-        self.remainder = remainder
-        self.toggle = toggle
-        self.description = description
-        self.default = default
+    position: int = -1
+    short_name: Optional[str] = None
+    long_name: Optional[str] = None
+    required: bool = False
+    remainder: bool = False
+    toggle: bool = False
+    description: Optional[str] = None
+    default: Any = None
+    # Set by __set_name__ at class-creation time; not a constructor parameter.
+    _attr_name: str = field(default="", init=False, repr=False)
 
     def __set_name__(self, owner: type, name: str) -> None:
         self._attr_name = name
