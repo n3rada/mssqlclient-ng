@@ -19,6 +19,7 @@ from prompt_toolkit.cursor_shapes import CursorShape
 from prompt_toolkit.completion import merge_completers
 from prompt_toolkit.styles import style_from_pygments_cls
 from prompt_toolkit.lexers import Lexer, PygmentsLexer
+from prompt_toolkit.formatted_text import StyleAndTextTuples
 
 from pygments.lexers.sql import SqlLexer
 from pygments.styles import get_style_by_name
@@ -50,10 +51,14 @@ SQL_STYLE = style_from_pygments_cls(get_style_by_name("one-dark"))
 class _PrefixAwareLexer(Lexer):
     """Apply SQL highlighting only to non-prefixed lines.
 
-    Lines starting with the action prefix (e.g. "!") are returned as plain
-    unstyled text so the SQL lexer does not fragment action names like
-    '!impersonation-map' into multiple colours.
+    Lines starting with the action prefix (e.g. "!") are rendered with two
+    distinct colours: one for the prefix character and one for the action name.
+    Arguments that follow are left unstyled.  Pure SQL lines are delegated to
+    the normal SQL lexer.
     """
+
+    _PREFIX_STYLE = "fg:#5c6370"   # one-dark grey  — prefix character
+    _ACTION_STYLE = "fg:#61afef"   # one-dark blue  — action name
 
     def __init__(self, prefix: str = "!"):
         self._prefix = prefix
@@ -62,10 +67,18 @@ class _PrefixAwareLexer(Lexer):
     def lex_document(self, document):
         sql_lex = self._sql_lexer.lex_document(document)
 
-        def get_line(lineno):
+        def get_line(lineno: int) -> StyleAndTextTuples:
             line = document.lines[lineno]
             if line.startswith(self._prefix):
-                return [("", line)]
+                rest = line[len(self._prefix):]
+                words = rest.split(maxsplit=1)
+                action = words[0] if words else ""
+                args = (" " + words[1]) if len(words) > 1 else ""
+                return [
+                    (self._PREFIX_STYLE, self._prefix),
+                    (self._ACTION_STYLE, action),
+                    ("", args),
+                ]
             return sql_lex(lineno)
 
         return get_line
