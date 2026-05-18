@@ -86,10 +86,8 @@ class ActionFactory:
         for name, (action_class, description) in cls._registry.items():
             try:
                 action = action_class()
-                # Assuming actions have a get_arguments method
-                arguments = (
-                    action.get_arguments() if hasattr(action, "get_arguments") else []
-                )
+                getter = getattr(action, "get_arguments", None)
+                arguments = getter() if getter is not None else []
                 result.append((name, description, arguments))
             except Exception as e:
                 logger.warning(f"Could not instantiate action '{name}': {e}")

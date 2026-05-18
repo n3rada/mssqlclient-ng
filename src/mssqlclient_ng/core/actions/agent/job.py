@@ -12,7 +12,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-from .jobs import _check_agent_running
 
 
 @ActionFactory.register(
@@ -27,8 +26,15 @@ class Job(BaseAction):
     Accepts job name or job_id GUID as identifier.
     """
 
-    _job_identifier = Arg(position=0, required=True, description="Job name or job_id GUID")
-    _history_limit = Arg(short_name="l", long_name="limit", default=25, description="Cap history record count")
+    _job_identifier = Arg(
+        position=0, required=True, description="Job name or job_id GUID"
+    )
+    _history_limit = Arg(
+        short_name="l",
+        long_name="limit",
+        default=25,
+        description="Cap history record count",
+    )
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)

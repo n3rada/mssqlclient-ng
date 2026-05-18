@@ -44,13 +44,6 @@ class Tree(BaseAction):
     _show_files = Arg(long_name="files", short_name="f", toggle=True, default=True, description="Include files (default: on)")
     _use_unicode = Arg(long_name="unicode", short_name="u", toggle=True, default=True, description="Use Unicode box-drawing characters (default: on)")
 
-    def __init__(self):
-        super().__init__()
-        self._path: str = ""
-        self._depth: int = 3
-        self._show_files: bool = True
-        self._use_unicode: bool = True
-
     def validate_arguments(self, additional_arguments: str = "") -> None:
         super().validate_arguments(additional_arguments)
         try:

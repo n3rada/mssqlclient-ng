@@ -163,11 +163,12 @@ class LinkMap(BaseAction):
     DEFAULT_MAX_DEPTH = 7
     MAX_ALLOWED_DEPTH = 15
 
-    _limit = Arg(position=0, default=7, description=f"Maximum recursion depth (1-15, default: 7)")
+    _limit = Arg(
+        position=0, default=7, description="Maximum recursion depth (1-15, default: 7)"
+    )
 
     def __init__(self):
         super().__init__()
-        self._limit: int = self.DEFAULT_MAX_DEPTH
         self._root_node: Optional[ServerNode] = None
         self._globally_explored_contexts: Set[str] = set()
         self._failed_link_attempts: Set[str] = set()
@@ -1152,8 +1153,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         if node.impersonation_chain:
             # Render impersonation steps as intermediate tree nodes
             current_indent = indent
-            for s in range(len(node.impersonation_chain)):
-                step = node.impersonation_chain[s]
+            for s, step in enumerate(node.impersonation_chain):
                 if s == 0:
                     step_connector = (
                         "\u2514\u2500\u2500 " if is_last else "\u251c\u2500\u2500 "
