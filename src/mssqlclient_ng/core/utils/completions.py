@@ -297,6 +297,9 @@ class ActionCompleter(Completer):
     # Commands that accept an output format name as their first argument
     _FORMAT_COMMANDS = {"format"}
 
+    # Commands that accept --all / -a as their first argument
+    _FLUSH_COMMANDS = {"flush"}
+
     def __init__(
         self,
         prefix: str = "!",
@@ -370,6 +373,9 @@ class ActionCompleter(Completer):
                 if cmd in self._FORMAT_COMMANDS:
                     yield from self._format_completions(arg_prefix)
                     return
+                if cmd in self._FLUSH_COMMANDS:
+                    yield from self._flush_completions(arg_prefix)
+                    return
 
             # Get all available actions
             actions = ActionFactory.list_actions()
@@ -434,6 +440,17 @@ class ActionCompleter(Completer):
             if alias.startswith(prefix_lower):
                 yield Completion(
                     alias[len(arg_prefix) :], 0, display_meta=f"→ !{canonical}"
+                )
+
+    def _flush_completions(self, arg_prefix: str):
+        """Yield flag completions for !flush."""
+        for flag, desc in (("--all", "flush all contexts"), ("-a", "flush all contexts")):
+            if flag.startswith(arg_prefix):
+                yield Completion(
+                    flag[len(arg_prefix) :],
+                    start_position=0,
+                    display=flag,
+                    display_meta=desc,
                 )
 
     def _format_completions(self, arg_prefix: str):
