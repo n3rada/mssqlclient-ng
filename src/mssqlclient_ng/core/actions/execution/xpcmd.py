@@ -81,12 +81,3 @@ class XpCmd(BaseAction):
                 logger.error(f"Error executing xp_cmdshell: {ex}")
 
             return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["Operating system command to execute via xp_cmdshell"]

@@ -87,6 +87,3 @@ class AdsiRedirect(BaseAction):
             "Query fired. Check your listener for the incoming LDAP simple bind."
         )
         return True
-
-    def get_arguments(self) -> list:
-        return ["<listener-ip[:port]>", "[adsi-server]"]

@@ -1400,6 +1400,3 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
     # ------------------------------------------------------------------
     # Public interface
     # ------------------------------------------------------------------
-
-    def get_arguments(self) -> List[str]:
-        return ["[max_depth]"]

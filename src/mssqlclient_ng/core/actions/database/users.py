@@ -102,12 +102,3 @@ class Users(BaseAction):
         )
 
         return None
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            Empty list as no arguments are required.
-        """
-        return []

@@ -297,6 +297,3 @@ class AdsiCredentialExtractor(BaseAction):
                 )
             except Exception:
                 pass
-
-    def get_arguments(self) -> list:
-        return ["[adsi-server]", "[--temp]"]

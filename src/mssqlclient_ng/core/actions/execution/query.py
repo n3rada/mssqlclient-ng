@@ -232,12 +232,3 @@ class Query(BaseAction):
             print(OutputFormatter.convert_list_of_dicts(combined_results))
 
         return combined_results
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["query: T-SQL query to execute (required)"]

@@ -465,12 +465,3 @@ class Search(BaseAction):
             "xml",
         ]
         return any(t in data_type for t in convertible_types)
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List of argument descriptions.
-        """
-        return ["<keyword> [target] [-c]"]

@@ -67,6 +67,3 @@ class ExternalSources(BaseAction):
         print(OutputFormatter.convert_list_of_dicts(display))
         logger.success(f"Retrieved {len(display)} external data source(s)")
         return display
-
-    def get_arguments(self) -> list:
-        return []

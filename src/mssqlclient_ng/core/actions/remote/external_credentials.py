@@ -85,6 +85,3 @@ class ExternalCredentials(BaseAction):
         print(OutputFormatter.convert_list_of_dicts(display))
         logger.success(f"Retrieved {len(display)} database-scoped credential(s)")
         return display
-
-    def get_arguments(self) -> list:
-        return []

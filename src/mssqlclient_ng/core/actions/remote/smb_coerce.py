@@ -161,12 +161,3 @@ class SmbCoerce(BaseAction):
         # UNC path validation: \\hostname\share
         unc_pattern = r"^\\\\[a-zA-Z0-9\-\.]+\\[a-zA-Z0-9\-_\.]+"
         return bool(re.match(unc_pattern, path))
-
-    def get_arguments(self) -> list:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["UNC path for SMB coercion (e.g., \\\\192.168.1.10\\share)"]

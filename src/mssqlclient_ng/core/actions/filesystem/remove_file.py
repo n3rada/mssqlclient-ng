@@ -87,6 +87,3 @@ EXEC sp_OADestroy @ObjectToken;"""
         except Exception as ex:
             logger.error(f"Deletion failed: {ex}")
             return False
-
-    def get_arguments(self) -> list:
-        return ["<remote_file_path>"]

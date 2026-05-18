@@ -53,6 +53,3 @@ class Requests(BaseAction):
             logger.info("No other active SQL requests running")
 
         return results
-
-    def get_arguments(self) -> list[str]:
-        return []

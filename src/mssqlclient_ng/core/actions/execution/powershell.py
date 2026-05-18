@@ -70,12 +70,3 @@ class PowerShell(XpCmd):
         # PowerShell expects UTF-16LE (Unicode) encoding
         input_bytes = input_string.encode("utf-16le")
         return base64.b64encode(input_bytes).decode("ascii")
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["PowerShell script or command to execute"]

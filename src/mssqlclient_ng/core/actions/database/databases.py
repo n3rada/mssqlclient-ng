@@ -112,12 +112,3 @@ DROP TABLE #db_owner_check;"""
         except Exception as e:
             logger.error(f"Failed to retrieve database information: {e}")
             return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            Empty list (no arguments required)
-        """
-        return []

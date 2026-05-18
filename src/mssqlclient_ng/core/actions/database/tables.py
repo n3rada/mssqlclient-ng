@@ -215,8 +215,3 @@ class Tables(BaseAction):
             logger.info("Use -p to show permissions")
 
         return enriched
-
-    def get_arguments(self) -> List[str]:
-        return [
-            "[database] [-n name] [-C] [-c column] [-r] [-p]",
-        ]

@@ -281,16 +281,3 @@ DROP TABLE #TreeResults;
                 self._render_tree(
                     node["children"], new_prefix, lines, is_last=is_last_node
                 )
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "Directory path",
-            "Depth (1-255, default: 3)",
-            "Show files (1|0, default: 1)",
-        ]

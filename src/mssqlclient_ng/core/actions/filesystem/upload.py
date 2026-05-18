@@ -354,15 +354,3 @@ class Upload(BaseAction):
 
         logger.success("PowerShell upload completed")
         return True
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "Local file path (must exist)",
-            "Optional: Remote destination path (defaults to C:\\Windows\\Tasks\\)",
-        ]

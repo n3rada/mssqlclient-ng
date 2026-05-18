@@ -102,6 +102,3 @@ ORDER BY name;"""
 
         logger.success(f"Extracted {len(output_lines)} password hash(es)")
         return rows
-
-    def get_arguments(self) -> list:
-        return []

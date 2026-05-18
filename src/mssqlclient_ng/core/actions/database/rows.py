@@ -223,12 +223,3 @@ ORDER BY c.column_id;"""
             else:
                 expressions.append(f"[{col_name}]")
         return ", ".join(expressions)
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List containing the table name argument description.
-        """
-        return ["table|schema.table|database.schema.table [-l/--limit N]"]

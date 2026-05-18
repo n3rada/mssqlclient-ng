@@ -238,6 +238,61 @@ class OutputCache:
         """Check if an action is eligible for output caching."""
         return action_name.lower() not in OutputCache._EXCLUDED_ACTIONS
 
+    def get_rows(
+        self,
+        execution_server: str,
+        system_user: str,
+        chain_spec: str,
+        database: str,
+        action_name: str,
+        args: str,
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Retrieve cached raw row data for an action.
+
+        Returns:
+            List of row dicts (for re-rendering with any format), or None if not cached.
+        """
+        ctx = self._context_hash(execution_server, system_user, chain_spec, database)
+        key = self._action_key(action_name, args)
+        cache_file = self._cache_dir / ctx / f"{key}.json"
+
+        if not cache_file.is_file():
+            return None
+
+        try:
+            return json.loads(cache_file.read_text(encoding="utf-8"))
+        except Exception as ex:
+            logger.debug(f"Failed to read cache file {cache_file}: {ex}")
+            return None
+
+    def put_rows(
+        self,
+        execution_server: str,
+        system_user: str,
+        chain_spec: str,
+        database: str,
+        action_name: str,
+        args: str,
+        rows: List[Dict[str, Any]],
+    ) -> None:
+        """Store raw row data as JSON for format-agnostic caching."""
+        ctx = self._context_hash(execution_server, system_user, chain_spec, database)
+        key = self._action_key(action_name, args)
+        ctx_dir = self._cache_dir / ctx
+
+        try:
+            ctx_dir.mkdir(parents=True, exist_ok=True)
+            cache_file = ctx_dir / f"{key}.json"
+            cache_file.write_text(json.dumps(rows, default=str), encoding="utf-8")
+            if os.name != "nt":
+                os.chmod(cache_file, 0o600)
+            # Remove stale text cache for the same key
+            (ctx_dir / f"{key}.txt").unlink(missing_ok=True)
+            logger.debug(f"Cached rows for '{action_name}' in {cache_file}")
+        except Exception as ex:
+            logger.debug(f"Failed to cache rows: {ex}")
+
     def get(
         self,
         execution_server: str,
@@ -248,7 +303,7 @@ class OutputCache:
         args: str,
     ) -> Optional[str]:
         """
-        Retrieve cached output for an action in the given context.
+        Retrieve cached text output for an action in the given context.
 
         Returns:
             The cached output string, or None if not cached.
@@ -276,7 +331,7 @@ class OutputCache:
         args: str,
         output: str,
     ) -> None:
-        """Store action output in the cache."""
+        """Store rendered text output in the cache (fallback for unstructured output)."""
         ctx = self._context_hash(execution_server, system_user, chain_spec, database)
         key = self._action_key(action_name, args)
         ctx_dir = self._cache_dir / ctx

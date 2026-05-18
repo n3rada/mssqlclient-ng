@@ -52,12 +52,3 @@ class Sessions(BaseAction):
         print(OutputFormatter.convert_list_of_dicts(result))
 
         return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions (empty, no arguments needed)
-        """
-        return []

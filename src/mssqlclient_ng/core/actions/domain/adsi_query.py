@@ -258,16 +258,3 @@ class AdsiQuery(BaseAction):
         if not input_str:
             return ""
         return input_str.replace("'", "''")
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "Domain FQDN (required, e.g., domain.local)",
-            "ADSI server name (optional - creates temporary server if omitted)",
-            "LDAP query string or preset (users, computers, groups, admins, ou, all - default: users)",
-        ]

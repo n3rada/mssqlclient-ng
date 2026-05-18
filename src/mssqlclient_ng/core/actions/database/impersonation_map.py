@@ -180,6 +180,3 @@ class ImpersonationMap(BaseAction):
                     db.user_service.revert_impersonation()
                 except Exception as ex:
                     logger.debug(f"Failed to revert from '{login}': {ex}")
-
-    def get_arguments(self) -> list:
-        return []

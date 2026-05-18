@@ -83,12 +83,3 @@ class ObjectLinkingEmbedding(BaseAction):
         logger.success("Executed command")
 
         return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return ["Operating system command to execute via OLE Automation"]

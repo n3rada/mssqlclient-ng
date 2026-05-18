@@ -41,6 +41,3 @@ class AdsiDel(BaseAction):
                 f"Failed to delete ADSI linked server '{self._server_name}': {ex}"
             )
             return False
-
-    def get_arguments(self) -> list:
-        return ["<server_name>"]

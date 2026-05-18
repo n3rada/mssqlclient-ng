@@ -121,16 +121,3 @@ class CreateUser(BaseAction):
                 logger.error(f"Failed to add user to role: {ex}")
 
             return False
-
-    def get_arguments(self) -> list:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "Username for SQL login (default: backup_usr)",
-            "Password for SQL login (default: $ap3rlip0pe//e)",
-            "Server role to assign (default: sysadmin)",
-        ]

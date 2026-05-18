@@ -456,14 +456,3 @@ class Procedures(BaseAction):
         except Exception as e:
             logger.error(f"Error searching stored procedures: {e}")
             return []
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List of argument descriptions.
-        """
-        return [
-            "[list | exec <schema.procedure> [args] | read <schema.procedure> | search <keyword> | create <file_path> [database_name]]"
-        ]

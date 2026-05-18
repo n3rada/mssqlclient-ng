@@ -105,12 +105,3 @@ class Impersonation(BaseAction):
         except Exception as e:
             logger.error(f"Failed to check impersonation permissions: {e}")
             return None
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            Empty list (no arguments required)
-        """
-        return []

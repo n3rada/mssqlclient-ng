@@ -335,12 +335,3 @@ class ExtendedProcs(BaseAction):
             )
         enriched.sort(key=lambda x: (x["Execute"].startswith("No"), x["Procedure"]))
         return enriched
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            Empty list (no arguments required)
-        """
-        return []

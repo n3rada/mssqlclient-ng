@@ -105,12 +105,3 @@ class DomainSid(BaseAction):
                 f"Failed to retrieve domain SID: {e.message if hasattr(e, 'message') else str(e)}"
             )
             return None
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            Empty list as no arguments are required.
-        """
-        return []

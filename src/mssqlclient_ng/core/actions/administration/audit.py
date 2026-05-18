@@ -111,6 +111,3 @@ ORDER BY a.name, s.name, d.audit_action_name;"""
         print(OutputFormatter.convert_list_of_dicts(specs_display))
 
         return specs_display
-
-    def get_arguments(self) -> list:
-        return []

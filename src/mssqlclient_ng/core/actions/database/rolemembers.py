@@ -63,12 +63,3 @@ class RoleMembers(BaseAction):
         print(OutputFormatter.convert_list_of_dicts(result))
 
         return None
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List containing the role name argument.
-        """
-        return ["role_name"]

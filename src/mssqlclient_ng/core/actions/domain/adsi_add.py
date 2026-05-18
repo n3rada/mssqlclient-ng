@@ -44,6 +44,3 @@ class AdsiAdd(BaseAction):
         logger.success(f"ADSI linked server '{self._server_name}' created successfully")
         logger.info(f"Data source: {self._data_source}")
         return True
-
-    def get_arguments(self) -> list:
-        return ["[server_name]", "[data_source]"]

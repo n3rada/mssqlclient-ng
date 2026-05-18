@@ -178,12 +178,3 @@ class OleDbProviders(BaseAction):
         except Exception as e:
             logger.error(f"Failed to enumerate OLE DB providers: {e}")
             raise
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            Empty list as no arguments are required.
-        """
-        return []

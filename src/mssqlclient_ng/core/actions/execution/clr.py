@@ -200,20 +200,6 @@ class ClrExecution(BaseAction):
                     f"ALTER DATABASE [{database_context.query_service.execution_database}] SET TRUSTWORTHY OFF;"
                 )
 
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            List of argument descriptions
-        """
-        return [
-            "DLL path (local file)",
-            "Class name containing the function",
-            "Function name to execute",
-            "Function args (optional)",
-        ]
-
     @staticmethod
     def _extract_mvid_conflict_name(error_message: str) -> str:
         """

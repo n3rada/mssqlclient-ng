@@ -26,15 +26,6 @@ class AuthToken(BaseAction):
     ACTION_NAME = "authtoken"
     DESCRIPTION = "Retrieve Windows authentication token groups"
 
-    def get_arguments(self) -> List[str]:
-        """
-        Return the list of arguments this action expects.
-
-        Returns:
-            Empty list - no arguments needed
-        """
-        return []
-
     def execute(
         self, database_context: DatabaseContext
     ) -> Optional[List[Dict[str, str]]]:

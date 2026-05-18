@@ -170,12 +170,3 @@ class Info(BaseAction):
         print(OutputFormatter.convert_dict(results, "Information", "Value"))
 
         return results
-
-    def get_arguments(self) -> list:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            Empty list (no arguments required)
-        """
-        return []

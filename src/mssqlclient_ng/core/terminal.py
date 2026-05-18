@@ -385,6 +385,16 @@ class Terminal:
         # Check output cache (unless --force or action is not cacheable)
         if not force and cacheable:
             ctx = self._cache_context()
+            # Prefer JSON (format-agnostic): re-render with the current formatter
+            cached_rows = self._output_cache.get_rows(
+                ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str
+            )
+            if cached_rows is not None:
+                logger.debug(f"Cache hit for '{canonical_name}' on {server_name}")
+                print(OutputFormatter.convert_list_of_dicts(cached_rows))
+                logger.warning("Cached output. Use --force to re-execute.")
+                return None
+            # Fall back to text cache (unstructured output)
             cached = self._output_cache.get(
                 ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str
             )
@@ -411,14 +421,23 @@ class Terminal:
             finally:
                 sys.stdout = original_stdout
 
-            # Cache the captured output
-            if stdout_capture is not None:
-                output = stdout_capture.getvalue()
-                if output:
-                    ctx = self._cache_context()
-                    self._output_cache.put(
-                        ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str, output
+            # Cache the result — prefer raw JSON when the action returns row data
+            if cacheable:
+                ctx = self._cache_context()
+                if (
+                    result is not None
+                    and isinstance(result, list)
+                    and all(isinstance(r, dict) for r in result)
+                ):
+                    self._output_cache.put_rows(
+                        ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str, result
                     )
+                elif stdout_capture is not None:
+                    output = stdout_capture.getvalue()
+                    if output:
+                        self._output_cache.put(
+                            ctx[0], ctx[1], ctx[2], ctx[3], canonical_name, args_str, output
+                        )
 
             return result
         except KeyboardInterrupt:

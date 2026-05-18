@@ -177,12 +177,3 @@ class Links(BaseAction):
         ]
 
         return enriched
-
-    def get_arguments(self) -> List[str]:
-        """
-        Get the list of arguments for this action.
-
-        Returns:
-            Empty list (no arguments required)
-        """
-        return []

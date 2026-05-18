@@ -112,12 +112,3 @@ class Kill(BaseAction):
         except Exception as ex:
             logger.error(f"An error occurred while processing: {ex}")
             return False
-
-    def get_arguments(self) -> list[str]:
-        """
-        Returns the list of expected arguments for this action.
-
-        Returns:
-            List of argument descriptions.
-        """
-        return ["<session_id|all>"]
