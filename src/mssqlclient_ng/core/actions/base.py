@@ -3,7 +3,7 @@
 # Built-in imports
 import shlex
 from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple, Optional, Any, overload
+from typing import Dict, List, Tuple, Optional, Any, Union, overload
 
 # Third party imports
 from loguru import logger
@@ -61,6 +61,16 @@ class Arg:
         obj.__dict__[self._attr_name] = value
 
 
+# Type alias for the value returned by execute().
+# list[dict]             — single tabular result; re-rendered on every cache hit
+#                          using the active OutputFormatter.
+# list[list[dict]]       — multiple independent tables (e.g. roles prints four);
+#                          each sub-list is re-rendered in order on cache hit.
+# None                   — pure side-effect action (mutations, file ops, etc.)
+#                          or actions that manage their own unstructured output.
+ActionResult = Optional[Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]]
+
+
 class BaseAction(ABC):
     """
     Abstract base class for all actions, enforcing validation and execution logic.
@@ -99,8 +109,16 @@ class BaseAction(ABC):
         self._bind_arguments(additional_arguments)
 
     @abstractmethod
-    def execute(self, database_context: Any) -> Optional[object]:
-        pass
+    def execute(self, database_context: Any) -> ActionResult:
+        """
+        Execute the action against the given database context.
+
+        Return value contract (drives format-agnostic caching):
+          list[dict]          single tabular result — print it, then return it
+          list[list[dict]]    multiple independent tables — print each, then return the list
+          None                side-effect-only or unstructured output; no JSON caching
+        """
+        ...
 
     @classmethod
     def _get_arg_fields(cls) -> Dict[str, "Arg"]:
