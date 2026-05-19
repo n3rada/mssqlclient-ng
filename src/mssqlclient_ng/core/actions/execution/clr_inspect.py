@@ -49,7 +49,7 @@ WHERE is_user_defined = 1 AND name = '{safe_name}'
         modules = database_context.query_service.execute_table(f"""
 SELECT
     o.name              AS [Object],
-    o.type_desc         AS [Type],
+    o.type_desc         AS [type],
     am.assembly_class   AS [Class],
     am.assembly_method  AS [Method]
 FROM sys.assembly_modules am

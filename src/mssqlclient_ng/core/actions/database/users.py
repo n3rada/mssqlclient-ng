@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("users", "List server principals and database users")
+@ActionFactory.register("users", "list server principals and database users")
 class Users(BaseAction):
     """
     Enumerates server-level principals (logins) and database users.
@@ -44,7 +44,7 @@ class Users(BaseAction):
                 server_principals_query = """
                     SELECT
                         sp.name AS Name,
-                        sp.type_desc AS Type,
+                        sp.type_desc AS type,
                         sp.is_disabled,
                         sp.create_date,
                         sp.modify_date,
@@ -64,7 +64,7 @@ class Users(BaseAction):
                 server_principals_query = """
                     SELECT
                         sp.name AS Name,
-                        sp.type_desc AS Type,
+                        sp.type_desc AS type,
                         sp.is_disabled,
                         sp.create_date,
                         sp.modify_date,

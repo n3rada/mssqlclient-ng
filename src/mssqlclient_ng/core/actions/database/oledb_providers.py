@@ -40,7 +40,7 @@ class OleDbProviders(BaseAction):
             database_context: The DatabaseContext instance to execute the query.
 
         Returns:
-            List of dictionaries containing provider information.
+            list of dictionaries containing provider information.
         """
         logger.info("Enumerating OLE DB providers")
 
@@ -82,7 +82,7 @@ class OleDbProviders(BaseAction):
 
 	            BEGIN
 
-	            -- Set the registry path
+	            -- set the registry path
 	            SET @regpath = N'SOFTWARE\Microsoft\MSSQLServer\Providers\' + @provider_name
 
 	            -- AllowInProcess

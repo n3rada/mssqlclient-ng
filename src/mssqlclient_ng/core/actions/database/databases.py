@@ -13,11 +13,11 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "databases", "List all databases with access and security information"
+    "databases", "list all databases with access and security information"
 )
 class Databases(BaseAction):
     """
-    List all SQL Server databases with accessibility and security information.
+    list all SQL Server databases with accessibility and security information.
 
     Shows database details including creation date, accessibility status,
     trustworthy flag, and owner information.
@@ -33,7 +33,7 @@ class Databases(BaseAction):
             database_context: The database context
 
         Returns:
-            List of database dictionaries with combined information
+            list of database dictionaries with combined information
         """
         try:
             # Use the richer sys.databases catalog view (SQL Server 2005+)

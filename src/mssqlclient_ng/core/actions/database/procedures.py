@@ -23,7 +23,7 @@ class ProcedureMode(Enum):
 
 @ActionFactory.register(
     "procedures",
-    "List, execute, read, search stored procedures or create from file",
+    "list, execute, read, search stored procedures or create from file",
     aliases=["procs", "sprocs"],
 )
 class Procedures(BaseAction):
@@ -198,7 +198,7 @@ class Procedures(BaseAction):
             database_context: The DatabaseContext instance.
 
         Returns:
-            List of stored procedures.
+            list of stored procedures.
         """
         exec_db = database_context.query_service.execution_database
         logger.info(f"Retrieving all stored procedures in [{exec_db}]")
@@ -405,7 +405,7 @@ class Procedures(BaseAction):
             database_context: The DatabaseContext instance.
 
         Returns:
-            List of procedures matching the search criteria.
+            list of procedures matching the search criteria.
         """
         exec_db = database_context.query_service.execution_database
         logger.info(

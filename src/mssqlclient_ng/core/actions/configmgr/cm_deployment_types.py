@@ -52,7 +52,7 @@ class CMDeploymentTypes(CMBaseAction):
             site_code = CMService.get_site_code(db)
             logger.info(f"ConfigMgr database: {db} (Site Code: {site_code})")
 
-            where = "WHERE ci.CIType_ID = 21"  # Deployment Type CI
+            where = "WHERE ci.CIType_ID = 21"  # Deployment type CI
             if self._application:
                 where += f" AND lp.DisplayName LIKE '%{self._application}%'"
 

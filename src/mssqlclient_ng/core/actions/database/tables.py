@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "tables",
-    "List tables in a database with schemas and permissions",
+    "list tables in a database with schemas and permissions",
 )
 class Tables(BaseAction):
     """
@@ -76,7 +76,7 @@ class Tables(BaseAction):
         if self._column_filter:
             self._show_columns = True
 
-    def execute(self, database_context: DatabaseContext) -> list[Dict] | None:
+    def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         target_database = (
             self._database
             if self._database

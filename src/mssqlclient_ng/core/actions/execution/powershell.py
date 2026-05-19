@@ -47,7 +47,7 @@ class PowerShell(XpCmd):
         # Craft the PowerShell command to execute the Base64-encoded script
         powershell_command = f"powershell.exe -noni -NoLogo -e {base64_encoded_script}"
 
-        # Set the crafted PowerShell command as the _command in the parent class
+        # set the crafted PowerShell command as the _command in the parent class
         super().validate_arguments(powershell_command)
 
         # Call the parent's execute method to execute the command

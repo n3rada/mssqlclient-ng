@@ -150,7 +150,7 @@ DROP TABLE #TreeResults;
         Build a tree representation from xp_dirtree results.
 
         Args:
-            results: List of dictionaries with subdirectory, depth, and isfile
+            results: list of dictionaries with subdirectory, depth, and isfile
             root_path: The root path being displayed
 
         Returns:
@@ -238,9 +238,9 @@ DROP TABLE #TreeResults;
         Recursively render the tree structure with proper formatting.
 
         Args:
-            nodes: List of nodes at current level
+            nodes: list of nodes at current level
             prefix: Current line prefix (for indentation)
-            lines: List to accumulate output lines
+            lines: list to accumulate output lines
             is_last: Whether this is the last node at current level
         """
         # Sort: directories first, then files, alphabetically

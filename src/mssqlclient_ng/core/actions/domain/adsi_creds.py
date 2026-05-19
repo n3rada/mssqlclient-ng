@@ -27,7 +27,7 @@ def _parse_ldap_simple_bind(data: bytes) -> tuple[str, str] | None:
     LDAP simple bind sends credentials in cleartext.
 
     Returns:
-        Tuple of (username, password) or None if parsing fails
+        tuple of (username, password) or None if parsing fails
     """
     try:
         # LDAP message: SEQUENCE { messageID INTEGER, bindRequest APPLICATION[0] { ... } }

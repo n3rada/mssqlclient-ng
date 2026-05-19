@@ -36,7 +36,7 @@ class Impersonation(BaseAction):
             database_context: The database context
 
         Returns:
-            List of users with their impersonation status
+            list of users with their impersonation status
         """
         logger.info("Starting impersonation check")
 
@@ -74,7 +74,7 @@ class Impersonation(BaseAction):
                 for user in result_rows:
                     enriched_user = {
                         "Login": user["name"],
-                        "Type": user["type_desc"],
+                        "type": user["type_desc"],
                         "Created Date": user["create_date"],
                         "Modified Date": user["modify_date"],
                     }
@@ -88,7 +88,7 @@ class Impersonation(BaseAction):
                     enriched_user = {
                         "Impersonation": "Yes" if can_impersonate else "No",
                         "Login": user["name"],
-                        "Type": user["type_desc"],
+                        "type": user["type_desc"],
                         "Created Date": user["create_date"],
                         "Modified Date": user["modify_date"],
                     }

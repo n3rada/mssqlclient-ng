@@ -82,7 +82,7 @@ class RidCycle(BaseAction):
                 "Too many positional arguments. Expected: [maxRid]. Use --format flag for output format."
             )
 
-    def execute(self, database_context: DatabaseContext) -> Dict:
+    def execute(self, database_context: DatabaseContext) -> dict:
         """
         Execute the RID cycling enumeration.
 
@@ -90,7 +90,7 @@ class RidCycle(BaseAction):
             database_context: Database context with connection and services
 
         Returns:
-            list[Dict] | None: List of discovered domain accounts or None
+            list[dict] | None: list of discovered domain accounts or None
         """
         logger.info(f"Starting RID cycling (max RID: {self._max_rid})")
 
@@ -180,12 +180,12 @@ class RidCycle(BaseAction):
 
         return results
 
-    def _print_results(self, results: list[Dict]) -> None:
+    def _print_results(self, results: list[dict]) -> None:
         """
         Print the results in the specified format.
 
         Args:
-            results: List of discovered accounts
+            results: list of discovered accounts
         """
         if self._bash_output:
             # Output in bash associative array format

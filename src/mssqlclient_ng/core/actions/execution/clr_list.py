@@ -9,7 +9,7 @@ from ..factory import ActionFactory
 
 @ActionFactory.register(
     "clr-list",
-    "List user-defined CLR assemblies in the current database",
+    "list user-defined CLR assemblies in the current database",
     aliases=["assemblies"],
 )
 class ClrList(BaseAction):
@@ -27,7 +27,7 @@ class ClrList(BaseAction):
 SELECT
     a.name                  AS [Name],
     a.clr_name              AS [CLR Name],
-    a.permission_set_desc   AS [Permission Set],
+    a.permission_set_desc   AS [Permission set],
     a.create_date           AS [Created],
     a.modify_date           AS [Modified],
     COUNT(am.object_id)     AS [Procedures]

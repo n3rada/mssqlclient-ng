@@ -243,7 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default=None,
-        help="Set the logging level explicitly.",
+        help="set the logging level explicitly.",
     )
 
     advanced_group.add_argument(
@@ -301,7 +301,7 @@ def main() -> int:
         level=log_level, stream=log_stream, enable_file=not no_log_file
     )
 
-    # Set output format based on CLI argument
+    # set output format based on CLI argument
     try:
         OutputFormatter.set_format(args.output_format)
     except ValueError as e:

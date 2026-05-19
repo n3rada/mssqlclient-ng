@@ -127,9 +127,9 @@ class AdSid(BaseAction):
 
                     result["RID"] = rid
                 else:
-                    result["Type"] = "Local or Built-in Account"
+                    result["type"] = "Local or Built-in Account"
             else:
-                result["Type"] = "Local or Built-in Account"
+                result["type"] = "Local or Built-in Account"
 
             logger.success("User SID information retrieved")
             print(OutputFormatter.convert_dict(result, "Property", "Value"))

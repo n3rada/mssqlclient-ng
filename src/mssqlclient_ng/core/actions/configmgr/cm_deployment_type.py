@@ -80,7 +80,7 @@ WHERE ci.CI_ID = {self._ci_id};"""
                     for k, v in info.items():
                         row[k] = v
 
-                logger.success(f"Deployment Type: {row.get('Title', 'Unknown')}")
+                logger.success(f"Deployment type: {row.get('Title', 'Unknown')}")
                 print(OutputFormatter.convert_list_of_dicts([row]))
                 return results
 

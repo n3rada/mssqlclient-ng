@@ -202,8 +202,8 @@ class Upload(BaseAction):
                 RETURN;
             END
 
-            -- Set stream type to binary
-            EXEC @Result = sp_OASetProperty @ObjectToken, 'Type', 1;
+            -- set stream type to binary
+            EXEC @Result = sp_OASetProperty @ObjectToken, 'type', 1;
             IF @Result <> 0
             BEGIN
                 EXEC sp_OAGetErrorInfo @ObjectToken, @ErrorSource OUT, @ErrorDesc OUT;

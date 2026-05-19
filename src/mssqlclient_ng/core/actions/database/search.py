@@ -228,7 +228,7 @@ class Search(BaseAction):
                     s.name AS [Schema],
                     t.name AS [Table],
                     c.name AS [Column],
-                    ty.name AS [Data Type],
+                    ty.name AS [Data type],
                     c.column_id AS [Position]
                 FROM [{db_name}].sys.tables t
                 INNER JOIN [{db_name}].sys.schemas s ON t.schema_id = s.schema_id
@@ -250,7 +250,7 @@ class Search(BaseAction):
                             "Schema": row["Schema"],
                             "Table": row["Table"],
                             "Column": row["Column"],
-                            "Data Type": row["Data Type"],
+                            "Data type": row["Data type"],
                             "Position": row["Position"],
                         }
                     )
@@ -284,7 +284,7 @@ class Search(BaseAction):
             database: Database name to search.
 
         Returns:
-            Tuple of (header_matches, row_matches, tables_searched).
+            tuple of (header_matches, row_matches, tables_searched).
         """
         # Escape single quotes in keyword for SQL
         escaped_keyword = self._keyword.replace("'", "''")

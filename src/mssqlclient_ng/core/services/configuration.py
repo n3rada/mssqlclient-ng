@@ -151,7 +151,7 @@ class ConfigurationService:
 
     def set_configuration_option(self, option_name: str, value: int) -> bool:
         """
-        Set a SQL Server configuration option using sp_configure.
+        set a SQL Server configuration option using sp_configure.
 
         Args:
             option_name: The name of the configuration option to modify

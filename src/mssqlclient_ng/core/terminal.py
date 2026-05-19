@@ -336,7 +336,7 @@ class Terminal:
 
         Args:
             action_name: The name of the action to execute
-            argument_list: List of arguments for the action
+            argument_list: list of arguments for the action
 
         Returns:
             The result of the action's execution, or None on error
@@ -525,7 +525,7 @@ class Terminal:
             )
 
         logger.info(
-            f"Type SQL directly or use '{prefix}<action> [args]' to run an action."
+            f"type SQL directly or use '{prefix}<action> [args]' to run an action."
         )
         logger.info(
             f"'{prefix}help' lists all actions, '{prefix}help <action>' shows usage."
@@ -653,7 +653,7 @@ class Terminal:
         print()
 
     def _handle_help(self, command_line: str) -> None:
-        """List actions or show help for a specific one: !help [action|term]"""
+        """list actions or show help for a specific one: !help [action|term]"""
         parts = command_line.split(maxsplit=1)
         term = parts[1].strip() if len(parts) > 1 else None
 
@@ -759,7 +759,7 @@ class Terminal:
                 logger.error(str(e))
 
     def _handle_link(self, command_line: str) -> None:
-        """Set or display the linked server chain.
+        """set or display the linked server chain.
         Usage: !link [server[/user1[/user2]][@db][;server2/user@db2;...]]
         Without arguments, shows the current linked server chain.
         With a server spec, replaces the chain and hops to the target.

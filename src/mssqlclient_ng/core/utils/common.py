@@ -109,7 +109,7 @@ def convert_dll_to_sql_bytes(data: bytes) -> tuple[str, str]:
         data: Raw bytes of the compiled .NET assembly
 
     Returns:
-        Tuple of (sha512_hash_hex_lowercase, assembly_hex_uppercase)
+        tuple of (sha512_hash_hex_lowercase, assembly_hex_uppercase)
     """
     sha512_hash = hashlib.sha512(data).hexdigest()
 
@@ -233,11 +233,11 @@ def convert_table_to_dicts(headers, table_data):
     Convert table format (headers, rows) to list of dicts.
 
     Args:
-        headers: List of column header names
-        table_data: List of rows (each row is a list of values)
+        headers: list of column header names
+        table_data: list of rows (each row is a list of values)
 
     Returns:
-        List of dictionaries where each dict represents a row
+        list of dictionaries where each dict represents a row
 
     Examples:
         >>> headers = ["Name", "Age"]

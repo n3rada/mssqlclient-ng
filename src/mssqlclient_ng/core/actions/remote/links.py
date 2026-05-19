@@ -36,7 +36,7 @@ class Links(BaseAction):
             database_context: The database context
 
         Returns:
-            List of linked servers with their configurations
+            list of linked servers with their configurations
         """
         logger.info("Retrieving linked SQL servers")
 
@@ -95,7 +95,7 @@ class Links(BaseAction):
             database_context: The database context
 
         Returns:
-            List of linked server dictionaries with Access column
+            list of linked server dictionaries with Access column
         """
         query = """
             SELECT

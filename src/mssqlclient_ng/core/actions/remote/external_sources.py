@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "ext-sources",
-    "List external data sources (PolyBase, Azure Elastic Query, Azure Synapse)",
+    "list external data sources (PolyBase, Azure Elastic Query, Azure Synapse)",
 )
 class ExternalSources(BaseAction):
     """
@@ -54,7 +54,7 @@ class ExternalSources(BaseAction):
             display.append(
                 {
                     "Name": row.get("name", ""),
-                    "Type": row.get("type_desc", ""),
+                    "type": row.get("type_desc", ""),
                     "Location": row.get("location", ""),
                     "Database Name": row.get("database_name", ""),
                     "Credential": cred_str,

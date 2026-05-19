@@ -14,7 +14,7 @@ class Server:
         version: The full version string of the server (e.g., "15.00.2000")
         port: The SQL Server port (default: 1433)
         database: The database to connect to (default: None, uses login default)
-        impersonation_users: List of users for cascading EXECUTE AS
+        impersonation_users: list of users for cascading EXECUTE AS
         mapped_user: The mapped user for the connection
         system_user: The system user for the connection
         is_azure_sql: Whether this is an Azure SQL Database instance
@@ -39,7 +39,7 @@ class Server:
             hostname: The hostname or IP address of the server
             port: The SQL Server port (default: 1433)
             database: The database to connect to (default: None, will use server default)
-            impersonation_users: List of users to cascade EXECUTE AS on this server
+            impersonation_users: list of users to cascade EXECUTE AS on this server
 
         Raises:
             ValueError: If hostname is empty or port is invalid
@@ -71,7 +71,7 @@ class Server:
     @version.setter
     def version(self, value: str | None) -> None:
         """
-        Set the server version and check if it's a legacy server.
+        set the server version and check if it's a legacy server.
         Logs a warning if major version <= 13 (SQL Server 2016 or older).
         """
         self._version = value
@@ -124,7 +124,7 @@ class Server:
 
     @property
     def impersonation_users(self) -> list[str]:
-        """List of impersonation users for cascading EXECUTE AS (like MSSQLand ImpersonationUsers)."""
+        """list of impersonation users for cascading EXECUTE AS (like MSSQLand ImpersonationUsers)."""
         return self._impersonation_users
 
     @impersonation_users.setter

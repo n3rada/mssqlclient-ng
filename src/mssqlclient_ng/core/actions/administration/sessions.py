@@ -11,7 +11,7 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("sessions", "List active SQL Server sessions", aliases=["who"])
+@ActionFactory.register("sessions", "list active SQL Server sessions", aliases=["who"])
 class Sessions(BaseAction):
     """
     Display active SQL Server sessions with connection information.
@@ -20,7 +20,7 @@ class Sessions(BaseAction):
     host name, program name, client interface, and login name.
 
     Usage:
-        sessions      # List all active sessions
+        sessions      # list all active sessions
     """
 
     def execute(self, database_context=None) -> list[dict[str, Any]] | None:

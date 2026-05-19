@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "ext-tables",
-    "List external tables (PolyBase / Elastic Query / Synapse)",
+    "list external tables (PolyBase / Elastic Query / Synapse)",
 )
 class ExternalTables(BaseAction):
     """
@@ -117,7 +117,7 @@ class ExternalTables(BaseAction):
                     "Data Source Location": ds_info.get("location", ""),
                     "File Format": ff_name,
                     "Table Location": row.get("location", ""),
-                    "Reject Type": reject_type,
+                    "Reject type": reject_type,
                     "Reject Value": reject_value,
                     "Distribution": row.get(
                         "distribution_desc", row.get("distribution_policy_desc", "")

@@ -63,7 +63,7 @@ class Query(BaseAction):
             database_context: The database context containing QueryService
 
         Returns:
-            List of result rows for SELECT queries, None for non-query commands
+            list of result rows for SELECT queries, None for non-query commands
         """
         if not database_context or not hasattr(database_context, "query_service"):
             logger.error("Database context with query_service is required")

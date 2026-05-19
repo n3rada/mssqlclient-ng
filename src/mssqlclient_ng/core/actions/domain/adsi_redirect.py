@@ -49,13 +49,13 @@ class AdsiRedirect(BaseAction):
             servers = adsi_service.get_adsi_server_names()
             if not servers:
                 logger.error("No ADSI linked server found on the execution target.")
-                logger.info("List linked servers with: links")
+                logger.info("list linked servers with: links")
                 return None
             self._target_server = servers[0]
             logger.info(f"Found existing ADSI linked server: '{self._target_server}'")
         elif not adsi_service.adsi_server_exists(self._target_server):
             logger.error(f"ADSI linked server '{self._target_server}' not found.")
-            logger.info("List available ADSI servers with: adsi-manager list")
+            logger.info("list available ADSI servers with: adsi-manager list")
             return None
 
         # Ensure listener address includes a port

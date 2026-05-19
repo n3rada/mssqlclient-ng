@@ -76,7 +76,7 @@ class ActionFactory:
         Get a list of all available actions with their descriptions and arguments.
 
         Returns:
-            List of tuples: (action_name, description, arguments)
+            list of tuples: (action_name, description, arguments)
         """
         result = []
 
@@ -114,7 +114,7 @@ class ActionFactory:
         Get a list of all registered action names.
 
         Returns:
-            List of action names
+            list of action names
         """
         return list(cls._registry.keys())
 
@@ -138,7 +138,7 @@ class ActionFactory:
         Get all registered action aliases.
 
         Returns:
-            Dict mapping alias -> canonical action name
+            dict mapping alias -> canonical action name
         """
         return dict(cls._aliases)
 

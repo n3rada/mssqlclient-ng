@@ -35,7 +35,7 @@ class AuthToken(BaseAction):
             database_context: The database context to use for execution
 
         Returns:
-            List of dictionaries containing group information, or None on error
+            list of dictionaries containing group information, or None on error
         """
         logger.info("Retrieving Windows authentication token groups")
 
@@ -84,19 +84,19 @@ class AuthToken(BaseAction):
                     {
                         "Group Name": group_name,
                         "Category": category,
-                        "Type": type_desc,
+                        "type": type_desc,
                         "Usage": usage,
                         "SQL Principal": sql_principal_str,
                     }
                 )
 
             # Display results
-            headers = ["Group Name", "Category", "Type", "Usage", "SQL Principal"]
+            headers = ["Group Name", "Category", "type", "Usage", "SQL Principal"]
             table_data = [
                 [
                     group["Group Name"],
                     group["Category"],
-                    group["Type"],
+                    group["type"],
                     group["Usage"],
                     group["SQL Principal"],
                 ]

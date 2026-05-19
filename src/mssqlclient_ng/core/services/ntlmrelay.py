@@ -74,7 +74,7 @@ class RelayMSSQL:
         # Only use MSSQL protocol client
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
-        # Set up config
+        # set up config
         c = NTLMRelayxConfig()
 
         c.setProtocolClients(minimal_protocol_clients)

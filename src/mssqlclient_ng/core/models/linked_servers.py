@@ -1,5 +1,7 @@
 # mssqlclient_ng/core/models/linked_servers.py
 
+from __future__ import annotations
+
 # Built-in imports
 
 # Third party imports
@@ -171,7 +173,7 @@ class LinkedServers:
         Server names are wrapped in brackets if they contain special characters.
 
         Returns:
-            List of server strings with optional impersonation and database
+            list of server strings with optional impersonation and database
             (e.g., ["[SQL-02]/user@db", "SQL03", "[SQL.04]@analytics"])
         """
         chain_parts = []
@@ -272,7 +274,7 @@ class LinkedServers:
             chain_input: Semicolon-separated list (e.g., "[SQL-27]/user01;[SQL.53]/user02")
 
         Returns:
-            List of Server objects
+            list of Server objects
 
         Raises:
             ValueError: If chain_input is empty

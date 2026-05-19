@@ -44,7 +44,7 @@ class UserService:
 
     @mapped_user.setter
     def mapped_user(self, value: str | None) -> None:
-        """Set the mapped database user."""
+        """set the mapped database user."""
         self._mapped_user = value
 
     @property
@@ -54,7 +54,7 @@ class UserService:
 
     @system_user.setter
     def system_user(self, value: str | None) -> None:
-        """Set the system login user."""
+        """set the system login user."""
         self._system_user = value
 
     @property
@@ -64,7 +64,7 @@ class UserService:
 
     @effective_user.setter
     def effective_user(self, value: str | None) -> None:
-        """Set the effective database user."""
+        """set the effective database user."""
         self._effective_user = value
 
     @property
@@ -74,7 +74,7 @@ class UserService:
 
     @source_principal.setter
     def source_principal(self, value: str | None) -> None:
-        """Set the source principal."""
+        """set the source principal."""
         self._source_principal = value
 
     @property
@@ -195,7 +195,7 @@ class UserService:
         Also populates the admin-status cache as a side effect.
 
         Returns:
-            Tuple of (fixed_roles, custom_roles)
+            tuple of (fixed_roles, custom_roles)
         """
         query = """
 SELECT name, is_fixed_role
@@ -252,7 +252,7 @@ ORDER BY is_fixed_role DESC, name;"""
         Retrieve information about the current user.
 
         Returns:
-            Tuple containing (mapped_user, system_user)
+            tuple containing (mapped_user, system_user)
         """
         query = "SELECT USER_NAME() AS U, SYSTEM_USER AS S;"
 

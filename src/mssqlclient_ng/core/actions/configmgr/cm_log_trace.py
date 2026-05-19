@@ -40,7 +40,7 @@ class CMLogTrace(CMBaseAction):
         self._guid = self.get_positional_argument(positional, 0, "")
         if not self._guid:
             raise ValueError(
-                "Deployment Type GUID is required. " "Usage: cm-trace <GUID>"
+                "Deployment type GUID is required. " "Usage: cm-trace <GUID>"
             )
 
         self._guid = self._guid.strip()
@@ -95,7 +95,7 @@ WHERE ci.CI_UniqueID LIKE '%{self._guid}%';"""
                 dt = dt_results[0]
                 dt_ci_id = dt["CI_ID"]
                 logger.success(
-                    f"Deployment Type: {dt.get('Title', 'Unknown')} (CI_ID: {dt_ci_id})"
+                    f"Deployment type: {dt.get('Title', 'Unknown')} (CI_ID: {dt_ci_id})"
                 )
 
                 # Step 2: Find parent application via CI relations

@@ -21,12 +21,12 @@ XP_DESCRIPTIONS = {
     "xp_servicecontrol": "Start/stop Windows services",
     "xp_terminate_process": "Terminate a Windows process by PID",
     # File System Operations
-    "xp_dirtree": "List directory tree structure (depth, files)",
-    "xp_subdirs": "List subdirectories only",
+    "xp_dirtree": "list directory tree structure (depth, files)",
+    "xp_subdirs": "list subdirectories only",
     "xp_fileexist": "Check if a file/directory exists",
-    "xp_fixeddrives": "List drives with free space (MB)",
-    "xp_availablemedia": "List available backup media devices",
-    "xp_get_tape_devices": "List tape backup devices",
+    "xp_fixeddrives": "list drives with free space (MB)",
+    "xp_availablemedia": "list available backup media devices",
+    "xp_get_tape_devices": "list tape backup devices",
     "xp_create_subdir": "Create a subdirectory",
     "xp_delete_file": "Delete backup/log files",
     "xp_copy_file": "Copy a file",
@@ -61,10 +61,10 @@ XP_DESCRIPTIONS = {
     "xp_msver": "Get SQL Server version info",
     "xp_loginconfig": "Get login/auth configuration",
     "xp_readerrorlog": "Read SQL Server error log",
-    "xp_enumerrorlogs": "List available error logs",
+    "xp_enumerrorlogs": "list available error logs",
     "xp_logevent": "Write to Windows Event Log",
     # SQL Agent
-    "xp_sqlagent_enum_jobs": "List SQL Agent jobs",
+    "xp_sqlagent_enum_jobs": "list SQL Agent jobs",
     "xp_sqlagent_is_starting": "Check if SQL Agent starting",
     "xp_sqlagent_monitor": "Monitor SQL Agent status",
     "xp_sqlagent_notify": "Send SQL Agent notification",
@@ -77,7 +77,7 @@ XP_DESCRIPTIONS = {
     "xp_sendmail": "Send email (legacy, use sp_send_dbmail)",
     "xp_smtp_sendmail": "Send email via SMTP",
     # OLE DB Providers
-    "xp_enum_oledb_providers": "List installed OLE DB providers",
+    "xp_enum_oledb_providers": "list installed OLE DB providers",
     "xp_prop_oledb_provider": "Get OLE DB provider properties",
     # String/Utility
     "xp_sprintf": "Format string (C-style sprintf)",
@@ -96,7 +96,7 @@ OLE_DESCRIPTIONS = {
     "sp_OACreate": "Create COM/OLE object instance",
     "sp_OAMethod": "Call method on COM object",
     "sp_OAGetProperty": "Get property from COM object",
-    "sp_OASetProperty": "Set property on COM object",
+    "sp_OASetProperty": "set property on COM object",
     "sp_OAGetErrorInfo": "Get last OLE error info",
     "sp_OADestroy": "Destroy COM object instance",
     "sp_OAStop": "Stop OLE Automation environment",
@@ -110,13 +110,13 @@ SYSTEM_PROC_DESCRIPTIONS = {
     "sp_addlinkedserver": "Create a linked server",
     "sp_addlinkedsrvlogin": "Map login to linked server",
     "sp_dropserver": "Drop a linked server",
-    "sp_linkedservers": "List linked servers",
+    "sp_linkedservers": "list linked servers",
     "sp_testlinkedserver": "Test linked server connectivity",
-    "sp_catalogs": "List catalogs on linked server",
-    "sp_tables_ex": "List tables on linked server",
-    "sp_columns_ex": "List columns on linked server table",
-    "sp_primarykeys": "List primary keys on linked server",
-    "sp_foreignkeys": "List foreign keys on linked server",
+    "sp_catalogs": "list catalogs on linked server",
+    "sp_tables_ex": "list tables on linked server",
+    "sp_columns_ex": "list columns on linked server table",
+    "sp_primarykeys": "list primary keys on linked server",
+    "sp_foreignkeys": "list foreign keys on linked server",
     "sp_add_job": "Create SQL Agent job",
     "sp_add_jobstep": "Add step to SQL Agent job",
     "sp_add_jobschedule": "Add schedule to SQL Agent job",
@@ -154,7 +154,7 @@ class ExtendedProcs(BaseAction):
             database_context: The database context
 
         Returns:
-            List of extended procedure dictionaries with execution permissions
+            list of extended procedure dictionaries with execution permissions
         """
         is_sysadmin = database_context.user_service.is_admin()
         sysadmin_flag = 1 if is_sysadmin else 0
@@ -272,7 +272,7 @@ class ExtendedProcs(BaseAction):
                             'OBJECT', 'EXECUTE') = 1 THEN 'Yes'
                         ELSE 'No'
                     END AS [Execute],
-                    o.type_desc AS [Type]
+                    o.type_desc AS [type]
                 FROM sys.all_objects o
                 WHERE o.name IN (
                     'sp_execute_external_script',
@@ -300,7 +300,7 @@ class ExtendedProcs(BaseAction):
                             "Description": SYSTEM_PROC_DESCRIPTIONS.get(
                                 simple_name, ""
                             ),
-                            "Type": str(proc.get("Type", "")),
+                            "type": str(proc.get("type", "")),
                         }
                     )
                 sys_enriched.sort(

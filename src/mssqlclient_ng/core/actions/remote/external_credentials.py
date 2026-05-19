@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "ext-creds",
-    "List database-scoped credentials used by external data sources",
+    "list database-scoped credentials used by external data sources",
 )
 class ExternalCredentials(BaseAction):
     """

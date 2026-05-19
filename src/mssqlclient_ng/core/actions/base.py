@@ -31,7 +31,7 @@ class Arg:
     toggle: bool = False
     description: str | None = None
     default: Any = None
-    # Set by __set_name__ at class-creation time; not a constructor parameter.
+    # set by __set_name__ at class-creation time; not a constructor parameter.
     _attr_name: str = field(default="", init=False, repr=False)
 
     def __set_name__(self, owner: type, name: str) -> None:
@@ -52,14 +52,14 @@ class Arg:
     def __set__(self, obj: object, value: Any) -> None:
         obj.__dict__[self._attr_name] = value
 
-# Type alias for the value returned by execute().
+# type alias for the value returned by execute().
 # list[dict]             — single tabular result; re-rendered on every cache hit
 #                          using the active OutputFormatter.
 # list[list[dict]]       — multiple independent tables (e.g. roles prints four);
 #                          each sub-list is re-rendered in order on cache hit.
 # None                   — pure side-effect action (mutations, file ops, etc.)
 #                          or actions that manage their own unstructured output.
-ActionResult = Union[list[dict[str, Any]], list[list[dict[str, Any]]]] | None
+ActionResult = list[dict[str, Any]] | list[list[dict[str, Any]]] | None
 
 class BaseAction(ABC):
     """
@@ -256,7 +256,7 @@ class BaseAction(ABC):
             argument_list: Pre-split list of arguments (preferred)
 
         Returns:
-            Tuple of (named_args, positional_args)
+            tuple of (named_args, positional_args)
         """
         named: dict[str, str] = {}
         positional: list[str] = []

@@ -315,12 +315,12 @@ class ActionCompleter(Completer):
 
         # Built-in commands with descriptions
         self.builtins = {
-            "help": "List actions or show help for a specific action/command",
+            "help": "list actions or show help for a specific action/command",
             "debug": "Toggle debug mode on/off",
             "chain": "Display full connection chain with impersonation context",
             "format": "Show or change the output table format",
             "flush": "Flush cached action outputs for current or all contexts",
-            "link": "Set linked server chain (e.g. SQL02/user;SQL03@db)",
+            "link": "set linked server chain (e.g. SQL02/user;SQL03@db)",
             "unlink": "Remove last server from chain",
             "unlink-all": "Clear entire linked server chain",
             "add-link": "Add server to chain (e.g. SQL03/user@db)",

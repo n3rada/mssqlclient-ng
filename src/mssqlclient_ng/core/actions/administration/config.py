@@ -21,12 +21,12 @@ class Config(BaseAction):
     Configure SQL Server options using sp_configure or list configurations.
 
     Modes:
-    1. List all configurations: config
+    1. list all configurations: config
     2. Check specific option: config xp_cmdshell
-    3. Set option: config xp_cmdshell 1
+    3. set option: config xp_cmdshell 1
 
     Usage:
-        config                      # List all configuration options
+        config                      # list all configuration options
         config xp_cmdshell          # Check status of xp_cmdshell
         config xp_cmdshell 1        # Enable xp_cmdshell
         config xp_cmdshell 0        # Disable xp_cmdshell
@@ -112,7 +112,7 @@ class Config(BaseAction):
         Returns:
             Status or list of configurations
         """
-        # Mode 1: Set configuration option
+        # Mode 1: set configuration option
         if self._value_int >= 0 and self._option_name:
             logger.info(f"Setting {self._option_name} to {self._value_int}")
             database_context.config_service.set_configuration_option(
@@ -138,7 +138,7 @@ class Config(BaseAction):
             )
             return status
 
-        # Mode 3: List all security-sensitive configurations
+        # Mode 3: list all security-sensitive configurations
         logger.info("Listing all configuration options")
         results = self._check_configuration_options(database_context)
 
@@ -160,7 +160,7 @@ class Config(BaseAction):
             database_context: The database context
 
         Returns:
-            List of configuration dictionaries
+            list of configuration dictionaries
         """
         results = []
 
@@ -214,6 +214,6 @@ class Config(BaseAction):
         Displays the results in a formatted table.
 
         Args:
-            results: List of configuration dictionaries
+            results: list of configuration dictionaries
         """
         print(OutputFormatter.convert_list_of_dicts(results))

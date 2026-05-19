@@ -113,7 +113,7 @@ class Rows(BaseAction):
             database_context: The DatabaseContext instance to execute the query.
 
         Returns:
-            List of rows from the table.
+            list of rows from the table.
         """
         # Use the execution database if no database is specified
         if not self._database:

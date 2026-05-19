@@ -139,7 +139,7 @@ class ChainStore:
 
     def list_servers(self) -> list[str]:
         """
-        List all servers that have saved chains.
+        list all servers that have saved chains.
 
         Returns:
             list of server names with saved chains

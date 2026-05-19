@@ -220,7 +220,7 @@ class ClrExecution(BaseAction):
             dll: Path to local file
 
         Returns:
-            Tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
+            tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
         """
         resolved = str(Path(normalize_windows_path(dll)).resolve())
         return self._convert_dll_to_sql_bytes_file(resolved)
@@ -233,7 +233,7 @@ class ClrExecution(BaseAction):
             dll: Full path to the DLL on disk
 
         Returns:
-            Tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
+            tuple of (sha512_hash_lowercase, dll_hex_bytes_uppercase)
         """
         try:
             path = Path(dll)

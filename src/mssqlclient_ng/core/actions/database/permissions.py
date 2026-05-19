@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "permissions",
-    "List permissions for the current user on server, databases, or specific table",
+    "list permissions for the current user on server, databases, or specific table",
 )
 class Permissions(BaseAction):
     """
@@ -164,13 +164,13 @@ class Permissions(BaseAction):
         print(OutputFormatter.convert_list_of_dicts(sorted_table))
         return sorted_table
 
-    def _sort_permissions_by_importance(self, permissions: list[Dict]) -> list[Dict]:
+    def _sort_permissions_by_importance(self, permissions: list[dict]) -> list[dict]:
         """
         Sort permissions by exploitation value - most interesting permissions first.
         Secondary sort by permission name for consistent ordering.
 
         Args:
-            permissions: List of permission dictionaries
+            permissions: list of permission dictionaries
 
         Returns:
             Sorted list of permissions

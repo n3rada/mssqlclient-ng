@@ -53,7 +53,7 @@ class QueryService:
     @linked_servers.setter
     def linked_servers(self, value: LinkedServers | None) -> None:
         """
-        Set the linked servers configuration.
+        set the linked servers configuration.
         Updates the execution server to the last server in the chain.
         Queries @@SERVERNAME and @@VERSION from the linked server to resolve
         the real hostname (vs alias) and detect Azure SQL.
@@ -122,7 +122,7 @@ class QueryService:
             silent: If True, suppress impacket error output
 
         Returns:
-            List of rows (dicts or tuples based on tuple_mode)
+            list of rows (dicts or tuples based on tuple_mode)
 
         Raises:
             ValueError: If query is empty
@@ -166,7 +166,7 @@ class QueryService:
             silent: If True, suppress impacket error output
 
         Returns:
-            List of row dictionaries, one per result row.
+            list of row dictionaries, one per result row.
         """
         rows = self.execute(query, tuple_mode=False, silent=silent)
         if not rows:
