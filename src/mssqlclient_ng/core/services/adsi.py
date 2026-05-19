@@ -58,7 +58,7 @@ class AdsiService:
         servers = self.list_adsi_servers()
         if not servers:
             return []
-        return [row.get("srvname") for row in servers if row.get("srvname")]
+        return [name for row in servers if isinstance(name := row.get("srvname"), str)]
 
     def adsi_server_exists(self, server_name: str) -> bool:
         """

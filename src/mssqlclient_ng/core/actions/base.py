@@ -9,6 +9,7 @@ from typing import Any, overload
 # Third party imports
 from loguru import logger
 
+
 @dataclass
 class Arg:
     """
@@ -52,6 +53,7 @@ class Arg:
     def __set__(self, obj: object, value: Any) -> None:
         obj.__dict__[self._attr_name] = value
 
+
 # type alias for the value returned by execute().
 # list[dict]             — single tabular result; re-rendered on every cache hit
 #                          using the active OutputFormatter.
@@ -60,6 +62,7 @@ class Arg:
 # None                   — pure side-effect action (mutations, file ops, etc.)
 #                          or actions that manage their own unstructured output.
 ActionResult = list[dict[str, Any]] | list[list[dict[str, Any]]] | None
+
 
 class BaseAction(ABC):
     """

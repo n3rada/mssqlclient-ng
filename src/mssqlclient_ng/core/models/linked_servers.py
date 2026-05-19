@@ -11,6 +11,7 @@ from loguru import logger
 from .server import Server
 from ..utils.common import bracket_identifier
 
+
 class LinkedServers:
     """
     Manages linked server chains for executing queries across multiple SQL Server instances.
@@ -18,9 +19,7 @@ class LinkedServers:
     Supports both OPENQUERY and EXEC AT (RPC) methods for chaining.
     """
 
-    def __init__(
-        self, chain_input: str | list[Server] | "LinkedServers" | None = None
-    ):
+    def __init__(self, chain_input: str | list[Server] | "LinkedServers" | None = None):
         """
         Initialize the linked server chain.
 
