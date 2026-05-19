@@ -11,12 +11,12 @@ authors = [
 ]
 license = {text = "GPL-3.0-or-later"}
 readme = "README.md"
-requires-python = ">3.9.1,<4.0"
+requires-python = ">=3.11,<4.0"
 dependencies = [
-    "loguru>=0.7.3,<0.8.0",
-    "prompt-toolkit>=3.0.52,<4.0.0",
-    "pygments>=2.19.2,<3.0.0",
-    "impacket @ git+https://github.com/fortra/impacket.git@master"
+    "impacket @ git+https://github.com/fortra/impacket.git@master",
+    "loguru>=0.7.3",
+    "prompt-toolkit>=3.0.52",
+    "pygments>=2.19.2",
 ]
 
 [project.urls]
@@ -37,3 +37,6 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
+
+[tool.uv.sources]
+impacket = { git = "https://github.com/fortra/impacket.git", rev = "master" }
