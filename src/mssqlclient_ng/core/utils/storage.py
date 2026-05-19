@@ -12,7 +12,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -31,14 +31,12 @@ def get_data_dir() -> Path:
         Path to the data directory (created if needed)
     """
     if os.name == "nt":
-        base = Path(os.environ.get("APPDATA", str(Path.home())))
+        base = Path(os.environ.get("APPDATA") or Path.home())
     else:
-        base = Path(
-            os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local" / "share"))
-        )
+        xdg = os.environ.get("XDG_DATA_HOME")
+        base = Path(xdg) if xdg else Path.home() / ".local" / "share"
 
-    data_dir = (base / APP_NAME).resolve()
-    return data_dir
+    return (base / APP_NAME).resolve()
 
 
 def _sanitize_filename(name: str) -> str:
@@ -79,13 +77,13 @@ class ChainStore:
         """Get the JSON file path for a given starting server."""
         return self._chains_dir / f"{_sanitize_filename(server)}.json"
 
-    def save(self, server: str, chains: List[Dict[str, Any]]) -> None:
+    def save(self, server: str, chains: list[dict[str, Any]]) -> None:
         """
         Save discovered chains for a starting server.
 
         Args:
             server: The starting server hostname
-            chains: List of chain row dicts (from LinkMap._display_chain_commands)
+            chains: list of chain row dicts (from LinkMap._display_chain_commands)
         """
         self._chains_dir.mkdir(parents=True, exist_ok=True)
 
@@ -102,10 +100,10 @@ class ChainStore:
             if os.name != "nt":
                 os.chmod(chain_file, 0o600)
             logger.info(f"Saved {len(chains)} chain(s) to {chain_file}")
-        except Exception as ex:
+        except OSError as ex:
             logger.warning(f"Failed to save chains: {ex}")
 
-    def load(self, server: str) -> Optional[Dict[str, Any]]:
+    def load(self, server: str) -> dict[str, Any] | None:
         """
         Load saved chains for a starting server.
 
@@ -113,7 +111,7 @@ class ChainStore:
             server: The starting server hostname
 
         Returns:
-            Dict with 'server', 'last_updated', 'chains' keys, or None if not found
+            dict with 'server', 'last_updated', 'chains' keys, or None if not found
         """
         chain_file = self._get_chain_file(server)
         if not chain_file.is_file():
@@ -122,7 +120,7 @@ class ChainStore:
         try:
             data = json.loads(chain_file.read_text(encoding="utf-8"))
             return data
-        except Exception as ex:
+        except (OSError, json.JSONDecodeError) as ex:
             logger.warning(f"Failed to load chains from {chain_file}: {ex}")
             return None
 
@@ -142,12 +140,12 @@ class ChainStore:
             return True
         return False
 
-    def list_servers(self) -> List[str]:
+    def list_servers(self) -> list[str]:
         """
         List all servers that have saved chains.
 
         Returns:
-            List of server names with saved chains
+            list of server names with saved chains
         """
         if not self._chains_dir.is_dir():
             return []
@@ -157,7 +155,7 @@ class ChainStore:
             try:
                 data = json.loads(f.read_text(encoding="utf-8"))
                 servers.append(data.get("server", f.stem))
-            except Exception:
+            except (OSError, json.JSONDecodeError):
                 servers.append(f.stem)
         return servers
 
@@ -246,12 +244,12 @@ class OutputCache:
         database: str,
         action_name: str,
         args: str,
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Retrieve cached raw row data for an action.
 
         Returns:
-            List of row dicts (for re-rendering with any format), or None if not cached.
+            list of row dicts (for re-rendering with any format), or None if not cached.
         """
         ctx = self._context_hash(execution_server, system_user, chain_spec, database)
         key = self._action_key(action_name, args)
@@ -262,7 +260,7 @@ class OutputCache:
 
         try:
             return json.loads(cache_file.read_text(encoding="utf-8"))
-        except Exception as ex:
+        except (OSError, json.JSONDecodeError) as ex:
             logger.debug(f"Failed to read cache file {cache_file}: {ex}")
             return None
 
@@ -274,7 +272,7 @@ class OutputCache:
         database: str,
         action_name: str,
         args: str,
-        rows: List[Dict[str, Any]],
+        rows: list[dict[str, Any]],
     ) -> None:
         """Store raw row data as JSON for format-agnostic caching."""
         ctx = self._context_hash(execution_server, system_user, chain_spec, database)
@@ -290,7 +288,7 @@ class OutputCache:
             # Remove stale text cache for the same key
             (ctx_dir / f"{key}.txt").unlink(missing_ok=True)
             logger.debug(f"Cached rows for '{action_name}' in {cache_file}")
-        except Exception as ex:
+        except OSError as ex:
             logger.debug(f"Failed to cache rows: {ex}")
 
     def get(
@@ -301,7 +299,7 @@ class OutputCache:
         database: str,
         action_name: str,
         args: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Retrieve cached text output for an action in the given context.
 
@@ -317,7 +315,7 @@ class OutputCache:
 
         try:
             return cache_file.read_text(encoding="utf-8")
-        except Exception as ex:
+        except OSError as ex:
             logger.debug(f"Failed to read cache file {cache_file}: {ex}")
             return None
 
@@ -343,7 +341,7 @@ class OutputCache:
             if os.name != "nt":
                 os.chmod(cache_file, 0o600)
             logger.debug(f"Cached output for '{action_name}' in {cache_file}")
-        except Exception as ex:
+        except OSError as ex:
             logger.debug(f"Failed to cache output: {ex}")
 
     def get_mtime(
@@ -354,15 +352,21 @@ class OutputCache:
         database: str,
         action_name: str,
         args: str,
-    ) -> Optional[datetime]:
+    ) -> datetime | None:
         """Return the modification time (UTC) of the cache file, or None if absent."""
         ctx = self._context_hash(execution_server, system_user, chain_spec, database)
         key = self._action_key(action_name, args)
-        for ext in (".json", ".txt"):
-            cache_file = self._cache_dir / ctx / f"{key}{ext}"
-            if cache_file.is_file():
-                return datetime.fromtimestamp(cache_file.stat().st_mtime, tz=timezone.utc)
-        return None
+        cache_file = next(
+            (
+                p
+                for ext in (".json", ".txt")
+                if (p := self._cache_dir / ctx / f"{key}{ext}").is_file()
+            ),
+            None,
+        )
+        if cache_file is None:
+            return None
+        return datetime.fromtimestamp(cache_file.stat().st_mtime, tz=timezone.utc)
 
     def flush(
         self,
@@ -385,16 +389,16 @@ class OutputCache:
             )
             ctx_dir = self._cache_dir / ctx
             if ctx_dir.is_dir():
-                for f in ctx_dir.iterdir():
+                files = list(ctx_dir.iterdir())
+                for f in files:
                     f.unlink()
-                    deleted += 1
                 ctx_dir.rmdir()
-        else:
-            if self._cache_dir.is_dir():
-                for ctx_dir in self._cache_dir.iterdir():
-                    if ctx_dir.is_dir():
-                        for f in ctx_dir.iterdir():
-                            f.unlink()
-                            deleted += 1
-                        ctx_dir.rmdir()
+                deleted = len(files)
+        elif self._cache_dir.is_dir():
+            for ctx_dir in (d for d in self._cache_dir.iterdir() if d.is_dir()):
+                files = list(ctx_dir.iterdir())
+                for f in files:
+                    f.unlink()
+                ctx_dir.rmdir()
+                deleted += len(files)
         return deleted
