@@ -24,7 +24,6 @@ from .core import actions  # noqa: F401
 from .core.actions.factory import ActionFactory
 from .core.actions.execution import query
 
-
 def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
@@ -262,7 +261,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     return parser
-
 
 def main() -> int:
     print(banner.display_banner())

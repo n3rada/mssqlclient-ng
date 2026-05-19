@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/filesystem/remove_file.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
-
 
 @ActionFactory.register(
     "rm",
@@ -34,7 +32,7 @@ class RemoveFile(BaseAction):
         self._bind_arguments(additional_arguments)
         self._file_path = normalize_windows_path(self._file_path).replace("/", "\\")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> bool | None:
         logger.info(f"Deleting remote file: {self._file_path}")
 
         # Ensure OLE Automation is enabled

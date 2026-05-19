@@ -4,11 +4,10 @@
 import shlex
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Any, Union, overload
+from typing import Any, overload
 
 # Third party imports
 from loguru import logger
-
 
 @dataclass
 class Arg:
@@ -25,12 +24,12 @@ class Arg:
     """
 
     position: int = -1
-    short_name: Optional[str] = None
-    long_name: Optional[str] = None
+    short_name: str | None = None
+    long_name: str | None = None
     required: bool = False
     remainder: bool = False
     toggle: bool = False
-    description: Optional[str] = None
+    description: str | None = None
     default: Any = None
     # Set by __set_name__ at class-creation time; not a constructor parameter.
     _attr_name: str = field(default="", init=False, repr=False)
@@ -42,7 +41,7 @@ class Arg:
     def __get__(self, obj: None, objtype: type) -> "Arg": ...
     @overload
     def __get__(self, obj: object, objtype: type) -> Any: ...
-    def __get__(self, obj: Optional[object], objtype: Optional[type] = None) -> Any:
+    def __get__(self, obj: object | None, objtype: type | None = None) -> Any:
         if obj is None:
             return self
         try:
@@ -53,7 +52,6 @@ class Arg:
     def __set__(self, obj: object, value: Any) -> None:
         obj.__dict__[self._attr_name] = value
 
-
 # Type alias for the value returned by execute().
 # list[dict]             — single tabular result; re-rendered on every cache hit
 #                          using the active OutputFormatter.
@@ -61,8 +59,7 @@ class Arg:
 #                          each sub-list is re-rendered in order on cache hit.
 # None                   — pure side-effect action (mutations, file ops, etc.)
 #                          or actions that manage their own unstructured output.
-ActionResult = Optional[Union[List[Dict[str, Any]], List[List[Dict[str, Any]]]]]
-
+ActionResult = Union[list[dict[str, Any]], list[list[dict[str, Any]]]] | None
 
 class BaseAction(ABC):
     """
@@ -90,7 +87,7 @@ class BaseAction(ABC):
     # After this many positional args, treat everything else as positional
     # regardless of flag-like syntax (like C# Remainder = true).
     # Auto-computed from Arg(remainder=True) fields, or set manually.
-    _remainder_after: Optional[int] = None
+    _remainder_after: int | None = None
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -114,7 +111,7 @@ class BaseAction(ABC):
         ...
 
     @classmethod
-    def _get_arg_fields(cls) -> Dict[str, "Arg"]:
+    def _get_arg_fields(cls) -> dict[str, "Arg"]:
         """Get all Arg() descriptors from the class hierarchy."""
         fields = {}
         for klass in reversed(cls.__mro__):
@@ -124,7 +121,7 @@ class BaseAction(ABC):
         return fields
 
     @classmethod
-    def _compute_remainder_after(cls) -> Optional[int]:
+    def _compute_remainder_after(cls) -> int | None:
         """Compute _remainder_after from Arg(remainder=True) fields."""
         for _, arg in cls._get_arg_fields().items():
             if arg.remainder and arg.position >= 0:
@@ -221,7 +218,7 @@ class BaseAction(ABC):
 
     def split_arguments(
         self, additional_arguments: str, separator: str = ","
-    ) -> List[str]:
+    ) -> list[str]:
         if not additional_arguments or additional_arguments.strip() == "":
             logger.debug("No arguments provided.")
             return []
@@ -246,8 +243,8 @@ class BaseAction(ABC):
     def _parse_action_arguments(
         self,
         additional_arguments: str = "",
-        argument_list: Optional[List[str]] = None,
-    ) -> Tuple[Dict[str, str], List[str]]:
+        argument_list: list[str] | None = None,
+    ) -> tuple[dict[str, str], list[str]]:
         """
         Parse arguments with Unix-style flags (-l, --limit) and positional arguments.
 
@@ -261,8 +258,8 @@ class BaseAction(ABC):
         Returns:
             Tuple of (named_args, positional_args)
         """
-        named: Dict[str, str] = {}
-        positional: List[str] = []
+        named: dict[str, str] = {}
+        positional: list[str] = []
 
         # Prefer pre-split list to avoid double-parsing
         if argument_list is not None:
@@ -346,13 +343,13 @@ class BaseAction(ABC):
         return named, positional
 
     def get_named_argument(
-        self, named_args: Dict[str, str], name: str, default: Optional[str] = None
-    ) -> Optional[str]:
+        self, named_args: dict[str, str], name: str, default: str | None = None
+    ) -> str | None:
         return named_args.get(name, default)
 
     def get_positional_argument(
-        self, positional_args: List[str], index: int, default: Optional[str] = None
-    ) -> Optional[str]:
+        self, positional_args: list[str], index: int, default: str | None = None
+    ) -> str | None:
         if 0 <= index < len(positional_args):
             return positional_args[index]
         return default

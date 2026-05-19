@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/domain/adsi_redirect.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
-
 
 @ActionFactory.register(
     "adsi-redirect",
@@ -43,7 +41,7 @@ class AdsiRedirect(BaseAction):
     _listener_address = Arg(position=0, required=True, description="Listener IP[:port] for LDAP capture")
     _target_server = Arg(position=1, default="", description="ADSI server name to redirect")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> bool | None:
         adsi_service = AdsiService(database_context)
 
         # Resolve target ADSI server

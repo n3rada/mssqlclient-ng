@@ -3,7 +3,6 @@
 # Built-in imports
 import base64
 from pathlib import Path
-from typing import Optional, List
 
 # Third-party imports
 from loguru import logger
@@ -13,7 +12,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
-
 
 @ActionFactory.register("upload", "Upload a local file to the SQL Server filesystem")
 class Upload(BaseAction):
@@ -34,7 +32,7 @@ class Upload(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._local_path: Optional[Path] = None
+        self._local_path: Path | None = None
         self._remote_path: str = ""
 
     def validate_arguments(self, additional_arguments: str = "") -> None:

@@ -4,12 +4,11 @@
 
 import re
 import xml.etree.ElementTree as ET
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 from loguru import logger
 
 from .query import QueryService
-
 
 class CMService:
     """
@@ -19,9 +18,9 @@ class CMService:
 
     def __init__(self, query_service: QueryService):
         self._query_service = query_service
-        self._has_views_cache: Dict[str, bool] = {}
+        self._has_views_cache: dict[str, bool] = {}
 
-    def get_sccm_databases(self) -> List[str]:
+    def get_sccm_databases(self) -> list[str]:
         """
         Gets all ConfigMgr databases on the server.
         If the current execution database is a CM_ database, returns only that one.
@@ -47,7 +46,7 @@ class CMService:
             return []
 
     @staticmethod
-    def get_site_code(database_name: str) -> Optional[str]:
+    def get_site_code(database_name: str) -> str | None:
         """Extracts the site code from a ConfigMgr database name (e.g., CM_PSC -> PSC)."""
         if not database_name or not database_name.upper().startswith("CM_"):
             return None
@@ -200,9 +199,9 @@ class CMService:
     @staticmethod
     def parse_sdm_package_digest(
         xml_content: str, detailed: bool = False
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Parse SDMPackageDigest XML and extract deployment type information."""
-        info: Dict[str, str] = {}
+        info: dict[str, str] = {}
         if not xml_content:
             return info
 

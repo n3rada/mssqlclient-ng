@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr collections."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-collections", "Enumerate ConfigMgr collections with member counts"
@@ -47,7 +44,7 @@ class CMCollections(CMBaseAction):
         self._limit = int(named.get("limit", "25"))
         self._with_members = "with-members" in named
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         filters = []
         if self._collection_id:
             filters.append(f"ID: {self._collection_id}")

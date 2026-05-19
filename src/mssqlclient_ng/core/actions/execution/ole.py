@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/execution/ole.py
 
 # Built-in imports
-from typing import List
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ...services.database import DatabaseContext
 from ...utils.common import generate_random_string
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
-
 
 @ActionFactory.register(
     "ole",

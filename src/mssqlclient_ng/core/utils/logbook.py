@@ -26,7 +26,6 @@ from pathlib import Path
 # Third party library imports
 from loguru import logger
 
-
 def _format_message(record):
     """Custom formatter with compact symbols and colors."""
     level_name = record["level"].name
@@ -66,7 +65,6 @@ def _format_message(record):
         "\n{exception}"
     )
 
-
 def _xdg_state_dir(app_name: str = "mssqlclient-ng") -> Path:
     """Get platform-appropriate log directory following XDG standards."""
 
@@ -80,7 +78,6 @@ def _xdg_state_dir(app_name: str = "mssqlclient-ng") -> Path:
         return Path(base).expanduser().resolve() / app_name / "logs"
 
     return Path.home() / ".local" / "state" / app_name / "logs"
-
 
 class InterceptHandler(logging.Handler):
     """Intercept standard logging and redirect to Loguru."""
@@ -101,7 +98,6 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(
             level, record.getMessage()
         )
-
 
 def setup_impacket_logging(level: str = "INFO"):
     """
@@ -132,7 +128,6 @@ def setup_impacket_logging(level: str = "INFO"):
         impacket_logger.handlers = [InterceptHandler()]
         impacket_logger.setLevel(std_level)
         impacket_logger.propagate = False
-
 
 def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = True):
     """

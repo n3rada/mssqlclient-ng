@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/filesystem/file_read.py
 
 # Built-in imports
-from typing import Optional, List
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
-
 
 @ActionFactory.register(
     "read",
@@ -35,7 +33,7 @@ class FileRead(BaseAction):
         self._bind_arguments(additional_arguments)
         self._file_path = normalize_windows_path(self._file_path)
 
-    def execute(self, database_context: DatabaseContext) -> Optional[str]:
+    def execute(self, database_context: DatabaseContext) -> str | None:
         """
         Execute the Read action to fetch the content of a file using OPENROWSET BULK.
 

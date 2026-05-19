@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/execution/xpcmd.py
 
 # Built-in imports
-from typing import Any, List, Optional
+from typing import Any
 
 # Third-party imports
 from loguru import logger
@@ -10,7 +10,6 @@ from loguru import logger
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register("exec", "Execute operating system commands via xp_cmdshell")
 class XpCmd(BaseAction):
@@ -23,7 +22,7 @@ class XpCmd(BaseAction):
 
     _command = Arg(position=0, remainder=True, required=True, description="OS command to execute")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
+    def execute(self, database_context: DatabaseContext) -> list[str] | None:
         """
         Execute the provided shell command on the SQL Server using xp_cmdshell.
 
@@ -47,10 +46,10 @@ class XpCmd(BaseAction):
         escaped_command = command.replace("'", "''")
         query = f"EXEC master..xp_cmdshell '{escaped_command}'"
 
-        output_lines: List[str] = []
+        output_lines: list[str] = []
 
         try:
-            rows: List[Any] = database_context.query_service.execute(query, tuple_mode=True)  # type: ignore[assignment]
+            rows: list[Any] = database_context.query_service.execute(query, tuple_mode=True)  # type: ignore[assignment]
 
             if rows:
                 print()

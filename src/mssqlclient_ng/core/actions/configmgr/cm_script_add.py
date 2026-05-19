@@ -5,7 +5,6 @@
 import hashlib
 import uuid
 import random
-from typing import Optional
 
 from loguru import logger
 
@@ -14,7 +13,6 @@ from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
-
 
 @ActionFactory.register("cm-script-add", "Upload a PowerShell script to ConfigMgr")
 class CMScriptAdd(CMBaseAction):
@@ -56,7 +54,7 @@ class CMScriptAdd(CMBaseAction):
         if not self._script_guid:
             self._script_guid = str(uuid.uuid4()).upper()
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Adding ConfigMgr script: {self._script_name}")
 
         databases = self._get_databases(database_context)

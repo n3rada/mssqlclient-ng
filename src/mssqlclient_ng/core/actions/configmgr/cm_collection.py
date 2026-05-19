@@ -2,8 +2,6 @@
 
 """Display comprehensive info about a specific ConfigMgr collection."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-collection", "Display details of a specific ConfigMgr collection"
@@ -31,7 +28,7 @@ class CMCollection(CMBaseAction):
         if not self._collection_id and not self._collection_name:
             raise ValueError("Collection ID or --name is required.")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         search_msg = (
             f"ID: {self._collection_id}"
             if self._collection_id

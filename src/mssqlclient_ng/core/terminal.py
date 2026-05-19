@@ -6,7 +6,7 @@ import os
 import shlex
 import sys
 from pathlib import Path
-from typing import Callable, Dict, List, Optional
+from typing import Callable
 
 # External library imports
 from impacket.tds import SQLErrorException
@@ -47,7 +47,6 @@ from .actions.execution import query
 
 SQL_STYLE = style_from_pygments_cls(get_style_by_name("one-dark"))
 
-
 class _PrefixAwareLexer(Lexer):
     """Apply SQL highlighting only to non-prefixed lines.
 
@@ -83,7 +82,6 @@ class _PrefixAwareLexer(Lexer):
 
         return get_line
 
-
 class _TeeWriter:
     """Write to two streams simultaneously (for stdout capture)."""
 
@@ -98,7 +96,6 @@ class _TeeWriter:
     def flush(self):
         self._primary.flush()
         self._secondary.flush()
-
 
 class Terminal:
 
@@ -134,7 +131,7 @@ class Terminal:
 
         # Built-in command dispatch table: command_name -> handler(command_line)
         # Handlers return True to continue the loop, False is unused (all continue).
-        self._command_handlers: Dict[str, Callable[[str], None]] = {
+        self._command_handlers: dict[str, Callable[[str], None]] = {
             "help": self._handle_help,
             "debug": self._handle_debug,
             "chain": self._handle_chain,
@@ -150,11 +147,11 @@ class Terminal:
 
         self._output_cache = OutputCache()
         self._prefix = "!"  # default; overwritten by start()
-        self._history_file: Optional[Path] = None
-        self._history_dir: Optional[Path] = (
+        self._history_file: Path | None = None
+        self._history_dir: Path | None = (
             None  # set by start() when history is enabled
         )
-        self._prompt_session: Optional[PromptSession] = None
+        self._prompt_session: PromptSession | None = None
         self._session_kwargs: dict = (
             {}
         )  # set by start(); used when recreating session on history switch
@@ -210,7 +207,7 @@ class Terminal:
             auto_suggest=ThreadedAutoSuggest(auto_suggest=AutoSuggestFromHistory()),
         )
 
-    def _switch_history(self, server: Optional[str]) -> None:
+    def _switch_history(self, server: str | None) -> None:
         """Switch the prompt session's history to the file for the current (server, identity) context.
 
         Each unique combination of server + login identity gets its own history
@@ -329,8 +326,8 @@ class Terminal:
     def execute_action(
         self,
         action_name: str,
-        argument_list: List[str],
-    ) -> Optional[object]:
+        argument_list: list[str],
+    ) -> object | None:
         """
         Execute an action by its registered name with a list of arguments.
 
@@ -587,7 +584,7 @@ class Terminal:
                 action_name, *args = shlex.split(command_line)
                 self.execute_action(action_name, args)
 
-    def _match_command(self, command_line: str) -> Optional[Callable[[str], None]]:
+    def _match_command(self, command_line: str) -> Callable[[str], None] | None:
         """Match a command line against registered built-in handlers."""
         for cmd, handler in self._command_handlers.items():
             if command_line == cmd or command_line.startswith(cmd + " "):
@@ -673,7 +670,7 @@ class Terminal:
             return
 
         # Build reverse alias map: canonical_name -> [alias, ]
-        reverse_aliases: Dict[str, List[str]] = {}
+        reverse_aliases: dict[str, list[str]] = {}
         for alias, canonical in ActionFactory.list_aliases().items():
             reverse_aliases.setdefault(canonical, []).append(alias)
 

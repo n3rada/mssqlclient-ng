@@ -2,8 +2,6 @@
 
 """Enumerate Azure AD applications stored in ConfigMgr."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-aadapps",
@@ -27,7 +24,7 @@ class CMAadApps(CMBaseAction):
 
     _filter = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by application name")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         filter_msg = f" (filter: {self._filter})" if self._filter else ""
         logger.info(f"Enumerating Azure AD applications{filter_msg}")
 

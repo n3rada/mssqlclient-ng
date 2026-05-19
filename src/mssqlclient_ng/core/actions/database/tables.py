@@ -1,7 +1,6 @@
 # /mssqlclient_ng/core/actions/database/tables.py
 
 # Built-in imports
-from typing import Optional, List, Dict
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "tables",
@@ -45,7 +43,7 @@ class Tables(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._database: Optional[str] = None
+        self._database: str | None = None
         self._name_filter: str = ""
         self._show_columns: bool = False
         self._column_filter: str = ""
@@ -78,7 +76,7 @@ class Tables(BaseAction):
         if self._column_filter:
             self._show_columns = True
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[Dict]]:
+    def execute(self, database_context: DatabaseContext) -> list[Dict] | None:
         target_database = (
             self._database
             if self._database
@@ -167,7 +165,7 @@ class Tables(BaseAction):
                 ORDER BY o.object_id, c.column_id;
             """
             columns_result = database_context.query_service.execute_table(columns_query)
-            columns_dict: Dict[str, List[str]] = {}
+            columns_dict: dict[str, list[str]] = {}
             for col_row in columns_result:
                 key = str(col_row["object_id"])
                 col_info = f"{col_row['column_name']} ({col_row['data_type']})"
@@ -187,7 +185,7 @@ class Tables(BaseAction):
                 WHERE o.object_id IN ({object_id_filter});
             """
             perms_result = database_context.query_service.execute_table(perms_query)
-            perms_dict: Dict[str, set] = {}
+            perms_dict: dict[str, set] = {}
             for perm_row in perms_result:
                 key = str(perm_row["object_id"])
                 perms_dict.setdefault(key, set()).add(perm_row["permission_name"])

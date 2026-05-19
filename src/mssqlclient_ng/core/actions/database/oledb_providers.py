@@ -1,5 +1,4 @@
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -9,7 +8,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "oledb",
@@ -24,7 +22,7 @@ class OleDbProviders(BaseAction):
     Reference: https://github.com/NetSPI/PowerUpSQL/blob/7d73373b0751b8648a800fbeef4c00ced66eba58/PowerUpSQL.ps1#L6987
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+    def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         """
         Executes the OLE DB providers enumeration query.
 

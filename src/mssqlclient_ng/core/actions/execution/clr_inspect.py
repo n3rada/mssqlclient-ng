@@ -7,7 +7,6 @@ from ...utils.formatters import OutputFormatter
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 
-
 @ActionFactory.register(
     "clr-inspect",
     "Show exported procedures and metadata for a named CLR assembly",

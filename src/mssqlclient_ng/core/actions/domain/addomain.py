@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/domain/addomain.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -12,7 +11,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import sid_bytes_to_string
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "ad-domain", "Retrieve the domain SID using SUSER_SID and DEFAULT_DOMAIN"
@@ -25,7 +23,7 @@ class DomainSid(BaseAction):
     then strips the trailing RID to get the domain SID prefix.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[dict]:
+    def execute(self, database_context: DatabaseContext) -> dict | None:
         """
         Executes the domain SID retrieval.
 

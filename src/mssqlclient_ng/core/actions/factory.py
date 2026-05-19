@@ -1,14 +1,12 @@
 # mssqlclient_ng/core/actions/factory.py
 
 # Built-in imports
-from typing import Dict, Type, List, Tuple, Optional
 
 # Third party imports
 from loguru import logger
 
 # Local library imports
 from .base import BaseAction
-
 
 class ActionFactory:
     """
@@ -17,13 +15,13 @@ class ActionFactory:
     """
 
     # Action registry: maps action names to (class, description)
-    _registry: Dict[str, Tuple[Type[BaseAction], str]] = {}
+    _registry: dict[str, tuple[type[BaseAction], str]] = {}
 
     # Alias registry: maps alias -> canonical action name
-    _aliases: Dict[str, str] = {}
+    _aliases: dict[str, str] = {}
 
     @classmethod
-    def register(cls, name: str, description: str, aliases: Optional[List[str]] = None):
+    def register(cls, name: str, description: str, aliases: list[str] | None = None):
         """
         Decorator to register an action class with the factory.
 
@@ -31,14 +29,13 @@ class ActionFactory:
             @ActionFactory.register("whoami", "Display current user context", aliases=["id"])
             class Whoami(BaseAction):
 
-
         Args:
             name: The action name (command)
             description: Human-readable description of the action
             aliases: Optional list of alternative names for this action
         """
 
-        def decorator(action_class: Type[BaseAction]):
+        def decorator(action_class: type[BaseAction]):
             cls._registry[name.lower()] = (action_class, description)
             if aliases:
                 for alias in aliases:
@@ -74,7 +71,7 @@ class ActionFactory:
         return cls._aliases.get(action_type.lower(), action_type.lower())
 
     @classmethod
-    def get_available_actions(cls) -> List[Tuple[str, str, List[str]]]:
+    def get_available_actions(cls) -> list[tuple[str, str, list[str]]]:
         """
         Get a list of all available actions with their descriptions and arguments.
 
@@ -96,7 +93,7 @@ class ActionFactory:
         return result
 
     @classmethod
-    def get_action_description(cls, action_name: str) -> Optional[str]:
+    def get_action_description(cls, action_name: str) -> str | None:
         """
         Get the description of an action by its name or alias.
 
@@ -112,7 +109,7 @@ class ActionFactory:
         return None
 
     @classmethod
-    def list_actions(cls) -> List[str]:
+    def list_actions(cls) -> list[str]:
         """
         Get a list of all registered action names.
 
@@ -136,7 +133,7 @@ class ActionFactory:
         return key in cls._registry or key in cls._aliases
 
     @classmethod
-    def list_aliases(cls) -> Dict[str, str]:
+    def list_aliases(cls) -> dict[str, str]:
         """
         Get all registered action aliases.
 

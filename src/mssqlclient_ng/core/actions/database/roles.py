@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/database/roles.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("roles", "Enumerate database-level roles and their members")
 class Roles(BaseAction):
@@ -26,7 +24,7 @@ class Roles(BaseAction):
     For server-level logins and instance-wide privileges, use the 'users' action instead.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         """
         Executes the roles enumeration.
 

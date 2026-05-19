@@ -2,7 +2,6 @@
 
 # Built-in imports
 import base64
-from typing import Optional, List
 
 # Third-party imports
 from loguru import logger
@@ -12,7 +11,6 @@ from ..base import Arg
 from ..execution.xpcmd import XpCmd
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register(
     "powershell", "Execute PowerShell scripts via xp_cmdshell", aliases=["pwsh"]
@@ -28,7 +26,7 @@ class PowerShell(XpCmd):
 
     _script = Arg(position=0, remainder=True, required=True, description="PowerShell script to execute")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
+    def execute(self, database_context: DatabaseContext) -> list[str] | None:
         """
         Execute the provided PowerShell script on the SQL Server using xp_cmdshell.
 

@@ -2,8 +2,6 @@
 
 """ConfigMgr client health diagnostics."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("cm-health", "Display ConfigMgr client health diagnostics")
 class CMHealth(CMBaseAction):
@@ -28,7 +25,7 @@ class CMHealth(CMBaseAction):
         super().validate_arguments(additional_arguments)
         self._limit = int(self._limit)
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         filter_msg = f" (filter: {self._filter})" if self._filter else ""
         logger.info(f"Enumerating ConfigMgr client health{filter_msg}")
 

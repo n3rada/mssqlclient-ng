@@ -14,7 +14,6 @@ if TYPE_CHECKING:
     from impacket.tds import MSSQL
     from ..models.server import Server
 
-
 class DatabaseContext:
     def __init__(self, server: "Server", mssql_instance: "MSSQL"):
         self._server = server

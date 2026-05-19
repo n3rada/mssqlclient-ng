@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr deployment types with technical details."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-dts",
@@ -35,7 +32,7 @@ class CMDeploymentTypes(CMBaseAction):
         super().validate_arguments(additional_arguments)
         self._limit = int(self._limit)
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         filters = []
         if self._technology:
             filters.append(f"tech: {self._technology}")

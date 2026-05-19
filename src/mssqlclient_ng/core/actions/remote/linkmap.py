@@ -4,7 +4,7 @@
 import io
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any, Set, Tuple
+from typing import Any
 import time
 
 # Third party imports
@@ -23,7 +23,7 @@ from ...utils.common import bracket_identifier
 from ...utils.storage import ChainStore
 
 # Server roles that grant significant privileges beyond standard access.
-ELEVATED_ROLES: Set[str] = {
+ELEVATED_ROLES: set[str] = {
     "securityadmin",  # Can grant permissions: near-sysadmin
     "serveradmin",  # Can change server configuration
     "setupadmin",  # Can add/remove linked servers
@@ -33,13 +33,12 @@ ELEVATED_ROLES: Set[str] = {
     "bulkadmin",  # Can run BULK INSERT
 }
 
-
 @dataclass
 class ImpersonationStep:
     """Represents a single impersonation step with the login name and its server roles."""
 
     login: str
-    roles: List[str] = field(default_factory=list)
+    roles: list[str] = field(default_factory=list)
 
     @property
     def is_sysadmin(self) -> bool:
@@ -62,7 +61,6 @@ class ImpersonationStep:
             return f" \u25c6 [{', '.join(non_sa_roles)}]"
         return f" [{', '.join(non_sa_roles)}]"
 
-
 @dataclass
 class ServerNode:
     """Represents a node in the linked server tree."""
@@ -71,11 +69,11 @@ class ServerNode:
     actual_name: str
     logged_in_user: str
     mapped_user: str
-    impersonation_chain: List[ImpersonationStep] = field(default_factory=list)
+    impersonation_chain: list[ImpersonationStep] = field(default_factory=list)
     is_sysadmin: bool = False
-    server_roles: List[str] = field(default_factory=list)
-    children: List["ServerNode"] = field(default_factory=list)
-    escalation_paths: List[List[ImpersonationStep]] = field(default_factory=list)
+    server_roles: list[str] = field(default_factory=list)
+    children: list["ServerNode"] = field(default_factory=list)
+    escalation_paths: list[list[ImpersonationStep]] = field(default_factory=list)
 
     @property
     def is_elevated(self) -> bool:
@@ -94,18 +92,15 @@ class ServerNode:
             return f" \u25c6 [{', '.join(roles)}]"
         return f" [{', '.join(roles)}]"
 
-
 def _context_key(server: str, login: str) -> str:
     """Canonical key for the global 'already explored' set: (server, login)."""
     return f"{server}|{login}".upper()
-
 
 def _link_attempt_key(source_server: str, target_server: str, caller_login: str) -> str:
     """Canonical key for the negative link-attempt cache."""
     return f"{source_server}|{target_server}|{caller_login}".upper()
 
-
-def _get_row_string(row: Dict[str, Any], column: str) -> str:
+def _get_row_string(row: dict[str, Any], column: str) -> str:
     """Read a column from a row dict, returning empty string for None/NULL."""
     val = row.get(column)
     if val is None:
@@ -115,22 +110,19 @@ def _get_row_string(row: Dict[str, Any], column: str) -> str:
         return ""
     return s
 
-
 def _format_impersonation_context(
-    chain: List[ImpersonationStep], fallback_login: str = "current login"
+    chain: list[ImpersonationStep], fallback_login: str = "current login"
 ) -> str:
     """Format a parent impersonation chain for log messages."""
     if chain:
         return " -> ".join(s.login for s in chain)
     return fallback_login
 
-
-def _build_impersonation_steps(logins: Optional[List[str]]) -> List[ImpersonationStep]:
+def _build_impersonation_steps(logins: list[str] | None) -> list[ImpersonationStep]:
     """Build ImpersonationStep list from login names (roles left empty)."""
     if not logins:
         return []
     return [ImpersonationStep(login=login) for login in logins]
-
 
 def _is_system_account(login: str) -> bool:
     """Check if login is a system account (NT AUTHORITY\\*, NT SERVICE\\*)."""
@@ -138,7 +130,6 @@ def _is_system_account(login: str) -> bool:
         return False
     upper = login.upper()
     return upper.startswith("NT ") or upper.startswith("NT\\")
-
 
 @ActionFactory.register(
     "linkmap",
@@ -169,13 +160,13 @@ class LinkMap(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._root_node: Optional[ServerNode] = None
-        self._globally_explored_contexts: Set[str] = set()
-        self._failed_link_attempts: Set[str] = set()
-        self._context_role_cache: Dict[str, Tuple[List[str], bool]] = {}
-        self._all_chains: List[List[ServerNode]] = []
-        self._seen_chain_displays: Set[str] = set()
-        self._starting_impersonation: List[str] = []
+        self._root_node: ServerNode | None = None
+        self._globally_explored_contexts: set[str] = set()
+        self._failed_link_attempts: set[str] = set()
+        self._context_role_cache: dict[str, tuple[list[str], bool]] = {}
+        self._all_chains: list[list[ServerNode]] = []
+        self._seen_chain_displays: set[str] = set()
+        self._starting_impersonation: list[str] = []
         self._chain_store = ChainStore()
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
@@ -198,7 +189,7 @@ class LinkMap(BaseAction):
                     ) from e
                 raise
 
-    def execute(self, database_context: DatabaseContext) -> Optional[Any]:
+    def execute(self, database_context: DatabaseContext) -> Any | None:
         server_name = database_context.server.hostname
 
         logger.info(f"Maximum recursion depth: {self._limit}")
@@ -220,8 +211,8 @@ class LinkMap(BaseAction):
             return None
 
         # Separate SQL Server links (chainable) from non-chainable
-        sql_server_links: List[Dict[str, Any]] = []
-        no_visibility_links: List[Dict[str, Any]] = []
+        sql_server_links: list[dict[str, Any]] = []
+        no_visibility_links: list[dict[str, Any]] = []
 
         for row in all_linked_servers:
             access = _get_row_string(row, "Access")
@@ -302,7 +293,7 @@ class LinkMap(BaseAction):
         force_impersonation_discovery = (
             len(sql_server_links) == 0 and len(no_visibility_links) > 0
         )
-        reachable_chains: List[List[str]] = (
+        reachable_chains: list[list[str]] = (
             []
             if self._root_node.is_sysadmin
             else self._get_reachable_login_chains(database_context)
@@ -321,8 +312,8 @@ class LinkMap(BaseAction):
             return None
 
         # Build unified map: (server, local_login) -> (row, chain)
-        all_sql_links: Dict[
-            Tuple[str, str], Tuple[Dict[str, Any], Optional[List[str]]]
+        all_sql_links: dict[
+            tuple[str, str], tuple[dict[str, Any], list[str] | None]
         ] = {}
 
         # Current user's links
@@ -437,8 +428,8 @@ class LinkMap(BaseAction):
                 )
                 continue
 
-            visited_in_chain: Set[str] = {starting_hash}
-            current_path: List[ServerNode] = []
+            visited_in_chain: set[str] = {starting_hash}
+            current_path: list[ServerNode] = []
 
             # Apply session-level impersonation
             session_hops = 0
@@ -538,9 +529,9 @@ class LinkMap(BaseAction):
         database_context: DatabaseContext,
         target_server: str,
         parent_node: ServerNode,
-        current_path: List[ServerNode],
-        visited_in_chain: Set[str],
-        parent_impersonation_chain: List[ImpersonationStep],
+        current_path: list[ServerNode],
+        visited_in_chain: set[str],
+        parent_impersonation_chain: list[ImpersonationStep],
         current_depth: int,
     ) -> None:
         """Recursively explores linked servers, building a tree structure."""
@@ -660,7 +651,7 @@ class LinkMap(BaseAction):
             self._globally_explored_contexts.add(context_key)
 
             # Discover impersonation chains on this server
-            remote_reachable_chains: List[List[str]] = (
+            remote_reachable_chains: list[list[str]] = (
                 []
                 if is_sysadmin
                 else self._get_reachable_login_chains(database_context)
@@ -670,8 +661,8 @@ class LinkMap(BaseAction):
             )
 
             # Build map of all links on this server
-            all_links_on_server: Dict[
-                Tuple[str, str], Tuple[Dict[str, Any], Optional[List[str]]]
+            all_links_on_server: dict[
+                tuple[str, str], tuple[dict[str, Any], list[str] | None]
             ] = {}
 
             # Current user's links
@@ -749,8 +740,8 @@ class LinkMap(BaseAction):
                         all_links_on_server[chain_key] = (existing_row, chain)
 
             # Classify discovered links (only SQL Server providers are chainable)
-            remote_sql_links: List[
-                Tuple[str, str, Dict[str, Any], Optional[List[str]]]
+            remote_sql_links: list[
+                tuple[str, str, dict[str, Any], list[str] | None]
             ] = []
 
             for (_, __), (row, chain) in all_links_on_server.items():
@@ -903,13 +894,13 @@ class LinkMap(BaseAction):
 
     def _get_reachable_login_chains(
         self, database_context: DatabaseContext
-    ) -> List[List[str]]:
+    ) -> list[list[str]]:
         """
         Returns all transitively reachable login chains from the current context,
         using the ImpersonationMap action. Each entry is an ordered list of
         logins to EXECUTE AS in sequence to reach the final login.
         """
-        chains: List[List[str]] = []
+        chains: list[list[str]] = []
         try:
             action = ImpersonationMap()
 
@@ -923,12 +914,12 @@ class LinkMap(BaseAction):
             if not raw or not isinstance(raw, list):
                 return chains
 
-            result: List[Dict[str, Any]] = raw
+            result: list[dict[str, Any]] = raw
 
             # Only keep the shortest chain to each unique end login
-            shortest_by_end: Dict[str, List[str]] = {}
+            shortest_by_end: dict[str, list[str]] = {}
             for row in result:
-                chain: List[str] = []
+                chain: list[str] = []
                 middle_logins = row.get("Middle Logins", "")
                 end_login = row.get("End Login", "")
 
@@ -957,7 +948,7 @@ class LinkMap(BaseAction):
     # ------------------------------------------------------------------
 
     def _try_apply_impersonation_chain(
-        self, database_context: DatabaseContext, chain: List[str]
+        self, database_context: DatabaseContext, chain: list[str]
     ) -> bool:
         """Apply a multi-hop impersonation chain. Returns False on failure."""
         applied = 0
@@ -985,7 +976,7 @@ class LinkMap(BaseAction):
     @staticmethod
     def _get_linked_servers_with_access(
         database_context: DatabaseContext,
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Retrieve linked servers with computed Access column.
         Matches the C# Links.GetLinkedServers which adds Access classification.
@@ -1073,7 +1064,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
     # Display: Real-time progress
     # ------------------------------------------------------------------
 
-    def _format_chain_progress(self, path: List[ServerNode]) -> str:
+    def _format_chain_progress(self, path: list[ServerNode]) -> str:
         """
         Format a discovered chain for real-time display using LinkedServers.format_chain_display().
 
@@ -1081,7 +1072,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             LAB-SQL01 (operator) ─(operator)─> LAB-SQL02 ─(john → john-a)─> LAB-SQL03 (john-a) ★
         """
         # Build Server objects from the path (same logic as _build_chain_row)
-        server_list: List[Server] = []
+        server_list: list[Server] = []
         for i, node in enumerate(path):
             if i > 0 and node.impersonation_chain:
                 server_list[-1].impersonation_users = [
@@ -1130,7 +1121,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         node: ServerNode,
         indent: str,
         is_last: bool,
-        parent_path: List[str],
+        parent_path: list[str],
     ) -> None:
         """Display a single tree node with proper indentation."""
         current_path = list(parent_path)
@@ -1224,12 +1215,12 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
     # Display: Chain commands summary
     # ------------------------------------------------------------------
 
-    def _display_chain_commands(self) -> List[Dict[str, Any]]:
+    def _display_chain_commands(self) -> list[dict[str, Any]]:
         """
         Build a summary table of all discovered chains.
         Sorted by privilege level (sysadmin first), then by hop count.
         """
-        rows: List[Dict[str, Any]] = []
+        rows: list[dict[str, Any]] = []
 
         # Sort: privileged first, then shortest hop count
         ordered = sorted(
@@ -1260,7 +1251,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         return rows
 
     @staticmethod
-    def _get_total_hops(chain: List[ServerNode]) -> int:
+    def _get_total_hops(chain: list[ServerNode]) -> int:
         """Total number of hops (linked servers + impersonation steps) in a chain."""
         hops = len(chain)
         for node in chain:
@@ -1268,7 +1259,7 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         return hops
 
     @staticmethod
-    def _get_chain_priority(chain: List[ServerNode]) -> int:
+    def _get_chain_priority(chain: list[ServerNode]) -> int:
         """Sort priority: 2 = sysadmin, 1 = elevated, 0 = standard."""
         if not chain:
             return 0
@@ -1280,13 +1271,13 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         return 0
 
     def _build_chain_row(
-        self, chain: List[ServerNode], hops: int, chain_id: int
-    ) -> Dict[str, Any]:
+        self, chain: list[ServerNode], hops: int, chain_id: int
+    ) -> dict[str, Any]:
         """Build a row for the chain summary table."""
         last_node = chain[-1]
 
         # Build linked server list for -l argument
-        server_list: List[Server] = []
+        server_list: list[Server] = []
         for i, node in enumerate(chain):
             if i > 0 and node.impersonation_chain:
                 server_list[-1].impersonation_users = [
@@ -1336,16 +1327,16 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
 
     def _build_escalation_row(
         self,
-        chain: List[ServerNode],
-        escalation: List[ImpersonationStep],
+        chain: list[ServerNode],
+        escalation: list[ImpersonationStep],
         hops: int,
         chain_id: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Build a row for a privilege escalation path."""
         last_node = chain[-1]
 
         # Build linked server list with escalation on the last server
-        server_list: List[Server] = []
+        server_list: list[Server] = []
         for i, node in enumerate(chain):
             if i > 0 and node.impersonation_chain:
                 server_list[-1].impersonation_users = [

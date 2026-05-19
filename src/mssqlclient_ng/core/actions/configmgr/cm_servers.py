@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr servers in site hierarchy."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,12 +10,11 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-
 @ActionFactory.register("cm-servers", "Enumerate ConfigMgr servers in site hierarchy")
 class CMServers(CMBaseAction):
     """Enumerate ConfigMgr servers including site servers, management points, and distribution points."""
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info("Enumerating ConfigMgr servers in hierarchy")
 
         databases = self._get_databases(database_context)

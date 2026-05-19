@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/remote/external_tables.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -11,7 +11,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "ext-tables",
@@ -32,7 +31,7 @@ class ExternalTables(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         logger.info("Retrieving external tables")
 
         tables_query = "SELECT * FROM sys.external_tables ORDER BY name;"
@@ -48,7 +47,7 @@ class ExternalTables(BaseAction):
             return None
 
         # Build lookup dicts for data sources and file formats
-        ds_dict: Dict[int, Dict[str, str]] = {}
+        ds_dict: dict[int, dict[str, str]] = {}
         try:
             ds_rows = database_context.query_service.execute_table(
                 "SELECT data_source_id, name, location FROM sys.external_data_sources;"
@@ -62,7 +61,7 @@ class ExternalTables(BaseAction):
         except Exception:
             pass
 
-        ff_dict: Dict[int, str] = {}
+        ff_dict: dict[int, str] = {}
         try:
             ff_rows = database_context.query_service.execute_table(
                 "SELECT file_format_id, name FROM sys.external_file_formats;"

@@ -3,7 +3,6 @@
 # Local library imports
 from . import __version__ as version
 
-
 def display_banner() -> str:
     return rf"""
                           _      _ _            _

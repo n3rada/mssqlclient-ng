@@ -1,5 +1,4 @@
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -9,7 +8,6 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("rolemembers", "List members of a specified server role")
 class RoleMembers(BaseAction):
@@ -22,7 +20,7 @@ class RoleMembers(BaseAction):
 
     _role_name = Arg(position=0, required=True, description="Server role name (e.g., sysadmin)")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+    def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         """
         Executes the role members enumeration.
 

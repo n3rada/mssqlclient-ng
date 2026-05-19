@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/database/users.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("users", "List server principals and database users")
 class Users(BaseAction):
@@ -25,7 +23,7 @@ class Users(BaseAction):
     For database-level role memberships, use the 'roles' action instead.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[dict]:
+    def execute(self, database_context: DatabaseContext) -> dict | None:
         """
         Executes the user enumeration.
 

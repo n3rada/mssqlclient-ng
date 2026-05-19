@@ -2,7 +2,6 @@
 
 # Built-in imports
 import re
-from typing import Optional, Dict, List
 
 # Third party imports
 from loguru import logger
@@ -51,7 +50,6 @@ INFO_QUERIES = {
     },
 }
 
-
 @ActionFactory.register("info", "Retrieve SQL Server instance information")
 class Info(BaseAction):
     """
@@ -74,11 +72,11 @@ class Info(BaseAction):
         """
         logger.info("Retrieving SQL Server instance information...")
 
-        results: Dict[str, str] = {}
+        results: dict[str, str] = {}
         is_azure = database_context.query_service.is_azure_sql
 
         # Determine which query sets to use
-        query_sets: List[Dict[str, str]] = [INFO_QUERIES["all"]]
+        query_sets: list[dict[str, str]] = [INFO_QUERIES["all"]]
 
         if is_azure:
             query_sets.append(INFO_QUERIES["azure"])

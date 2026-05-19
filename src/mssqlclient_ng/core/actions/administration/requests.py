@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/administration/requests.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -12,7 +11,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-
 @ActionFactory.register("requests", "Display currently executing SQL requests")
 class Requests(BaseAction):
     """
@@ -20,7 +18,7 @@ class Requests(BaseAction):
     Shows session details, command status, wait types, and blocking information.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+    def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         logger.info("Currently executing SQL requests")
 
         query = """

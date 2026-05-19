@@ -12,7 +12,6 @@ from base64 import b64decode
 # Third party imports
 from impacket.dcerpc.v5.dtypes import SID
 
-
 def generate_random_string(length: int) -> str:
     """
     Generate a random alphanumeric string.
@@ -26,7 +25,6 @@ def generate_random_string(length: int) -> str:
     alphabet = string.ascii_lowercase + string.digits
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
-
 def get_random_number(min_val: int, max_val: int) -> int:
     """
     Generates a random number within the specified range (inclusive of min, exclusive of max).
@@ -39,7 +37,6 @@ def get_random_number(min_val: int, max_val: int) -> int:
         A random integer between min_val (inclusive) and max_val (exclusive)
     """
     return secrets.randbelow(max_val - min_val) + min_val
-
 
 def get_hex_char(value: int, upper: bool = False) -> str:
     """
@@ -61,7 +58,6 @@ def get_hex_char(value: int, upper: bool = False) -> str:
     else:
         return chr((ord("A") if upper else ord("a")) + (value - 10))
 
-
 def decode_and_decompress(encoded: str) -> bytes:
     """
     Decodes a base64-encoded string and decompresses it using gzip.
@@ -77,7 +73,6 @@ def decode_and_decompress(encoded: str) -> bytes:
         with gzip.GzipFile(fileobj=input_stream, mode="rb") as gzip_stream:
             return gzip_stream.read()
 
-
 def hex_string_to_bytes(hex_str: str) -> bytes:
     """
     Converts a hexadecimal string to bytes.
@@ -90,7 +85,6 @@ def hex_string_to_bytes(hex_str: str) -> bytes:
     """
     return bytes.fromhex(hex_str)
 
-
 def bytes_to_hex_string(data: bytes) -> str:
     """
     Converts bytes to a hexadecimal string.
@@ -102,7 +96,6 @@ def bytes_to_hex_string(data: bytes) -> str:
         Hexadecimal string representation (lowercase)
     """
     return data.hex()
-
 
 def convert_dll_to_sql_bytes(data: bytes) -> tuple[str, str]:
     """
@@ -127,7 +120,6 @@ def convert_dll_to_sql_bytes(data: bytes) -> tuple[str, str]:
 
     return (sha512_hash, "".join(hex_chars))
 
-
 def get_random_unused_port() -> int:
     """
     Gets a random unused TCP port by binding to port 0 and retrieving the assigned port.
@@ -138,7 +130,6 @@ def get_random_unused_port() -> int:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         sock.bind(("127.0.0.1", 0))
         return sock.getsockname()[1]
-
 
 def compute_sha256(input_str: str) -> str:
     """
@@ -154,7 +145,6 @@ def compute_sha256(input_str: str) -> str:
     hash_bytes = hashlib.sha256(input_bytes).digest()
     return hash_bytes.hex()
 
-
 def sid_bytes_to_string(sid_bytes: bytes) -> str:
     """
     Converts binary SID to string format (S-1-5-21-...).
@@ -167,7 +157,6 @@ def sid_bytes_to_string(sid_bytes: bytes) -> str:
     """
 
     return SID(bytes.fromhex(sid_bytes.decode())).formatCanonical()
-
 
 def normalize_windows_path(path: str) -> str:
     r"""
@@ -193,7 +182,6 @@ def normalize_windows_path(path: str) -> str:
     # Replace single backslashes with double backslashes
     # This handles raw strings or strings with single backslashes
     return path.replace("\\", "\\\\")
-
 
 def yes_no_prompt(question: str, default: bool = True) -> bool:
     """
@@ -240,7 +228,6 @@ def yes_no_prompt(question: str, default: bool = True) -> bool:
         print()  # New line
         return True
 
-
 def convert_table_to_dicts(headers, table_data):
     """
     Convert table format (headers, rows) to list of dicts.
@@ -259,7 +246,6 @@ def convert_table_to_dicts(headers, table_data):
         [{'Name': 'Alice', 'Age': 30}, {'Name': 'Bob', 'Age': 25}]
     """
     return [dict(zip(headers, row)) for row in table_data]
-
 
 def bracket_identifier(name: str) -> str:
     """

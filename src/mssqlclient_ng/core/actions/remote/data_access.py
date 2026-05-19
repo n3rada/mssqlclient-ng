@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/remote/data_access.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -13,7 +12,6 @@ from ...services.database import DatabaseContext
 
 _ENABLE_ALIASES = {"add", "on", "1", "true", "enable"}
 _DISABLE_ALIASES = {"del", "off", "0", "false", "disable"}
-
 
 @ActionFactory.register(
     "data",
@@ -66,7 +64,7 @@ class DataAccess(BaseAction):
 
         self._linked_server_name = positional[1]
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> bool | None:
         opt_value = "true" if self._enable else "false"
         verb = "Enabling" if self._enable else "Disabling"
         logger.info(f"{verb} data access on linked server '{self._linked_server_name}'")

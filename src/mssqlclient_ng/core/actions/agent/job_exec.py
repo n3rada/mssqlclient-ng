@@ -3,7 +3,6 @@
 # Built-in imports
 import time
 import uuid
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -12,7 +11,6 @@ from loguru import logger
 from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register(
     "job-exec", "Execute OS commands via SQL Server Agent temporary job"
@@ -50,7 +48,7 @@ class JobExec(BaseAction):
             )
         self._subsystem = matched
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> bool | None:
         # Check agent is running
         result = database_context.query_service.execute_table(
             "SELECT 1 FROM master.dbo.sysprocesses WHERE program_name LIKE 'SQLAgent%'"

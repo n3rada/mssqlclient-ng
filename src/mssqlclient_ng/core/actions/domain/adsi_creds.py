@@ -4,7 +4,6 @@
 import socket
 import struct
 import threading
-from typing import Optional, Tuple
 
 # Third party imports
 from loguru import logger
@@ -16,15 +15,13 @@ from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
 from ...utils.common import generate_random_string
 
-
 def _find_free_port() -> int:
     """Find an available TCP port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("", 0))
         return s.getsockname()[1]
 
-
-def _parse_ldap_simple_bind(data: bytes) -> Optional[Tuple[str, str]]:
+def _parse_ldap_simple_bind(data: bytes) -> tuple[str, str] | None:
     """
     Parse an LDAP simple bind request to extract username and password.
     LDAP simple bind sends credentials in cleartext.
@@ -83,8 +80,7 @@ def _parse_ldap_simple_bind(data: bytes) -> Optional[Tuple[str, str]]:
     except (IndexError, ValueError):
         return None
 
-
-def _parse_ber_length(data: bytes, offset: int) -> Tuple[int, int]:
+def _parse_ber_length(data: bytes, offset: int) -> tuple[int, int]:
     """Parse a BER length field, returning (length, new_offset)."""
     b = data[offset]
     offset += 1
@@ -93,7 +89,6 @@ def _parse_ber_length(data: bytes, offset: int) -> Tuple[int, int]:
     num_bytes = b & 0x7F
     length = int.from_bytes(data[offset : offset + num_bytes], "big")
     return (length, offset + num_bytes)
-
 
 @ActionFactory.register(
     "adsi-creds",
@@ -123,7 +118,7 @@ class AdsiCredentialExtractor(BaseAction):
     _target_server = Arg(position=0, default="", description="ADSI server name")
     _use_temporary_server = Arg(short_name="t", long_name="temp", default="", description="Use temporary server")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[Tuple[str, str]]:
+    def execute(self, database_context: DatabaseContext) -> tuple[str, str] | None:
         adsi_service = AdsiService(database_context)
 
         # Discover or validate target server
@@ -157,7 +152,7 @@ class AdsiCredentialExtractor(BaseAction):
 
     def _extract_with_temporary_server(
         self, database_context: DatabaseContext, adsi_service: AdsiService
-    ) -> Optional[Tuple[str, str]]:
+    ) -> tuple[str, str] | None:
         """Create a temporary ADSI server, extract credentials, then cleanup."""
         server_name = f"ADSI_{generate_random_string(8)}"
         logger.info(f"Creating temporary ADSI server '{server_name}'")
@@ -182,7 +177,7 @@ class AdsiCredentialExtractor(BaseAction):
         database_context: DatabaseContext,
         adsi_service: AdsiService,
         adsi_server: str,
-    ) -> Optional[Tuple[str, str]]:
+    ) -> tuple[str, str] | None:
         """Extract credentials by intercepting LDAP simple bind."""
 
         if not database_context.user_service.is_admin():
@@ -267,7 +262,7 @@ class AdsiCredentialExtractor(BaseAction):
 
     def _get_data_source(
         self, database_context: DatabaseContext, server_name: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """Get current data source for a linked server."""
         try:
             result = database_context.query_service.execute_scalar(

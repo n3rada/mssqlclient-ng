@@ -2,7 +2,6 @@
 
 # Built-in imports
 from enum import Enum
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -13,7 +12,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-
 class ProcedureMode(Enum):
     """Execution mode for the procedures action."""
 
@@ -22,7 +20,6 @@ class ProcedureMode(Enum):
     READ = "read"
     SEARCH = "search"
     CREATE = "create"
-
 
 @ActionFactory.register(
     "procedures",
@@ -48,11 +45,11 @@ class Procedures(BaseAction):
     def __init__(self):
         super().__init__()
         self._mode: ProcedureMode = ProcedureMode.LIST
-        self._procedure_name: Optional[str] = None
-        self._procedure_args: Optional[str] = None
-        self._search_keyword: Optional[str] = None
-        self._procedure_file_path: Optional[str] = None
-        self._target_database: Optional[str] = None
+        self._procedure_name: str | None = None
+        self._procedure_args: str | None = None
+        self._search_keyword: str | None = None
+        self._procedure_file_path: str | None = None
+        self._target_database: str | None = None
 
     def _validate_procedure_format(self, procedure_name: str) -> None:
         """
@@ -131,7 +128,7 @@ class Procedures(BaseAction):
             self._procedure_file_path = self._procedure_name
             self._target_database = self._procedure_args
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+    def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         """
         Executes the procedures action based on the selected mode.
 
@@ -312,7 +309,7 @@ class Procedures(BaseAction):
 
     def _execute_procedure(
         self, database_context: DatabaseContext
-    ) -> Optional[list[dict]]:
+    ) -> list[dict] | None:
         """
         Executes a stored procedure with optional parameters.
 
@@ -348,7 +345,7 @@ class Procedures(BaseAction):
 
     def _read_procedure_definition(
         self, database_context: DatabaseContext
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Reads the definition of a stored procedure.
 
@@ -400,7 +397,7 @@ class Procedures(BaseAction):
 
     def _search_procedures(
         self, database_context: DatabaseContext
-    ) -> Optional[list[dict]]:
+    ) -> list[dict] | None:
         """
         Searches for stored procedures containing a specific keyword in their definition.
 

@@ -2,7 +2,7 @@
 
 # Built-in imports
 from enum import Enum
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -13,13 +13,11 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters.formatter import OutputFormatter
 
-
 class RpcActionMode(Enum):
     """RPC action mode for enabling/disabling RPC Out."""
 
     ENABLE = "enable"
     DISABLE = "disable"
-
 
 @ActionFactory.register("rpc", "Enable or disable RPC Out option on a linked server")
 class RemoteProcedureCall(BaseAction):
@@ -50,7 +48,7 @@ class RemoteProcedureCall(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._action: Optional[RpcActionMode] = None
+        self._action: RpcActionMode | None = None
         self._linked_server_name: str = ""
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
@@ -99,7 +97,7 @@ class RemoteProcedureCall(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Executes the RPC action on the specified linked server.
 

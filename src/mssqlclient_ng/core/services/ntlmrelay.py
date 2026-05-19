@@ -3,7 +3,6 @@
 # Built-in imports
 import sys
 import time
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -18,7 +17,6 @@ from impacket.examples.ntlmrelayx.utils.config import NTLMRelayxConfig
 # Local library imports
 from ..models.server import Server
 from .database import DatabaseContext
-
 
 class RelayMSSQL:
     """
@@ -107,7 +105,7 @@ class RelayMSSQL:
 
     def wait_for_connection(
         self, server_instance: Server, timeout: int = 60
-    ) -> Optional[DatabaseContext]:
+    ) -> DatabaseContext | None:
         """
         Wait for a relayed connection and create a DatabaseContext from it.
 

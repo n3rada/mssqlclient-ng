@@ -7,7 +7,6 @@ from loguru import logger
 from ..models.server import Server
 from .query import QueryService
 
-
 class ConfigurationService:
     """
     Service for managing SQL Server configuration options and CLR assemblies.

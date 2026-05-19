@@ -1,11 +1,9 @@
 # mssqlclient_ng/core/models/server.py
 
 # Built-in imports
-from typing import List, Optional
 
 # Third party imports
 from loguru import logger
-
 
 class Server:
     """
@@ -31,8 +29,8 @@ class Server:
         self,
         hostname: str,
         port: int = 1433,
-        database: Optional[str] = None,
-        impersonation_users: Optional[List[str]] = None,
+        database: str | None = None,
+        impersonation_users: list[str] | None = None,
     ):
         """
         Initialize a Server instance.
@@ -53,12 +51,12 @@ class Server:
             raise ValueError(f"Port must be between 1 and 65535, got {port}")
 
         self.hostname = hostname.strip()
-        self._version: Optional[str] = None
+        self._version: str | None = None
         self.port = port or 1433
         self.database = database.strip() if database else None
 
         # Initialize cascading impersonation users (like MSSQLand's string[] ImpersonationUsers)
-        self._impersonation_users: List[str] = []
+        self._impersonation_users: list[str] = []
         if impersonation_users is not None:
             self._impersonation_users = [u for u in impersonation_users if u]
         self.mapped_user = ""
@@ -66,12 +64,12 @@ class Server:
         self.is_azure_sql = False
 
     @property
-    def version(self) -> Optional[str]:
+    def version(self) -> str | None:
         """Get the server version."""
         return self._version
 
     @version.setter
-    def version(self, value: Optional[str]) -> None:
+    def version(self, value: str | None) -> None:
         """
         Set the server version and check if it's a legacy server.
         Logs a warning if major version <= 13 (SQL Server 2016 or older).
@@ -125,17 +123,17 @@ class Server:
             return 0
 
     @property
-    def impersonation_users(self) -> List[str]:
+    def impersonation_users(self) -> list[str]:
         """List of impersonation users for cascading EXECUTE AS (like MSSQLand ImpersonationUsers)."""
         return self._impersonation_users
 
     @impersonation_users.setter
-    def impersonation_users(self, value: List[str]) -> None:
+    def impersonation_users(self, value: list[str]) -> None:
         self._impersonation_users = [u for u in value if u] if value else []
 
     @classmethod
     def parse_server(
-        cls, server_input: str, port: int = 1433, database: Optional[str] = None
+        cls, server_input: str, port: int = 1433, database: str | None = None
     ) -> "Server":
         """
         Parses a server string in the format "[server][:port][/user][@database]".
@@ -226,7 +224,7 @@ class Server:
         # Initialize with defaults
         parsed_port = port
         parsed_database = database
-        impersonation_users: List[str] = []
+        impersonation_users: list[str] = []
 
         # Parse remaining components
         first_delimiter = None

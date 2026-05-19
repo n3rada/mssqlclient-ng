@@ -2,8 +2,6 @@
 
 """Display detailed info about a specific ConfigMgr deployment."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-deployment",
@@ -27,7 +24,7 @@ class CMDeployment(CMBaseAction):
 
     _assignment_id = Arg(position=0, required=True, description="Assignment ID")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Retrieving assignment details for: {self._assignment_id}")
 
         databases = self._get_databases(database_context)

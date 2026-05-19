@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/remote/links.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +11,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "links",
@@ -29,7 +28,7 @@ class Links(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Execute the linked servers enumeration.
 
@@ -78,7 +77,7 @@ class Links(BaseAction):
     @staticmethod
     def _get_linked_servers(
         database_context: DatabaseContext,
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Retrieve linked servers and login mappings with computed Access column.
 

@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/database/hashes.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -10,7 +10,6 @@ from loguru import logger
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register(
     "hashes",
@@ -33,7 +32,7 @@ class Hashes(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         if database_context.query_service.is_azure_sql:
             logger.warning("Azure SQL Database does not expose password hashes")
             return None

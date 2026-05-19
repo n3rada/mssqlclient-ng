@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr PowerShell scripts."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("cm-scripts", "Enumerate ConfigMgr PowerShell scripts")
 class CMScripts(CMBaseAction):
@@ -23,7 +20,7 @@ class CMScripts(CMBaseAction):
 
     _name = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by script name")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info("Enumerating ConfigMgr scripts")
 
         databases = self._get_databases(database_context)

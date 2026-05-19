@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/services/authentication.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -9,7 +8,6 @@ from impacket.tds import MSSQL
 
 # Local library imports
 from ..models.server import Server
-
 
 class AuthenticationService:
     """
@@ -21,14 +19,14 @@ class AuthenticationService:
         self,
         server: Server,
         remote_name: str,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        domain: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
+        domain: str | None = None,
         use_windows_auth: bool = False,
-        hashes: Optional[str] = None,
-        aes_key: Optional[str] = None,
+        hashes: str | None = None,
+        aes_key: str | None = None,
         kerberos_auth: bool = False,
-        kdc_host: Optional[str] = None,
+        kdc_host: str | None = None,
         workstation_id: str = "SQLServerCEIP",
         application_name: str = "Framework Microsoft SqlClient Da",
         client_interface_name: str = ".Net SqlClient Data Provider",
@@ -52,8 +50,8 @@ class AuthenticationService:
             client_interface_name: Client interface name for the TDS LOGIN packet
         """
         self.server = server
-        self._database: Optional[str] = self.server.database
-        self.mssql_instance: Optional[MSSQL] = None
+        self._database: str | None = self.server.database
+        self.mssql_instance: MSSQL | None = None
 
         # Store authentication parameters
         self._remote_name = remote_name

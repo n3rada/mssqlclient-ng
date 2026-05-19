@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/domain/adsid.py
 
 # Built-in imports
-from typing import Optional, Dict
 
 # Third-party imports
 from loguru import logger
@@ -13,7 +12,6 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 from ...utils.common import sid_bytes_to_string
 
-
 @ActionFactory.register(
     "ad-sid",
     "Retrieves the current user's SID using SUSER_SID() function",
@@ -24,7 +22,7 @@ class AdSid(BaseAction):
     Also extracts domain SID and RID if the user is a domain account.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[Dict[str, str]]:
+    def execute(self, database_context: DatabaseContext) -> dict[str, str] | None:
         """
         Execute the user SID retrieval action.
 
@@ -32,7 +30,7 @@ class AdSid(BaseAction):
             database_context: Database context with connection and services
 
         Returns:
-            Optional[Dict[str, str]]: Dictionary with user SID information or None if failed
+            dict[str, str] | None: Dictionary with user SID information or None if failed
         """
         logger.info("Retrieving current user's SID")
 

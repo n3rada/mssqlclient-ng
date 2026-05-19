@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/database/rows.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("rows", "Retrieve all rows from a specified table")
 class Rows(BaseAction):
@@ -33,7 +31,7 @@ class Rows(BaseAction):
     def __init__(self):
         super().__init__()
         self._fqtn: str = ""
-        self._database: Optional[str] = None
+        self._database: str | None = None
         self._schema: str = "dbo"  # Default to dbo schema
         self._table: str = ""
         self._limit: int = 25  # Default: 25 rows (0 = unlimited)
@@ -107,7 +105,7 @@ class Rows(BaseAction):
                     )
                 raise
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list[dict]]:
+    def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         """
         Executes the rows retrieval query.
 

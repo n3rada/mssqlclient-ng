@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/domain/ridcycle.py
 
 # Built-in imports
-from typing import List, Dict
 
 # Third-party imports
 from loguru import logger
@@ -15,7 +14,6 @@ from ...utils.formatters import OutputFormatter
 
 DEFAULT_MAX_RID = 10000
 BATCH_SIZE = 1000
-
 
 @ActionFactory.register(
     "ad-users",
@@ -92,7 +90,7 @@ class RidCycle(BaseAction):
             database_context: Database context with connection and services
 
         Returns:
-            Optional[List[Dict]]: List of discovered domain accounts or None
+            list[Dict] | None: List of discovered domain accounts or None
         """
         logger.info(f"Starting RID cycling (max RID: {self._max_rid})")
 
@@ -182,7 +180,7 @@ class RidCycle(BaseAction):
 
         return results
 
-    def _print_results(self, results: List[Dict]) -> None:
+    def _print_results(self, results: list[Dict]) -> None:
         """
         Print the results in the specified format.
 

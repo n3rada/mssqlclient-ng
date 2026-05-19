@@ -2,7 +2,7 @@
 Retrieves all group memberships from the Windows authentication token.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -13,7 +13,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 from ...utils.common import convert_table_to_dicts
-
 
 @ActionFactory.register("authtoken", "Retrieve Windows authentication token groups")
 class AuthToken(BaseAction):
@@ -28,7 +27,7 @@ class AuthToken(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, str]]]:
+    ) -> list[dict[str, str]] | None:
         """
         Execute the authtoken action to retrieve Windows authentication token groups.
 
@@ -66,7 +65,7 @@ class AuthToken(BaseAction):
                 logger.warning("No groups found in authentication token.")
                 return None
 
-            groups: List[Dict[str, str]] = []
+            groups: list[dict[str, str]] = []
 
             for row in token_rows:
                 group_name = str(row.get("name", ""))

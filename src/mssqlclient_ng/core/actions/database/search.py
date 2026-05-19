@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/database/rows.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "search",
@@ -45,9 +43,9 @@ class Search(BaseAction):
         super().__init__()
         self._keyword: str = ""
         self._columns_only: bool = False
-        self._limit_database: Optional[str] = None
-        self._target_table: Optional[str] = None
-        self._target_schema: Optional[str] = None
+        self._limit_database: str | None = None
+        self._target_table: str | None = None
+        self._target_schema: str | None = None
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -106,7 +104,7 @@ class Search(BaseAction):
                     "Invalid target format. Use: database, schema.table, or database.schema.table"
                 )
 
-    def execute(self, database_context: DatabaseContext) -> Optional[dict]:
+    def execute(self, database_context: DatabaseContext) -> dict | None:
         """
         Executes the search operation.
 
@@ -190,7 +188,7 @@ class Search(BaseAction):
 
         return None
 
-    def _search_columns_only(self, database_context: DatabaseContext) -> Optional[dict]:
+    def _search_columns_only(self, database_context: DatabaseContext) -> dict | None:
         """
         Search only column names across all accessible databases (fast, no row data scanning).
 
@@ -275,8 +273,8 @@ class Search(BaseAction):
         self,
         database_context: DatabaseContext,
         database: str,
-        target_schema: Optional[str] = None,
-        target_table: Optional[str] = None,
+        target_schema: str | None = None,
+        target_table: str | None = None,
     ) -> tuple[int, int, int]:
         """
         Searches a specific database for the keyword.

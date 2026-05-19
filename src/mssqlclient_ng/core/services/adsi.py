@@ -2,14 +2,13 @@
 
 # Built-in imports
 import asyncio
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
 
 # Local library imports
 from ..utils import common
-
 
 class AdsiService:
     """
@@ -29,7 +28,7 @@ class AdsiService:
         self.function_name = f"f_{common.generate_random_string(8)}"
         self.library_path = f"l_{common.generate_random_string(8)}"
 
-    def list_adsi_servers(self) -> Optional[List[Dict[str, Any]]]:
+    def list_adsi_servers(self) -> list[dict[str, Any]] | None:
         """
         Returns full information about all ADSI linked servers.
 
@@ -49,7 +48,7 @@ class AdsiService:
             logger.error(f"Error while listing ADSI servers: {e}")
             return None
 
-    def get_adsi_server_names(self) -> List[str]:
+    def get_adsi_server_names(self) -> list[str]:
         """
         Returns the names of all ADSI linked servers.
 
@@ -178,7 +177,7 @@ class AdsiService:
 
     def execute_raw_ldap_query(
         self, ldap_query: str, server_name: str
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Execute a raw LDAP query (ADsDSOObject SQL dialect) via OPENQUERY.
         Handles single-quote escaping for the one-hop OPENQUERY wrapper.
@@ -203,8 +202,8 @@ class AdsiService:
         ldap_path: str,
         ldap_filter: str,
         attributes: str = "*",
-        server_name: Optional[str] = None,
-    ) -> Optional[List[Dict[str, Any]]]:
+        server_name: str | None = None,
+    ) -> list[dict[str, Any]] | None:
         """
         Execute an LDAP query via OPENQUERY against an ADSI linked server.
 
@@ -238,7 +237,7 @@ class AdsiService:
             logger.warning(f"{e}")
             return None
 
-    async def listen_for_request(self) -> Optional[List[Dict[str, Any]]]:
+    async def listen_for_request(self) -> list[dict[str, Any]] | None:
         """
         Start a listener for LDAP requests asynchronously.
 
@@ -248,7 +247,7 @@ class AdsiService:
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, self._listen_sync)
 
-    def _listen_sync(self) -> Optional[List[Dict[str, Any]]]:
+    def _listen_sync(self) -> list[dict[str, Any]] | None:
         """
         Synchronous implementation of the LDAP listener.
 

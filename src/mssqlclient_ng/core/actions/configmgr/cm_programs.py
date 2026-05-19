@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr programs (legacy package execution configurations)."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-programs", "Enumerate ConfigMgr programs with command lines"
@@ -32,7 +29,7 @@ class CMPrograms(CMBaseAction):
         super().validate_arguments(additional_arguments)
         self._limit = int(self._limit)
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         filters = []
         if self._package_id:
             filters.append(f"package: {self._package_id}")

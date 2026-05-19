@@ -2,8 +2,6 @@
 
 """Create a stealthy RBAC admin in ConfigMgr."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -11,7 +9,6 @@ from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
-
 
 @ActionFactory.register(
     "cm-rbac-add",
@@ -38,7 +35,7 @@ class CMRbacAdd(CMBaseAction):
                 "Account name is required. Usage: cm-rbac-add <domain\\\\user>"
             )
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Creating stealthy RBAC admin: {self._account_name}")
 
         databases = self._get_databases(database_context)

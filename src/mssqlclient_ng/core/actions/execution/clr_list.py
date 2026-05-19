@@ -7,7 +7,6 @@ from ...utils.formatters import OutputFormatter
 from ..base import BaseAction
 from ..factory import ActionFactory
 
-
 @ActionFactory.register(
     "clr-list",
     "List user-defined CLR assemblies in the current database",

@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/database/permissions.py
 
 # Built-in imports
-from typing import Optional, List, Dict
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "permissions",
@@ -84,7 +82,7 @@ class Permissions(BaseAction):
                 "'schema.table', or nothing to return current server permissions."
             )
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         """
         Execute the permissions enumeration.
 
@@ -166,7 +164,7 @@ class Permissions(BaseAction):
         print(OutputFormatter.convert_list_of_dicts(sorted_table))
         return sorted_table
 
-    def _sort_permissions_by_importance(self, permissions: List[Dict]) -> List[Dict]:
+    def _sort_permissions_by_importance(self, permissions: list[Dict]) -> list[Dict]:
         """
         Sort permissions by exploitation value - most interesting permissions first.
         Secondary sort by permission name for consistent ordering.

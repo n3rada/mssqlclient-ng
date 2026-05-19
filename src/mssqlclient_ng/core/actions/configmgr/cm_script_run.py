@@ -4,7 +4,6 @@
 
 import base64
 import uuid
-from typing import Optional
 
 from loguru import logger
 
@@ -13,7 +12,6 @@ from ..base import Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
-
 
 @ActionFactory.register(
     "cm-script-run", "Execute a ConfigMgr script on a target device"
@@ -42,7 +40,7 @@ class CMScriptRun(CMBaseAction):
         if not self._script_guid:
             raise ValueError("--scriptguid is required")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Executing ConfigMgr script on ResourceID: {self._resource_id}")
 
         databases = self._get_databases(database_context)

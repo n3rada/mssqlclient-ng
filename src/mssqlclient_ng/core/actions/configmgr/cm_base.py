@@ -2,13 +2,11 @@
 
 """Base class for ConfigMgr actions providing common SCCM database detection logic."""
 
-from typing import Optional, List
 from loguru import logger
 
 from ..base import BaseAction
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
-
 
 class CMBaseAction(BaseAction):
     """
@@ -19,7 +17,7 @@ class CMBaseAction(BaseAction):
     def _get_cm_service(self, database_context: DatabaseContext) -> CMService:
         return CMService(database_context.query_service)
 
-    def _get_databases(self, database_context: DatabaseContext) -> List[str]:
+    def _get_databases(self, database_context: DatabaseContext) -> list[str]:
         """Get ConfigMgr databases, logging warnings if none found."""
         cm_service = self._get_cm_service(database_context)
         databases = cm_service.get_sccm_databases()

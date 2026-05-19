@@ -1,11 +1,9 @@
 # mssqlclient_ng/core/utils/formatters/markdown.py
 
 # Built-in imports
-from typing import Dict, List
 
 # Local library imports
 from .base import IOutputFormatter
-
 
 class MarkdownFormatter(IOutputFormatter):
     """Formats data into Markdown-friendly table format."""
@@ -33,7 +31,7 @@ class MarkdownFormatter(IOutputFormatter):
         return str(value)
 
     def convert_dict(
-        self, data: Dict[str, str], column_one_header: str, column_two_header: str
+        self, data: dict[str, str], column_one_header: str, column_two_header: str
     ) -> str:
         """Converts a dictionary into a markdown table."""
         if not data:
@@ -64,7 +62,7 @@ class MarkdownFormatter(IOutputFormatter):
 
         return "\n" + "\n".join(lines) + "\n"
 
-    def convert_list_of_dicts(self, data: List[Dict[str, any]]) -> str:
+    def convert_list_of_dicts(self, data: list[dict[str, any]]) -> str:
         """Converts a list of dictionaries into a markdown table."""
         if not data:
             return "No data available."
@@ -108,7 +106,7 @@ class MarkdownFormatter(IOutputFormatter):
 
         return "\n" + "\n".join(lines) + "\n"
 
-    def convert_list(self, data: List[str], column_name: str) -> str:
+    def convert_list(self, data: list[str], column_name: str) -> str:
         """Converts a list into a markdown table with a specified column name."""
         if not data:
             return ""

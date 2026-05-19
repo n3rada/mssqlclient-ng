@@ -3,7 +3,7 @@ Extended Procedures action for enumerating extended stored procedures available 
 """
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -129,7 +129,6 @@ SYSTEM_PROC_DESCRIPTIONS = {
     "sp_grant_proxy_to_subsystem": "Grant proxy to subsystem",
 }
 
-
 @ActionFactory.register(
     "xprocs",
     "Enumerate extended stored procedures available on SQL Server",
@@ -146,7 +145,7 @@ class ExtendedProcs(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Enumerate extended stored procedures, OLE Automation procedures,
         and system procedures on the SQL Server instance.
@@ -318,8 +317,8 @@ class ExtendedProcs(BaseAction):
 
     @staticmethod
     def _enrich_procs(
-        rows: List[Dict[str, Any]], descriptions: Dict[str, str]
-    ) -> List[Dict[str, Any]]:
+        rows: list[dict[str, Any]], descriptions: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Add descriptions and sort procedures (executable first, then by name)."""
         enriched = []
         for proc in rows:

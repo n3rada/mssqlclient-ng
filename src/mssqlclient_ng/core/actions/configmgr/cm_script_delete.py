@@ -2,8 +2,6 @@
 
 """Delete a PowerShell script from ConfigMgr."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -13,7 +11,6 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 
 BUILT_IN_CMPIVOT_GUID = "7DC6B6F1-E7F6-43C1-96E0-E1D16BC25C14"
-
 
 @ActionFactory.register("cm-script-delete", "Delete a ConfigMgr script by GUID")
 class CMScriptDelete(CMBaseAction):
@@ -29,7 +26,7 @@ class CMScriptDelete(CMBaseAction):
         if self._script_guid.upper() == BUILT_IN_CMPIVOT_GUID:
             raise ValueError("Cannot delete the built-in CMPivot script")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Deleting ConfigMgr script: {self._script_guid}")
 
         databases = self._get_databases(database_context)

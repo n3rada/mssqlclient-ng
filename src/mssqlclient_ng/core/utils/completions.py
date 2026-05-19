@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/utils/completions.py
 
 # Built-in imports
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
 
 # External library imports
 from prompt_toolkit.completion import Completer, Completion
@@ -281,7 +281,6 @@ SQL_FUNCTIONS = [
     "IDENT_INCR",
 ]
 
-
 class ActionCompleter(Completer):
     """
     Auto-completer for action commands.
@@ -303,7 +302,7 @@ class ActionCompleter(Completer):
     def __init__(
         self,
         prefix: str = "!",
-        chain_loader: Optional[Callable[[], List[Tuple[int, str]]]] = None,
+        chain_loader: Callable[[], list[tuple[int, str]]] | None = None,
     ):
         """
         Args:
@@ -531,7 +530,6 @@ class ActionCompleter(Completer):
                     display=id_str,
                     display_meta=summary,
                 )
-
 
 class SQLBuiltinCompleter(Completer):
     """

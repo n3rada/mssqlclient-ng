@@ -1,14 +1,12 @@
 # mssqlclient_ng/core/services/user.py
 
 # Built-in imports
-from typing import List, Optional, Tuple
 
 # Third party imports
 from loguru import logger
 
 # Local library imports
 from .query import QueryService
-
 
 class UserService:
     """
@@ -34,48 +32,48 @@ class UserService:
         self._permission_cache: dict[str, bool] = {}
 
         # Private user information
-        self._mapped_user: Optional[str] = None
-        self._system_user: Optional[str] = None
-        self._effective_user: Optional[str] = None
-        self._source_principal: Optional[str] = None
+        self._mapped_user: str | None = None
+        self._system_user: str | None = None
+        self._effective_user: str | None = None
+        self._source_principal: str | None = None
 
     @property
-    def mapped_user(self) -> Optional[str]:
+    def mapped_user(self) -> str | None:
         """Get the mapped database user."""
         return self._mapped_user
 
     @mapped_user.setter
-    def mapped_user(self, value: Optional[str]) -> None:
+    def mapped_user(self, value: str | None) -> None:
         """Set the mapped database user."""
         self._mapped_user = value
 
     @property
-    def system_user(self) -> Optional[str]:
+    def system_user(self) -> str | None:
         """Get the system login user."""
         return self._system_user
 
     @system_user.setter
-    def system_user(self, value: Optional[str]) -> None:
+    def system_user(self, value: str | None) -> None:
         """Set the system login user."""
         self._system_user = value
 
     @property
-    def effective_user(self) -> Optional[str]:
+    def effective_user(self) -> str | None:
         """Get the effective database user (handles AD group-based access)."""
         return self._effective_user
 
     @effective_user.setter
-    def effective_user(self, value: Optional[str]) -> None:
+    def effective_user(self, value: str | None) -> None:
         """Set the effective database user."""
         self._effective_user = value
 
     @property
-    def source_principal(self) -> Optional[str]:
+    def source_principal(self) -> str | None:
         """Get the source principal (AD group or login) that granted access."""
         return self._source_principal
 
     @source_principal.setter
-    def source_principal(self, value: Optional[str]) -> None:
+    def source_principal(self, value: str | None) -> None:
         """Set the source principal."""
         self._source_principal = value
 
@@ -190,7 +188,7 @@ class UserService:
         upper = login.upper()
         return upper.startswith("NT ") or upper.startswith("NT\\")
 
-    def get_server_roles(self) -> Tuple[List[str], List[str]]:
+    def get_server_roles(self) -> tuple[list[str], list[str]]:
         """
         Returns the current user's server role memberships split into fixed and custom roles.
         Excludes the public role and internal placeholder roles (##...##).
@@ -208,8 +206,8 @@ WHERE type = 'R'
   AND ISNULL(IS_SRVROLEMEMBER(name), 0) = 1
 ORDER BY is_fixed_role DESC, name;"""
 
-        fixed_roles: List[str] = []
-        custom_roles: List[str] = []
+        fixed_roles: list[str] = []
+        custom_roles: list[str] = []
         try:
             rows = self._query_service.execute_table(query, silent=True)
             for row in rows:
@@ -249,7 +247,7 @@ ORDER BY is_fixed_role DESC, name;"""
         # Username has domain format - it's a Windows user
         return True
 
-    def get_info(self) -> Tuple[str, str]:
+    def get_info(self) -> tuple[str, str]:
         """
         Retrieve information about the current user.
 

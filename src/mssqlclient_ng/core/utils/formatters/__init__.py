@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/utils/formatters/__init__.py
 
 # Built-in imports
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Sequence
 
 # Local library imports
 from .base import IOutputFormatter
@@ -24,7 +24,6 @@ __all__ = [
     "format_table",
 ]
 
-
 def normalize_value(value: Any) -> str:
     """
     Normalizes a value for display in a table.
@@ -36,9 +35,8 @@ def normalize_value(value: Any) -> str:
         return ""
     return str(value)
 
-
 def dict_to_markdown_table(
-    dictionary: Dict[str, str], column_one_header: str, column_two_header: str
+    dictionary: dict[str, str], column_one_header: str, column_two_header: str
 ) -> str:
     """
     Converts a dictionary into a formatted table (uses current output format).
@@ -47,24 +45,21 @@ def dict_to_markdown_table(
         dictionary, column_one_header, column_two_header
     )
 
-
 def list_to_markdown_table(lst: Sequence[str], column_name: str) -> str:
     """
     Converts a list of strings into a formatted table with a specified column name.
     """
     return OutputFormatter.convert_list(list(lst), column_name)
 
-
-def rows_to_markdown_table(rows: List[Dict[str, Any]]) -> str:
+def rows_to_markdown_table(rows: list[dict[str, Any]]) -> str:
     """
     Converts a list of dictionaries (rows) into a formatted table.
     Each dict should have the same keys (column names).
     """
     return OutputFormatter.convert_list_of_dicts(rows)
 
-
 def table_to_markdown(
-    table: List[List[Any]], headers: Optional[List[str]] = None
+    table: list[list[Any]], headers: list[str] | None = None
 ) -> str:
     """
     Converts a 2D list (table) into a formatted table.
@@ -92,8 +87,7 @@ def table_to_markdown(
             rows.append(row_dict)
         return OutputFormatter.convert_list_of_dicts(rows)
 
-
-def format_table(headers: List[str], table: List[List[Any]]) -> str:
+def format_table(headers: list[str], table: list[list[Any]]) -> str:
     """
     Formats a table with headers and data rows.
     Alias for table_to_markdown for backward compatibility.

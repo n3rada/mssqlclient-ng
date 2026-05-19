@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/administration/kill.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -10,7 +9,6 @@ from loguru import logger
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register("kill", "Kill a specific session or all sessions")
 class Kill(BaseAction):
@@ -34,7 +32,7 @@ class Kill(BaseAction):
                     "Invalid argument. Provide a positive session ID or 'all'"
                 ) from exc
 
-    def execute(self, database_context: DatabaseContext) -> Optional[object]:
+    def execute(self, database_context: DatabaseContext) -> object | None:
         """
         Executes the kill operation on target session(s).
 

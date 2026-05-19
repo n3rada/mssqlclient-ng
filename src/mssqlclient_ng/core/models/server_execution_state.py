@@ -3,7 +3,6 @@
 # Built-in imports
 import hashlib
 
-
 class ServerExecutionState:
     """
     Represents the runtime execution state of a SQL Server connection.

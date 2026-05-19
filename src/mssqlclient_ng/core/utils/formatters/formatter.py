@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/utils/formatters/formatter.py
 
 # Built-in imports
-from typing import Dict, List
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
 from .grid import GridFormatter
-
 
 class OutputFormatter:
     """
@@ -56,13 +54,13 @@ class OutputFormatter:
         logger.debug(f"Output format set to: {cls._current_formatter.format_name}")
 
     @classmethod
-    def get_available_formats(cls) -> List[str]:
+    def get_available_formats(cls) -> list[str]:
         """Gets a list of available format names."""
         return ["markdown", "csv", "grid"]
 
     @classmethod
     def convert_dict(
-        cls, data: Dict[str, str], column_one_header: str, column_two_header: str
+        cls, data: dict[str, str], column_one_header: str, column_two_header: str
     ) -> str:
         """Converts a dictionary into the current output format."""
         return cls._current_formatter.convert_dict(
@@ -70,11 +68,11 @@ class OutputFormatter:
         )
 
     @classmethod
-    def convert_list_of_dicts(cls, data: List[Dict[str, any]]) -> str:
+    def convert_list_of_dicts(cls, data: list[dict[str, any]]) -> str:
         """Converts a list of dictionaries into the current output format."""
         return cls._current_formatter.convert_list_of_dicts(data)
 
     @classmethod
-    def convert_list(cls, data: List[str], column_name: str) -> str:
+    def convert_list(cls, data: list[str], column_name: str) -> str:
         """Converts a list into the current output format with a specified column name."""
         return cls._current_formatter.convert_list(data, column_name)

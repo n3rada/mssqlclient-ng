@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/models/linked_servers.py
 
 # Built-in imports
-from typing import List, Optional
 
 # Third party imports
 from loguru import logger
@@ -9,7 +8,6 @@ from loguru import logger
 # Local library imports
 from .server import Server
 from ..utils.common import bracket_identifier
-
 
 class LinkedServers:
     """
@@ -19,7 +17,7 @@ class LinkedServers:
     """
 
     def __init__(
-        self, chain_input: Optional[str | List[Server] | "LinkedServers"] = None
+        self, chain_input: str | list[Server] | "LinkedServers" | None = None
     ):
         """
         Initialize the linked server chain.
@@ -29,7 +27,7 @@ class LinkedServers:
                         another LinkedServers instance (copy constructor), or None for an empty chain
         """
         if chain_input is None:
-            self.server_chain: List[Server] = []
+            self.server_chain: list[Server] = []
         elif isinstance(chain_input, str):
             self.server_chain = (
                 self._parse_server_chain(chain_input) if chain_input.strip() else []
@@ -92,37 +90,37 @@ class LinkedServers:
         logger.debug(f"Marked server '{server_name}' as non-RPC")
 
     @property
-    def server_names(self) -> List[str]:
+    def server_names(self) -> list[str]:
         """Public array of server names extracted from the server chain."""
         return self._server_names
 
     def _recompute_chain(self) -> None:
         """Recompute internal arrays (server names, impersonation users, databases)."""
         # Computable server names starts with "0" as convention
-        self._computable_server_names: List[str] = ["0"] + [
+        self._computable_server_names: list[str] = ["0"] + [
             server.hostname for server in self.server_chain
         ]
 
-        # Extract impersonation users (List[List[str]] for cascading EXECUTE AS support)
-        self._computable_impersonation_names: List[List[str]] = [
+        # Extract impersonation users (list[list[str]] for cascading EXECUTE AS support)
+        self._computable_impersonation_names: list[list[str]] = [
             list(server.impersonation_users) for server in self.server_chain
         ]
 
         # Extract database contexts
-        self._computable_database_names: List[str] = [
+        self._computable_database_names: list[str] = [
             server.database if server.database else "" for server in self.server_chain
         ]
 
         # Public server names (without "0" prefix)
-        self._server_names: List[str] = [
+        self._server_names: list[str] = [
             server.hostname for server in self.server_chain
         ]
 
     def add_to_chain(
         self,
         new_server: str,
-        impersonation_users: Optional[List[str]] = None,
-        database: Optional[str] = None,
+        impersonation_users: list[str] | None = None,
+        database: str | None = None,
     ) -> None:
         """
         Add a new server to the linked server chain.
@@ -167,7 +165,7 @@ class LinkedServers:
         self.server_chain = []
         self._recompute_chain()
 
-    def get_chain_parts(self) -> List[str]:
+    def get_chain_parts(self) -> list[str]:
         """
         Returns a properly formatted linked server chain parts.
         Server names are wrapped in brackets if they contain special characters.
@@ -208,8 +206,8 @@ class LinkedServers:
     def format_chain_display(
         self,
         initial_host: str,
-        initial_login: Optional[str] = None,
-        initial_impersonation: Optional[List[str]] = None,
+        initial_login: str | None = None,
+        initial_impersonation: list[str] | None = None,
     ) -> str:
         """
         Format a human-readable chain display with impersonation context.
@@ -249,7 +247,7 @@ class LinkedServers:
         return result
 
     @staticmethod
-    def _format_connector(impersonation_users: Optional[List[str]] = None) -> str:
+    def _format_connector(impersonation_users: list[str] | None = None) -> str:
         """Format a connector arrow, optionally with impersonation cascade."""
         if impersonation_users:
             cascade = " → ".join(impersonation_users)
@@ -257,7 +255,7 @@ class LinkedServers:
         return " ──> "
 
     @staticmethod
-    def _parse_server_chain(chain_input: str) -> List[Server]:
+    def _parse_server_chain(chain_input: str) -> list[Server]:
         """
         Parse a semicolon-separated list of servers into a list of Server objects.
         Handles bracketed SQL Server identifiers correctly.
@@ -335,11 +333,11 @@ class LinkedServers:
 
     def _build_select_openquery_chain_recursive(
         self,
-        linked_servers: List[str],
+        linked_servers: list[str],
         query: str,
         ticks_counter: int = 0,
-        linked_impersonation: Optional[List[List[str]]] = None,
-        linked_databases: Optional[List[str]] = None,
+        linked_impersonation: list[list[str]] | None = None,
+        linked_databases: list[str] | None = None,
     ) -> str:
         """
         Recursively construct a nested OPENQUERY statement for querying linked SQL servers.
@@ -365,7 +363,7 @@ class LinkedServers:
         current_query = query
 
         # Prepare the impersonation login list, if any
-        login_list: List[str] = []
+        login_list: list[str] = []
         if linked_impersonation and len(linked_impersonation) > 0:
             login_list = linked_impersonation[0]
             linked_impersonation = linked_impersonation[1:]
@@ -452,10 +450,10 @@ class LinkedServers:
 
     @staticmethod
     def _build_remote_procedure_call_recursive(
-        linked_servers: List[str],
+        linked_servers: list[str],
         query: str,
-        linked_impersonation: Optional[List[List[str]]] = None,
-        linked_databases: Optional[List[str]] = None,
+        linked_impersonation: list[list[str]] | None = None,
+        linked_databases: list[str] | None = None,
     ) -> str:
         """
         Recursively construct a nested EXEC AT statement for querying linked SQL servers.

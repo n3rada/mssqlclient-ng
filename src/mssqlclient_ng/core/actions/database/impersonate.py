@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/database/impersonate.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +11,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "impersonate",
@@ -29,7 +28,7 @@ class Impersonation(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Check impersonation permissions for SQL logins and Windows principals.
 

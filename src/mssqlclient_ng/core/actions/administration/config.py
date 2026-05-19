@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/administration/config.py
 
 # Standard library imports
-from typing import Optional, List
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "config",
@@ -104,7 +102,7 @@ class Config(BaseAction):
         if self._option_name and self._value_int >= 0 and self._value_int not in [0, 1]:
             raise ValueError("Invalid value. Use 1 to enable or 0 to disable.")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[object]:
+    def execute(self, database_context: DatabaseContext) -> object | None:
         """
         Execute the configuration action.
 
@@ -154,7 +152,7 @@ class Config(BaseAction):
 
     def _check_configuration_options(
         self, database_context: DatabaseContext
-    ) -> List[dict]:
+    ) -> list[dict]:
         """
         Checks all configuration options.
 
@@ -211,7 +209,7 @@ class Config(BaseAction):
 
         return results
 
-    def _display_results(self, results: List[dict]) -> None:
+    def _display_results(self, results: list[dict]) -> None:
         """
         Displays the results in a formatted table.
 

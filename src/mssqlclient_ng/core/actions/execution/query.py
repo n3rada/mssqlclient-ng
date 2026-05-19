@@ -1,15 +1,13 @@
 # mssqlclient_ng/core/actions/execution/query.py
 
-
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third-party imports
 from loguru import logger
 
 from ..base import BaseAction
 from ...utils.formatters import OutputFormatter
-
 
 # Not registered via ActionFactory - Query is invoked directly by the shell
 # when no action prefix is matched (any raw SQL input).
@@ -28,7 +26,7 @@ class Query(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._query: Optional[str] = None
+        self._query: str | None = None
         self._execute_all: bool = False
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
@@ -57,7 +55,7 @@ class Query(BaseAction):
 
         self._query = args
 
-    def execute(self, database_context=None) -> Optional[List[Dict[str, Any]]]:
+    def execute(self, database_context=None) -> list[dict[str, Any]] | None:
         """
         Execute the T-SQL query.
 
@@ -177,7 +175,7 @@ class Query(BaseAction):
 
     def _execute_across_all_databases(
         self, database_context
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         """
         Execute the query across all accessible databases.
 

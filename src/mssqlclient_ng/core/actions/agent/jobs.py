@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/agent/jobs.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -11,7 +11,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 def _check_agent_running(database_context: DatabaseContext) -> bool:
     """Return True if the SQL Server Agent service is running."""
@@ -34,7 +33,6 @@ END AS AgentStatus;"""
     except Exception as e:
         logger.error(f"Failed to check Agent status: {e}")
         return False
-
 
 @ActionFactory.register(
     "jobs",
@@ -65,7 +63,7 @@ class Jobs(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         if not _check_agent_running(database_context):
             return None
 

@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/filesystem/tree.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third-party imports
 from loguru import logger
@@ -10,7 +10,6 @@ from loguru import logger
 from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register(
     "tree",
@@ -146,7 +145,7 @@ DROP TABLE #TreeResults;
             logger.error(f"Failed to generate tree for '{self._path}': {ex}")
             raise
 
-    def _build_tree(self, results: List[Dict[str, Any]], root_path: str) -> str:
+    def _build_tree(self, results: list[dict[str, Any]], root_path: str) -> str:
         """
         Build a tree representation from xp_dirtree results.
 
@@ -169,8 +168,8 @@ DROP TABLE #TreeResults;
         return "\n".join(lines)
 
     def _organize_tree_structure(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self, results: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """
         Organize flat xp_dirtree results into a hierarchical structure.
 
@@ -230,9 +229,9 @@ DROP TABLE #TreeResults;
 
     def _render_tree(
         self,
-        nodes: List[Dict[str, Any]],
+        nodes: list[dict[str, Any]],
         prefix: str,
-        lines: List[str],
+        lines: list[str],
         is_last: bool = False,
     ) -> None:
         """

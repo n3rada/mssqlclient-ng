@@ -19,7 +19,6 @@ from loguru import logger
 
 APP_NAME = "mssqlclient-ng"
 
-
 def get_data_dir() -> Path:
     """
     Return the persistent data directory, following XDG/platform conventions.
@@ -38,12 +37,10 @@ def get_data_dir() -> Path:
 
     return (base / APP_NAME).resolve()
 
-
 def _sanitize_filename(name: str) -> str:
     """Sanitize a server name for use as a filename component."""
     # Replace characters not safe in filenames
     return "".join(c if c.isalnum() or c in ".-_" else "_" for c in name)
-
 
 class ChainStore:
     """
@@ -158,7 +155,6 @@ class ChainStore:
             except (OSError, json.JSONDecodeError):
                 servers.append(f.stem)
         return servers
-
 
 class OutputCache:
     """

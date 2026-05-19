@@ -2,7 +2,7 @@
 
 # Built-in imports
 import re
-from typing import Optional, Any, List, Dict, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 # Third party imports
 from loguru import logger
@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 # Local library imports
 from ..models.linked_servers import LinkedServers
-
 
 class QueryService:
     """
@@ -32,15 +31,15 @@ class QueryService:
             mssql: An active MSSQL connection instance from impacket
         """
         self.mssql_instance = mssql
-        self.execution_server: Optional[str] = None
-        self.execution_database: Optional[str] = None
-        self.linked_server_alias: Optional[str] = None
-        self._full_version_string: Optional[str] = None
+        self.execution_server: str | None = None
+        self.execution_database: str | None = None
+        self.linked_server_alias: str | None = None
+        self._full_version_string: str | None = None
         self._linked_servers = LinkedServers()
         self.command_timeout = 120  # Default timeout in seconds
 
         # Dictionary to cache Azure SQL detection for each execution server
-        self._is_azure_sql_cache: Dict[str, bool] = {}
+        self._is_azure_sql_cache: dict[str, bool] = {}
 
         # Initialize execution server and database
         self.execution_server = self._get_server_name()
@@ -52,7 +51,7 @@ class QueryService:
         return self._linked_servers
 
     @linked_servers.setter
-    def linked_servers(self, value: Optional[LinkedServers]) -> None:
+    def linked_servers(self, value: LinkedServers | None) -> None:
         """
         Set the linked servers configuration.
         Updates the execution server to the last server in the chain.
@@ -113,7 +112,7 @@ class QueryService:
 
     def execute(
         self, query: str, tuple_mode: bool = False, silent: bool = False
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Execute a SQL query and return results as rows.
 
@@ -158,7 +157,7 @@ class QueryService:
             logger.error(error)
             return -1
 
-    def execute_table(self, query: str, silent: bool = False) -> List[Dict[str, Any]]:
+    def execute_table(self, query: str, silent: bool = False) -> list[dict[str, Any]]:
         """
         Execute a SQL query and return the results as a list of dictionaries.
 
@@ -175,14 +174,14 @@ class QueryService:
         return [self._normalize_row(row) for row in rows]
 
     @staticmethod
-    def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
         """Convert impacket's 'NULL' sentinel strings to Python None."""
         return {
             k: (None if isinstance(v, str) and v.upper() == "NULL" else v)
             for k, v in row.items()
         }
 
-    def execute_scalar(self, query: str, silent: bool = False) -> Optional[Any]:
+    def execute_scalar(self, query: str, silent: bool = False) -> Any | None:
         """
         Execute a SQL query and return a single scalar value (first column of first row).
 
@@ -669,7 +668,7 @@ class QueryService:
             logger.debug(f"Could not retrieve @@VERSION through chain: {e}")
 
     @staticmethod
-    def _extract_non_rpc_server(error_message: str) -> Optional[str]:
+    def _extract_non_rpc_server(error_message: str) -> str | None:
         """
         Extract the server name from an RPC error message.
         SQL Server returns: "Server 'X' is not configured for RPC."

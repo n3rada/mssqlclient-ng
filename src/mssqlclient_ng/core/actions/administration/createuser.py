@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/administration/createuser.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -10,7 +9,6 @@ from loguru import logger
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register(
     "user-add", "Create a new SQL Server login with server role privileges"

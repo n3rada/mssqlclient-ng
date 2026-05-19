@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/utils/formatters/grid.py
 
 # Built-in imports
-from typing import Dict, List
 
 # Local library imports
 from .base import IOutputFormatter
@@ -18,7 +17,6 @@ BJ = "\u2534"  # ┴
 LJ = "\u251c"  # ├
 RJ = "\u2524"  # ┤
 CJ = "\u253c"  # ┼
-
 
 class GridFormatter(IOutputFormatter):
     """Formats data into box-drawing grid tables for terminal display."""
@@ -44,24 +42,24 @@ class GridFormatter(IOutputFormatter):
         return str(value)
 
     @staticmethod
-    def _top_border(widths: List[int]) -> str:
+    def _top_border(widths: list[int]) -> str:
         return TL + TJ.join(H * (w + 2) for w in widths) + TR
 
     @staticmethod
-    def _mid_border(widths: List[int]) -> str:
+    def _mid_border(widths: list[int]) -> str:
         return LJ + CJ.join(H * (w + 2) for w in widths) + RJ
 
     @staticmethod
-    def _bot_border(widths: List[int]) -> str:
+    def _bot_border(widths: list[int]) -> str:
         return BL + BJ.join(H * (w + 2) for w in widths) + BR
 
     @staticmethod
-    def _row(values: List[str], widths: List[int]) -> str:
+    def _row(values: list[str], widths: list[int]) -> str:
         cells = [f" {v.ljust(w)} " for v, w in zip(values, widths)]
         return V + V.join(cells) + V
 
     def convert_dict(
-        self, data: Dict[str, str], column_one_header: str, column_two_header: str
+        self, data: dict[str, str], column_one_header: str, column_two_header: str
     ) -> str:
         if not data:
             return ""
@@ -87,7 +85,7 @@ class GridFormatter(IOutputFormatter):
         lines.append(self._bot_border(widths))
         return "\n" + "\n".join(lines) + "\n"
 
-    def convert_list_of_dicts(self, data: List[Dict[str, any]]) -> str:
+    def convert_list_of_dicts(self, data: list[dict[str, any]]) -> str:
         if not data:
             return "No data available."
 
@@ -121,7 +119,7 @@ class GridFormatter(IOutputFormatter):
         lines.append(self._bot_border(widths))
         return "\n" + "\n".join(lines) + "\n"
 
-    def convert_list(self, data: List[str], column_name: str) -> str:
+    def convert_list(self, data: list[str], column_name: str) -> str:
         if not data:
             return ""
 

@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/administration/sessions.py
 
 # Standard library imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third-party imports
 from loguru import logger
@@ -10,7 +10,6 @@ from loguru import logger
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("sessions", "List active SQL Server sessions", aliases=["who"])
 class Sessions(BaseAction):
@@ -24,7 +23,7 @@ class Sessions(BaseAction):
         sessions      # List all active sessions
     """
 
-    def execute(self, database_context=None) -> Optional[List[Dict[str, Any]]]:
+    def execute(self, database_context=None) -> list[dict[str, Any]] | None:
         """
         Execute the query to retrieve active sessions.
 

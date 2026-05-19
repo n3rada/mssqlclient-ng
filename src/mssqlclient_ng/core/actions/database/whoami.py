@@ -1,5 +1,4 @@
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -9,7 +8,6 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "whoami", "Display current user identity and permissions", aliases=["id", "groups"]
@@ -21,7 +19,7 @@ class Whoami(BaseAction):
     Shows user identity, server roles (fixed and custom), database roles, and accessible databases.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[dict]:
+    def execute(self, database_context: DatabaseContext) -> dict | None:
         """
         Executes the whoami action.
 

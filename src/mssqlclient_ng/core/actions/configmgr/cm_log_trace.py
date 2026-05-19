@@ -3,7 +3,6 @@
 """Trace a deployment type GUID to its assignments and collections."""
 
 import re
-from typing import Optional
 
 from loguru import logger
 
@@ -13,7 +12,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-trace",
@@ -59,7 +57,7 @@ class CMLogTrace(CMBaseAction):
         ):
             self._guid = f"DeploymentType_{self._guid}"
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Tracing deployment type: {self._guid}")
 
         databases = self._get_databases(database_context)

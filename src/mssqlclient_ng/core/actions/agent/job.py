@@ -2,7 +2,7 @@
 
 # Built-in imports
 import uuid
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -12,7 +12,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "job",
@@ -42,7 +41,7 @@ class Job(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         logger.info(f"Retrieving details for job: {self._job_identifier}")
 
         # Determine if identifier is a GUID or a name

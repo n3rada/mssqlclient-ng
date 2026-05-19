@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/database/impersonation_map.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any, Set
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -25,10 +25,8 @@ WHERE HAS_PERMS_BY_NAME(sp.name, 'LOGIN', 'IMPERSONATE') = 1
   AND sp.type_desc IN ('SQL_LOGIN', 'WINDOWS_LOGIN')
   AND sp.name NOT LIKE '##%';"""
 
-
 def _is_system_account(login: str) -> bool:
     return login.lower().startswith(_SYSTEM_PREFIXES)
-
 
 @ActionFactory.register(
     "impersonation-map",
@@ -52,7 +50,7 @@ class ImpersonationMap(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         logger.info("Starting impersonation chain mapping")
 
         starting_login = database_context.user_service.system_user or ""
@@ -64,7 +62,7 @@ class ImpersonationMap(BaseAction):
             )
             return []
 
-        all_chains: List[Dict[str, Any]] = []
+        all_chains: list[dict[str, Any]] = []
         self._build_map(
             database_context,
             starting_login,
@@ -93,9 +91,9 @@ class ImpersonationMap(BaseAction):
         self,
         db: DatabaseContext,
         starting_login: str,
-        current_path: List[str],
-        all_chains: List[Dict[str, Any]],
-        visited: Set[str],
+        current_path: list[str],
+        all_chains: list[dict[str, Any]],
+        visited: set[str],
         depth: int,
     ) -> None:
         if depth >= _MAX_DEPTH:

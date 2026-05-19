@@ -4,7 +4,6 @@
 import hashlib
 import re
 from pathlib import Path
-from typing import List
 
 # Third-party imports
 from loguru import logger
@@ -18,7 +17,6 @@ from ...utils.common import (
 )
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
-
 
 @ActionFactory.register(
     "clr", "Deploy and execute .NET CLR assemblies (DLL) on SQL Server"

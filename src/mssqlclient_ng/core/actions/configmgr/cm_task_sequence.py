@@ -2,8 +2,6 @@
 
 """Display detailed info about a specific ConfigMgr task sequence."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-tasksequence", "Display details of a specific task sequence"
@@ -25,7 +22,7 @@ class CMTaskSequence(CMBaseAction):
 
     _package_id = Arg(position=0, required=True, description="Task Sequence PackageID")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Retrieving task sequence details for: {self._package_id}")
 
         databases = self._get_databases(database_context)

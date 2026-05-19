@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr-managed devices."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("cm-devices", "Enumerate ConfigMgr-managed devices")
 class CMDevices(CMBaseAction):
@@ -56,7 +53,7 @@ class CMDevices(CMBaseAction):
         self._limit = int(named.get("limit", "25"))
         self._count_only = "count" in named
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         filters = []
         if self._name:
             filters.append(f"name: {self._name}")

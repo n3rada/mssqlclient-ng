@@ -2,8 +2,6 @@
 
 """Monitor ConfigMgr script execution status."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register("cm-script-status", "Monitor ConfigMgr script execution status")
 class CMScriptStatus(CMBaseAction):
@@ -35,7 +32,7 @@ class CMScriptStatus(CMBaseAction):
         if not self._task_id:
             raise ValueError("Task ID is required. Usage: cm-script-status <task_id>")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Checking status for Task ID: {self._task_id}")
 
         databases = self._get_databases(database_context)

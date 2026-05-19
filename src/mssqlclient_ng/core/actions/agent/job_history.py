@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/agent/job_history.py
 
 # Built-in imports
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Third party imports
 from loguru import logger
@@ -11,7 +11,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "job-history",
@@ -35,7 +34,7 @@ class JobHistory(BaseAction):
 
     def execute(
         self, database_context: DatabaseContext
-    ) -> Optional[List[Dict[str, Any]]]:
+    ) -> list[dict[str, Any]] | None:
         filter_msg = f" for '{self._name}'" if self._name else ""
         failed_msg = " (failed only)" if self._failed_only else ""
         logger.info(f"Retrieving Agent job history{filter_msg}{failed_msg}")

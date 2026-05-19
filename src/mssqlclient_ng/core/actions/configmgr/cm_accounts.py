@@ -2,8 +2,6 @@
 
 """Enumerate ConfigMgr user accounts."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -11,7 +9,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-accounts", "Enumerate ConfigMgr user accounts (NAA, Client Push, etc.)"
@@ -22,7 +19,7 @@ class CMAccounts(CMBaseAction):
     Client Push accounts, and Task Sequence accounts.
     """
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(
             "Enumerating ConfigMgr user accounts (NAA, Client Push, Task Sequence)"
         )

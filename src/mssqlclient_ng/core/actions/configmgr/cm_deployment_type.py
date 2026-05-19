@@ -2,8 +2,6 @@
 
 """Display detailed info about a specific ConfigMgr deployment type."""
 
-from typing import Optional
-
 from loguru import logger
 
 from .cm_base import CMBaseAction
@@ -12,7 +10,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
-
 
 @ActionFactory.register(
     "cm-dt",
@@ -37,7 +34,7 @@ class CMDeploymentType(CMBaseAction):
         if not self._ci_id:
             raise ValueError("CI_ID is required. Usage: cm-dt <CI_ID>")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[list]:
+    def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(f"Retrieving deployment type details for CI_ID: {self._ci_id}")
 
         databases = self._get_databases(database_context)

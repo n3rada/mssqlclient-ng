@@ -1,7 +1,7 @@
 # mssqlclient_ng/core/actions/domain/adsi_query.py
 
 # Built-in imports
-from typing import Optional, List
+
 from loguru import logger
 
 # Local library imports
@@ -13,7 +13,6 @@ from ...services.adsi import AdsiService
 
 from ..base import Arg, BaseAction
 from ..factory import ActionFactory
-
 
 @ActionFactory.register(
     "adsi-query",
@@ -32,11 +31,11 @@ class AdsiQuery(BaseAction):
 
     def __init__(self):
         super().__init__()
-        self._adsi_server_name: Optional[str] = None
-        self._ldap_query: Optional[str] = None
+        self._adsi_server_name: str | None = None
+        self._ldap_query: str | None = None
         self._preset: str = "users"
         self._using_temp_server: bool = False
-        self._domain_fqdn: Optional[str] = None
+        self._domain_fqdn: str | None = None
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         """
@@ -245,7 +244,7 @@ class AdsiQuery(BaseAction):
         ldap_path = "LDAP://" + ",".join([f"DC={part}" for part in domain_parts])
         return ldap_path
 
-    def _escape_single_quotes(self, input_str: Optional[str]) -> str:
+    def _escape_single_quotes(self, input_str: str | None) -> str:
         """
         Escape single quotes in LDAP queries for SQL Server.
 

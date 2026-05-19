@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/execution/run.py
 
 # Built-in imports
-from typing import Optional, List
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
-
 
 @ActionFactory.register("run", "Execute a remote file on the SQL Server")
 class RunExecutable(BaseAction):
@@ -91,7 +89,7 @@ class RunExecutable(BaseAction):
         if self._arguments:
             logger.info(f"Arguments: {self._arguments}")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[List[str]]:
+    def execute(self, database_context: DatabaseContext) -> list[str] | None:
         """
         Execute the remote file.
 
@@ -157,7 +155,7 @@ class RunExecutable(BaseAction):
 
     def _execute_via_ole(
         self, database_context: DatabaseContext, async_mode: bool
-    ) -> Optional[List[str]]:
+    ) -> list[str] | None:
         """
         Execute the file using OLE Automation with WScript.Shell.Run.
 
@@ -277,7 +275,7 @@ class RunExecutable(BaseAction):
 
     def _execute_via_xpcmdshell(
         self, database_context: DatabaseContext, async_mode: bool
-    ) -> Optional[List[str]]:
+    ) -> list[str] | None:
         """
         Execute the file using xp_cmdshell.
 
@@ -330,7 +328,7 @@ class RunExecutable(BaseAction):
                 logger.info("Executing via xp_cmdshell (sync)")
                 result = database_context.query_service.execute(query, tuple_mode=True)
 
-                output_lines: List[str] = []
+                output_lines: list[str] = []
 
                 if result:
                     print()

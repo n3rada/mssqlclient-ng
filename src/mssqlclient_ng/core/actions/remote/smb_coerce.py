@@ -2,7 +2,6 @@
 
 # Built-in imports
 import re
-from typing import Optional
 
 # Third-party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from loguru import logger
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
-
 
 @ActionFactory.register(
     "unc",
@@ -50,7 +48,7 @@ class SmbCoerce(BaseAction):
             )
         self._unc_path = path
 
-    def execute(self, database_context: DatabaseContext) -> Optional[object]:
+    def execute(self, database_context: DatabaseContext) -> object | None:
         """
         Execute SMB coercion using multiple fallback methods.
 

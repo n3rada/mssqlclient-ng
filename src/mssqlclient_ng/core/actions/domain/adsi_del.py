@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/domain/adsi_del.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -11,7 +10,6 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
-
 
 @ActionFactory.register(
     "adsi-del", "Delete an ADSI linked server", aliases=["adsi-delete", "adsi-drop"]
@@ -23,7 +21,7 @@ class AdsiDel(BaseAction):
 
     _server_name = Arg(position=0, required=True, description="ADSI linked server name to delete")
 
-    def execute(self, database_context: DatabaseContext) -> Optional[bool]:
+    def execute(self, database_context: DatabaseContext) -> bool | None:
         adsi_service = AdsiService(database_context)
 
         if not adsi_service.adsi_server_exists(self._server_name):

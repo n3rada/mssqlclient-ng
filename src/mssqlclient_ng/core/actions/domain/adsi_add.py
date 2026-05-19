@@ -1,7 +1,6 @@
 # mssqlclient_ng/core/actions/domain/adsi_add.py
 
 # Built-in imports
-from typing import Optional
 
 # Third party imports
 from loguru import logger
@@ -12,7 +11,6 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
 from ...utils.common import generate_random_string
-
 
 @ActionFactory.register("adsi-add", "Create an ADSI linked server")
 class AdsiAdd(BaseAction):
