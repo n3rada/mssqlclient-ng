@@ -104,6 +104,30 @@ def bytes_to_hex_string(data: bytes) -> str:
     return data.hex()
 
 
+def convert_dll_to_sql_bytes(data: bytes) -> tuple[str, str]:
+    """
+    Converts a .NET assembly byte array into the two values required to deploy
+    it via SQL Server: the SHA-512 hash (for sp_add_trusted_assembly) and the
+    uppercase hex string (for CREATE ASSEMBLY ... FROM 0x...).
+
+    Mirrors ByteHelper.ConvertDllToSqlBytes in MSSQLand.
+
+    Args:
+        data: Raw bytes of the compiled .NET assembly
+
+    Returns:
+        Tuple of (sha512_hash_hex_lowercase, assembly_hex_uppercase)
+    """
+    sha512_hash = hashlib.sha512(data).hexdigest()
+
+    hex_chars = []
+    for b in data:
+        hex_chars.append(get_hex_char((b >> 4) & 0xF, upper=True))
+        hex_chars.append(get_hex_char(b & 0xF, upper=True))
+
+    return (sha512_hash, "".join(hex_chars))
+
+
 def get_random_unused_port() -> int:
     """
     Gets a random unused TCP port by binding to port 0 and retrieving the assigned port.
@@ -241,14 +265,14 @@ def bracket_identifier(name: str) -> str:
     """
     Wrap SQL Server identifier in brackets if it contains separator characters.
     Only bracket if the name contains delimiters used in our syntax: : / @ ;
-    
+
     Args:
         name: The identifier name
-        
+
     Returns:
         Bracketed identifier if separators present, otherwise unchanged
     """
     # Only bracket if name contains our special delimiter characters
-    if any(char in name for char in (':', '/', '@', ';')):
+    if any(char in name for char in (":", "/", "@", ";")):
         return f"[{name}]"
     return name
