@@ -48,7 +48,6 @@ These are the mandatory Python development rules for this repo.
 3. Error handling and logging
 - Avoid broad `except Exception` unless re-raising, translating, or intentionally degrading behavior.
 - Inside exception handlers, prefer `logger.exception(...)` if available from `loguru` when traceback context matters.
-- Use `SystemExit(code)` only at CLI/orchestration boundaries.
 
 4. Code hygiene
 - Keep comments concise and non-obvious.
