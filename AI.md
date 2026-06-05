@@ -6,6 +6,7 @@ This file is the canonical AI guidance for this repository.
 
 - Python version baseline is 3.11+ (see [pyproject.toml](pyproject.toml): `requires-python = ">=3.11,<4.0"`).
 - Do not introduce language features or dependencies incompatible with Python 3.11.
+- Use `uv` for environment and dependency workflows in this repo.
 
 ## Read Order
 
@@ -28,6 +29,31 @@ When a feature, bug, or edge case touches TDS, auth, or low-level protocol flow,
 - Review the relevant Impacket classes and call paths first. Do not hesitate to go take a look inside current virtual env.
 - Prefer fixing usage of existing Impacket primitives over re-implementing protocol logic.
 - Only add local abstraction when it simplifies correctness, testing, and maintainability.
+
+## Python Rules
+
+These are the mandatory Python development rules for this repo. 
+
+1. Imports
+- Prefer module imports for utility modules over importing individual utility functions.
+- Keep imports at module top unless a local import is required to break a cycle or avoid optional import cost.
+- Preserve clear import grouping: standard library, third-party, local.
+- Add explicit section comments for each group: `# Built-in imports`, `# Third-party imports`, `# Local imports`.
+
+2. Typing and modern Python
+- Use modern Python 3.11 typing syntax such as `X | Y` and `X | None`.
+- Prefer concrete types over `Any` when practical.
+- Keep return types honest and narrow them explicitly when needed.
+
+3. Error handling and logging
+- Avoid broad `except Exception` unless re-raising, translating, or intentionally degrading behavior.
+- Inside exception handlers, prefer `logger.exception(...)` if available from `loguru` when traceback context matters.
+- Use `SystemExit(code)` only at CLI/orchestration boundaries.
+
+4. Code hygiene
+- Keep comments concise and non-obvious.
+- Prefer minimal diffs over broad refactors.
+- Do not introduce repo-wide style churn while solving local problems.
 
 ## Source Map (Start Here)
 
@@ -59,7 +85,11 @@ When a feature, bug, or edge case touches TDS, auth, or low-level protocol flow,
 - Reuse argument parsing and formatter helpers.
 - Do not duplicate SQL wrapping or linked-server handling in actions.
 
-5. Fail fast and observable
+5. Keep MSSQLand parity intentional
+- Before changing action semantics, compare the equivalent MSSQLand behavior.
+- Differences are acceptable only when Python runtime constraints, Impacket behavior, or transport details require them.
+
+6. Fail fast and observable
 - Surface errors with clear logs.
 - Keep operational semantics predictable (timeouts, retries, chain behavior).
 
