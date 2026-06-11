@@ -240,6 +240,16 @@ class Terminal:
         logger.info(f"Session context [{ctx_hash}]: {server} as {identity}")
         logger.debug(f"History file: {history_file}")
 
+    def _log_current_identity(self) -> None:
+        """Log the current login and mapped user as a single line."""
+        system_user = self._database_context.server.system_user
+        mapped_user = self._database_context.server.mapped_user
+        server = self._database_context.query_service.execution_server
+        if mapped_user and mapped_user != system_user:
+            logger.info(f"Logged in on {server} as {system_user} (mapped to {mapped_user})")
+        else:
+            logger.info(f"Logged in on {server} as {system_user}")
+
     def _log_server_context(self) -> None:
         """Log the current execution server and switch history to it."""
         server = self._database_context.query_service.execution_server
@@ -799,12 +809,7 @@ class Terminal:
 
             try:
                 self._refresh_user_info()
-                logger.info(
-                    f"Logged in on {self._database_context.query_service.execution_server} as {self._database_context.server.system_user}"
-                )
-                logger.info(
-                    f"Mapped to the user: {self._database_context.server.mapped_user}"
-                )
+                self._log_current_identity()
             except Exception as exc:
                 logger.error(f"Error retrieving user info from linked server: {exc}")
 
@@ -877,13 +882,7 @@ class Terminal:
 
             try:
                 self._refresh_user_info()
-                logger.info(
-                    f"Logged in on {self._database_context.query_service.execution_server} "
-                    f"as {self._database_context.server.system_user}"
-                )
-                logger.info(
-                    f"Mapped to the user: {self._database_context.server.mapped_user}"
-                )
+                self._log_current_identity()
             except Exception as exc:
                 logger.error(f"Error retrieving user info from linked server: {exc}")
 
@@ -923,9 +922,7 @@ class Terminal:
             if self._database_context.user_service.can_impersonate(login):
                 if self._database_context.user_service.impersonate_user(login):
                     self._refresh_user_info()
-                    logger.success(
-                        f"Impersonated: {self._database_context.server.system_user}"
-                    )
+                    self._log_current_identity()
                     logger.info("Use !revert to revert impersonation")
                 else:
                     logger.error(f"Failed to impersonate: {login}")
@@ -941,7 +938,7 @@ class Terminal:
         try:
             self._database_context.user_service.revert_impersonation()
             self._refresh_user_info()
-            logger.success(f"Reverted to: {self._database_context.server.system_user}")
+            self._log_current_identity()
         except Exception as e:
             logger.error(f"Error reverting impersonation: {e}")
 
@@ -970,22 +967,18 @@ class Terminal:
 
             try:
                 self._refresh_user_info()
-                logger.info(
-                    f"Logged in on {self._database_context.query_service.execution_server} as {self._database_context.server.system_user}"
-                )
-                logger.info(
-                    f"Mapped to the user: {self._database_context.server.mapped_user}"
-                )
+                self._log_current_identity()
             except Exception as exc:
                 logger.error(f"Error retrieving user info from linked server: {exc}")
                 # Rollback the addition
                 self._database_context.query_service.linked_servers.remove_last_from_chain()
                 return
 
-            chain_parts = (
-                self._database_context.query_service.linked_servers.get_chain_parts()
+            chain_display = self._database_context.query_service.linked_servers.format_chain_display(
+                initial_host=self._original_execution_server or "",
+                initial_login=self._original_system_user,
             )
-            logger.success(f"Added to chain: {' -> '.join(chain_parts)}")
+            logger.success(f"Added to chain: {chain_display}")
             self._log_server_context()
 
         except Exception as e:
@@ -1013,20 +1006,15 @@ class Terminal:
 
             try:
                 self._refresh_user_info()
-                logger.info(
-                    f"Returned to {self._database_context.query_service.execution_server} as {self._database_context.server.system_user}"
-                )
-                logger.info(
-                    f"Mapped to the user: {self._database_context.server.mapped_user}"
-                )
+                self._log_current_identity()
             except Exception as exc:
                 logger.error(f"Error retrieving user info: {exc}")
 
-            chain_parts = linked.format_chain_display(
+            chain_display = linked.format_chain_display(
                 initial_host=self._original_execution_server or "",
                 initial_login=self._original_system_user,
             )
-            logger.success(f"Current chain: {chain_parts}")
+            logger.success(f"Current chain: {chain_display}")
             self._log_server_context()
 
     # ── Display ─────────────────────────────────────────────────────────

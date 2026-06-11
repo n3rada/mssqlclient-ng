@@ -46,6 +46,7 @@ class TestTerminalInit:
         terminal = Terminal(mock_database_context)
         expected = {
             "debug",
+            "trace",
             "chain",
             "format",
             "link",
@@ -121,16 +122,20 @@ class TestTerminalHandleDebug:
     """Test debug toggle handler."""
 
     def test_toggle_debug_on(self, mock_database_context):
-        terminal = Terminal(mock_database_context, log_level="INFO")
-        with patch("mssqlclient_ng.core.terminal.logbook"):
+        terminal = Terminal(mock_database_context)
+        mock_logbook = MagicMock()
+        mock_logbook.get_level.return_value = "INFO"
+        with patch("mssqlclient_ng.core.terminal.logbook", mock_logbook):
             terminal._handle_debug("debug")
-        assert terminal._log_level == "DEBUG"
+        mock_logbook.set_level.assert_called_once_with("DEBUG")
 
     def test_toggle_debug_off(self, mock_database_context):
-        terminal = Terminal(mock_database_context, log_level="DEBUG")
-        with patch("mssqlclient_ng.core.terminal.logbook"):
+        terminal = Terminal(mock_database_context)
+        mock_logbook = MagicMock()
+        mock_logbook.get_level.return_value = "DEBUG"
+        with patch("mssqlclient_ng.core.terminal.logbook", mock_logbook):
             terminal._handle_debug("debug")
-        assert terminal._log_level == "INFO"
+        mock_logbook.set_level.assert_called_once_with("INFO")
 
 
 class TestTerminalRestoreToOriginal:
