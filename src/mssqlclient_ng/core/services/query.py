@@ -36,7 +36,6 @@ class QueryService:
         self.linked_server_alias: str | None = None
         self._full_version_string: str | None = None
         self._linked_servers = LinkedServers()
-        self.command_timeout = 120  # Default timeout in seconds
 
         # Dictionary to cache Azure SQL detection for each execution server
         self._is_azure_sql_cache: dict[str, bool] = {}
@@ -194,7 +193,7 @@ class QueryService:
         """
         rows = self.execute(query, tuple_mode=False, silent=silent)
 
-        if rows and len(rows) > 0:
+        if rows:
             # Get first column value of first row
             first_row = rows[0]
             if isinstance(first_row, dict) and first_row:
@@ -210,7 +209,6 @@ class QueryService:
         query: str,
         tuple_mode: bool = False,
         return_rows: bool = True,
-        timeout: int = 120,
         retry_count: int = 0,
         silent: bool = False,
     ) -> Any:
@@ -221,8 +219,7 @@ class QueryService:
             query: The SQL query to execute
             tuple_mode: If True, return rows as tuples
             return_rows: If True, return row data; otherwise return affected count
-            timeout: Timeout in seconds for query execution
-            retry_count: Current retry attempt (for exponential backoff)
+            retry_count: Current retry attempt (used to cap retries at MAX_RETRIES)
             silent: If True, suppress impacket error output (for internal queries)
 
         Returns:
@@ -236,7 +233,7 @@ class QueryService:
             raise ValueError("Query cannot be null or empty.")
 
         # Check if we've exceeded max retries
-        if retry_count > self.MAX_RETRIES:
+        if retry_count >= self.MAX_RETRIES:
             logger.error(
                 f"Maximum retry attempts ({self.MAX_RETRIES}) exceeded. Aborting query execution."
             )
@@ -306,7 +303,7 @@ class QueryService:
                     )
                     self._linked_servers.use_remote_procedure_call = False
                 return self._execute_with_handling(
-                    query, tuple_mode, return_rows, timeout, retry_count + 1, silent
+                    query, tuple_mode, return_rows, retry_count + 1, silent
                 )
 
             # Handle metadata errors
@@ -315,15 +312,21 @@ class QueryService:
                     "DDL statement detected - wrapping query to make it OPENQUERY-compatible"
                 )
 
-                # Wrap the query to return a result set - use EXEC to avoid metadata issues
-                wrapped_query = f"DECLARE @result NVARCHAR(MAX); BEGIN TRY {query.rstrip(';')}; SET @result = 'Success'; END TRY BEGIN CATCH SET @result = ERROR_MESSAGE(); END CATCH; SELECT @result AS Result;"
+                # Wrap query in TRY/CATCH so OPENQUERY always receives a rowset.
+                # Escape single quotes before embedding to avoid syntax errors.
+                core = query.rstrip(";").replace("'", "''")
+                wrapped_query = (
+                    f"DECLARE @result NVARCHAR(MAX);"
+                    f" BEGIN TRY {core}; SET @result = 'Success';"
+                    f" END TRY BEGIN CATCH SET @result = ERROR_MESSAGE(); END CATCH;"
+                    f" SELECT @result AS Result;"
+                )
 
                 logger.warning("Retrying with wrapped query")
                 return self._execute_with_handling(
                     wrapped_query,
                     tuple_mode,
                     return_rows,
-                    timeout,
                     retry_count + 1,
                     silent,
                 )
@@ -346,7 +349,6 @@ class QueryService:
                     query_without_prefix,
                     tuple_mode,
                     return_rows,
-                    timeout,
                     retry_count + 1,
                     silent,
                 )
@@ -356,14 +358,13 @@ class QueryService:
         except Exception as e:
             error_message = str(e).strip()
 
-            # Handle timeout errors with exponential backoff
+            # Handle timeout errors
             if "timeout" in error_message.lower():
-                new_timeout = timeout * 2  # Exponential backoff
                 logger.warning(
-                    f"Query timed out after {timeout} seconds. Retrying with {new_timeout} seconds (attempt {retry_count + 1}/{self.MAX_RETRIES})"
+                    f"Query timed out (attempt {retry_count + 1}/{self.MAX_RETRIES})"
                 )
                 return self._execute_with_handling(
-                    query, tuple_mode, return_rows, new_timeout, retry_count + 1, silent
+                    query, tuple_mode, return_rows, retry_count + 1, silent
                 )
 
             # If OPENQUERY is in use and we hit a metadata/no-rowset error,
@@ -375,7 +376,7 @@ class QueryService:
                 logger.debug("OPENQUERY returned no rowset. Wrapping query.")
                 wrapped = self._wrap_for_openquery(query)
                 return self._execute_with_handling(
-                    wrapped, tuple_mode, return_rows, timeout, retry_count + 1, silent
+                    wrapped, tuple_mode, return_rows, retry_count + 1, silent
                 )
 
             # Some stored procedures (like OLE Automation) may raise exceptions
@@ -480,32 +481,32 @@ class QueryService:
         if s.startswith("SELECT ") or s.startswith("WITH "):
             return False
 
-        # Check for server-level DDL and configuration commands
-        rpc_commands = [
+        # Strip a leading EXEC/EXECUTE so "EXEC SP_CONFIGURE" is normalised to "SP_CONFIGURE"
+        exec_stripped = re.sub(r"^EXEC(?:UTE)?\s+", "", s)
+
+        # Commands that must start the (possibly EXEC-stripped) statement
+        rpc_prefixes = [
             "CREATE LOGIN",
             "ALTER LOGIN",
             "DROP LOGIN",
             "ALTER SERVER CONFIGURATION",
             "ALTER SERVER ROLE",
-            "EXEC SP_CONFIGURE",
-            "EXEC MASTER..SP_CONFIGURE",
-            "EXEC MASTER.DBO.SP_CONFIGURE",
             "SP_CONFIGURE",
             "RECONFIGURE",
             "CREATE ENDPOINT",
             "ALTER ENDPOINT",
             "DROP ENDPOINT",
-            "GRANT ",  # Server-level GRANT (not database-level)
-            "REVOKE ",  # Server-level REVOKE
+            "GRANT ",
+            "REVOKE ",
             "SP_ADDLINKEDSERVER",
             "SP_ADDLINKEDSRVLOGIN",
             "SP_DROPLINKEDSRVLOGIN",
             "SP_DROPSERVER",
         ]
 
-        for cmd in rpc_commands:
-            if cmd in s:
-                logger.trace(f"Query requires RPC: matched '{cmd}' in SQL statement")
+        for cmd in rpc_prefixes:
+            if s.startswith(cmd) or exec_stripped.startswith(cmd):
+                logger.trace(f"Query requires RPC: matched '{cmd.strip()}'")
                 return True
 
         return False
