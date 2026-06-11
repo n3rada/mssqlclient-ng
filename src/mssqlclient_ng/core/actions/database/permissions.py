@@ -16,17 +16,6 @@ from ...utils.formatters import OutputFormatter
     "Enumerate current user's permissions via fn_my_permissions. No argument shows server-level and database-level permissions plus accessible databases. Pass schema.table or database.schema.table to check object-level permissions.",
 )
 class Permissions(BaseAction):
-    """
-    Enumerate user and role permissions at server, database, and object levels.
-
-    Usage:
-    - No arguments: Show current user's server, database, and database access permissions
-    - schema.table: Show permissions on a specific table in the current database
-    - database.schema.table: Show permissions on a specific table in a specific database
-
-    Uses fn_my_permissions to check what the current user can do.
-    Schema defaults to the user's default schema if not explicitly specified.
-    """
 
     _fqtn = Arg(position=0, default="", description="[database.]schema.table (omit for server/db-level permissions)")
 

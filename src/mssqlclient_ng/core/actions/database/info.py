@@ -52,13 +52,6 @@ INFO_QUERIES = {
 
 @ActionFactory.register("info", "Enumerate SQL Server instance properties: server name, version, edition, authentication mode, service account, data/log paths, OS details, and Azure service tier when applicable.")
 class Info(BaseAction):
-    """
-    Retrieve SQL Server instance information using DMVs and SERVERPROPERTY.
-
-    Gathers server details including version, edition, authentication mode,
-    operating system information, and service account. Uses only DMVs and
-    built-in functions (no registry access required).
-    """
 
     def execute(self, database_context: DatabaseContext) -> None:
         """

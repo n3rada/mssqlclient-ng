@@ -17,17 +17,6 @@ from ...utils.formatters import OutputFormatter
     "Enumerate Agent proxy accounts, mapped credentials, logins, and allowed subsystems.",
 )
 class JobProxies(BaseAction):
-    """
-    Enumerate SQL Server Agent proxy accounts.
-
-    Proxy accounts allow job steps to run under alternate Windows credentials —
-    useful for discovering stored credentials in the MSDB database.
-
-    Shows three tables:
-      1. Proxy accounts with credential names and identities
-      2. Proxy -> Subsystem mappings (which subsystems the proxy can run)
-      3. Proxy -> Login mappings (which logins can use the proxy)
-    """
 
     _limit = Arg(short_name="l", long_name="limit", default=25, description="Cap result count")
 

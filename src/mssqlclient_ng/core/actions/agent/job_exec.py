@@ -16,11 +16,6 @@ from ...services.database import DatabaseContext
     "job-exec", "Dispatch OS commands asynchronously via SQL Server Agent (CmdExec, PowerShell, TSQL, VBScript). Returns immediately after queuing. Poll output with job-history."
 )
 class JobExec(BaseAction):
-    """
-    Execute OS commands via SQL Server Agent by creating a temporary job.
-    Supports CmdExec, PowerShell, TSQL, and VBScript subsystems.
-    Optionally polls for completion and retrieves output from sysjobhistory.
-    """
 
     VALID_SUBSYSTEMS = ("CmdExec", "PowerShell", "TSQL", "VBScript")
 

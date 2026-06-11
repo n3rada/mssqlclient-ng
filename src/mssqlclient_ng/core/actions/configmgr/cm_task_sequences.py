@@ -17,10 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-ts"],
 )
 class CMTaskSequences(CMBaseAction):
-    """
-    Enumerate ConfigMgr Task Sequences with their properties and referenced content.
-    Task Sequences are used for OS deployment and complex automation workflows.
-    """
 
     _name = Arg(short_name="n", long_name="name", default="", description="Filter by name")
     _package_id = Arg(short_name="i", long_name="packageid", default="", description="Filter by PackageID")

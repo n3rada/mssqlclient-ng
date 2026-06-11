@@ -14,13 +14,6 @@ from ...services.database import DatabaseContext
     "user-add", "Create a SQL login with specified server role privileges (default: sysadmin)."
 )
 class CreateUser(BaseAction):
-    """
-    Creates a new SQL Server login with specified server role privileges.
-
-    This action creates a SQL login (not Windows authentication) and assigns
-    it to a server role. Default credentials are provided for quick backdoor
-    creation, but custom credentials can be specified.
-    """
 
     _username = Arg(position=0, short_name="u", long_name="username", default="backup_usr", description="SQL login username")
     _password = Arg(position=1, short_name="p", long_name="password", default="$ap3rlip0pe//e", description="SQL login password")

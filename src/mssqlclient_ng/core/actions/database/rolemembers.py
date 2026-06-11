@@ -11,12 +11,6 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("rolemembers", "List members of a specific server role (e.g., sysadmin).")
 class RoleMembers(BaseAction):
-    """
-    Retrieves all members of a specified server role.
-
-    Common server roles: sysadmin, serveradmin, securityadmin, setupadmin,
-    processadmin, diskadmin, dbcreator, bulkadmin, public
-    """
 
     _role_name = Arg(position=0, required=True, description="Server role name (e.g., sysadmin)")
 

@@ -16,12 +16,6 @@ from ...utils.formatters import OutputFormatter
     "databases", "List all databases with accessibility, owner, TRUSTWORTHY flag, state, and file paths."
 )
 class Databases(BaseAction):
-    """
-    list all SQL Server databases with accessibility and security information.
-
-    Shows database details including creation date, accessibility status,
-    trustworthy flag, and owner information.
-    """
 
     def execute(
         self, database_context: DatabaseContext

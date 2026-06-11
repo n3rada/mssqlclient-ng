@@ -15,10 +15,6 @@ from ...utils.formatters import OutputFormatter
     "cm-collections", "Enumerate device and user collections with member counts for targeted deployment attacks."
 )
 class CMCollections(CMBaseAction):
-    """
-    Enumerate ConfigMgr collections with member counts, types, and properties.
-    Filter by collection ID, name, or type (user/device).
-    """
 
     _collection_id = Arg(position=0, long_name="collection-id", default="", description="Filter by collection ID")
     _name_filter = Arg(short_name="n", long_name="name", default="", description="Filter by name")

@@ -15,17 +15,6 @@ from ...utils.common import normalize_windows_path
 
 @ActionFactory.register("upload", "Upload a local file to the SQL Server filesystem.")
 class Upload(BaseAction):
-    """
-    Upload a local file to the SQL Server filesystem.
-
-    This action reads a file from the local filesystem and writes it to a
-    remote path on the SQL Server using OLE Automation (ADODB.Stream) or
-    xp_cmdshell with PowerShell. After upload, it verifies the file was created.
-
-    Methods used (in order of preference):
-    1. OLE Automation with ADODB.Stream (most compatible)
-    2. xp_cmdshell with PowerShell -EncodedCommand (if OLE is disabled)
-    """
 
     _local_path_str = Arg(position=0, required=True, description="Local file path to upload")
     _remote_path = Arg(position=1, default="", description="Remote destination path (default: C:\\Windows\\Tasks\\)")

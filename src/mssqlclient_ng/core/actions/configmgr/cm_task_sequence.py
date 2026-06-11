@@ -15,10 +15,6 @@ from ...utils.formatters import OutputFormatter
     "cm-tasksequence", "Display detailed information for a specific task sequence including all referenced content."
 )
 class CMTaskSequence(CMBaseAction):
-    """
-    Display detailed information about a specific ConfigMgr Task Sequence
-    including all referenced content (packages, drivers, applications, OS images, boot images).
-    """
 
     _package_id = Arg(position=0, required=True, description="Task Sequence PackageID")
 

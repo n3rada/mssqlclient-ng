@@ -17,10 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-deploymenttype"],
 )
 class CMDeploymentType(CMBaseAction):
-    """
-    Display detailed information about a specific ConfigMgr deployment type (by CI_ID).
-    Shows install/uninstall commands, detection methods, content location, and execution context.
-    """
 
     _ci_id = Arg(position=0, required=True, description="Deployment type CI_ID integer")
 

@@ -17,19 +17,6 @@ from ...services.database import DatabaseContext
     aliases=["coerce", "smb", "ntlm"],
 )
 class SmbCoerce(BaseAction):
-    """
-    Trigger SMB coercion using multiple fallback methods.
-
-    This action attempts to authenticate to a UNC path via SQL Server extended stored
-    procedures (xp_dirtree, xp_subdirs, xp_fileexist). This forces the SQL Server
-    service account to initiate an SMB connection, which can be intercepted using
-    tools like Responder.
-
-    Supported methods (in order of preference):
-    1. xp_dirtree - Lists directory contents (most reliable)
-    2. xp_subdirs - Lists subdirectories (alternative)
-    3. xp_fileexist - Checks if file exists (last resort)
-    """
 
     _unc_path = Arg(position=0, remainder=True, required=True, description="Target UNC path")
 

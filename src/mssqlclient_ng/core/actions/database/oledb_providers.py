@@ -15,12 +15,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["ole-providers"],
 )
 class OleDbProviders(BaseAction):
-    """
-    Enumerates OLE DB providers installed on the SQL Server instance and retrieves
-    their registry configuration settings.
-
-    Reference: https://github.com/NetSPI/PowerUpSQL/blob/7d73373b0751b8648a800fbeef4c00ced66eba58/PowerUpSQL.ps1#L6987
-    """
 
     def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         """

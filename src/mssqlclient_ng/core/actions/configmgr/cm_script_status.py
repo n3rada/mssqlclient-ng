@@ -13,10 +13,6 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("cm-script-status", "Monitor script execution status and retrieve output from target devices by Task ID.")
 class CMScriptStatus(CMBaseAction):
-    """
-    Monitor execution status and retrieve output from scripts run via cm-script-run.
-    Shows task state (Pending/Success/Failed), execution time, script output, and errors.
-    """
 
     _task_id = Arg(position=0, short_name="t", long_name="taskid", required=True, description="Task ID returned by cm-script-run")
 

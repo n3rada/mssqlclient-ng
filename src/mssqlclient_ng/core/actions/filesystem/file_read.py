@@ -17,14 +17,6 @@ from ...utils.common import normalize_windows_path
     aliases=["cat"],
 )
 class FileRead(BaseAction):
-    """
-    Reads file content from the target SQL Server using OPENROWSET BULK.
-    Requires ADMINISTER BULK OPERATIONS or ADMINISTER DATABASE BULK OPERATIONS permission.
-
-    Flags:
-      --base64 / -b   Return file content as a Base64-encoded string instead of plain text.
-                      Useful for binary files or files with characters that break the console.
-    """
 
     _file_path = Arg(position=0, required=True, description="Remote file path to read")
     _base64 = Arg(short_name="b", long_name="base64", default="", description="Output as base64")

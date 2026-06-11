@@ -12,17 +12,6 @@ from ...utils.formatters import OutputFormatter
 # Not registered via ActionFactory - Query is invoked directly by the shell
 # when no action prefix is matched (any raw SQL input).
 class Query(BaseAction):
-    """
-    Execute a T-SQL query against the SQL Server.
-
-    Supports both queries that return result sets (SELECT) and
-    non-query commands (INSERT, UPDATE, DELETE, etc.).
-
-    Usage:
-        query SELECT @@SERVERNAME
-        query --all SELECT DB_NAME()
-        sql SELECT name FROM sys.databases
-    """
 
     def __init__(self):
         super().__init__()

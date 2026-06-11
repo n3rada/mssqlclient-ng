@@ -17,17 +17,6 @@ from ...utils.formatters import OutputFormatter
     "Enumerate External Data Sources (Azure SQL Database, Synapse, PolyBase).",
 )
 class ExternalSources(BaseAction):
-    """
-    Retrieve external data sources configured on the SQL Server instance.
-
-    External data sources enable querying data stored outside the database:
-      - Azure SQL Database: Elastic Query for cross-database queries
-      - Azure Synapse Analytics: Query data lakes (Parquet, CSV in ADLS)
-      - SQL Server with PolyBase: Access Hadoop, Azure Blob Storage, etc.
-
-    Unlike linked servers (server-to-server connections), external data sources
-    are designed for cloud storage integration and distributed architectures.
-    """
 
     def execute(
         self, database_context: DatabaseContext

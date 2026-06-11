@@ -17,12 +17,6 @@ from ...utils.formatters import OutputFormatter
     "Display SQL Server Agent job execution history with status and output messages.",
 )
 class JobHistory(BaseAction):
-    """
-    Show SQL Server Agent job execution history from msdb.dbo.sysjobhistory.
-
-    Optionally filter by job name (substring) and limit the number of rows.
-    Use --failed/-f to show only failed runs.
-    """
 
     _name = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by job name (substring match)")
     _failed_only = Arg(short_name="f", long_name="failed", toggle=True, description="Show only failed runs")

@@ -16,13 +16,6 @@ from ...services.database import DatabaseContext
     "powershell", "Execute PowerShell scripts or commands on the SQL Server host. The script is base64-encoded and invoked non-interactively. Returns command output.", aliases=["pwsh"]
 )
 class PowerShell(XpCmd):
-    """
-    Execute PowerShell scripts on the SQL Server using xp_cmdshell.
-
-    This action encodes the PowerShell script in Base64 and executes it using
-    the -EncodedCommand parameter, which bypasses execution policy restrictions
-    and handles special characters properly.
-    """
 
     _script = Arg(position=0, remainder=True, required=True, description="PowerShell script to execute")
 

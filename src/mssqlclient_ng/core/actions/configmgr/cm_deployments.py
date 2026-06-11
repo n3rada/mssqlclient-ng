@@ -17,10 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-assignments"],
 )
 class CMDeployments(CMBaseAction):
-    """
-    Enumerate ConfigMgr deployments showing what content is being pushed to which collections.
-    Filter by name, collection, type, or intent.
-    """
 
     _name = Arg(short_name="n", long_name="name", default="", description="Filter by software name")
     _collection = Arg(short_name="c", long_name="collection", default="", description="Filter by collection name or ID")

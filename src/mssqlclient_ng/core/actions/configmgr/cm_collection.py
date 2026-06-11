@@ -15,10 +15,6 @@ from ...utils.formatters import OutputFormatter
     "cm-collection", "Display comprehensive information about a specific collection including all member devices and deployments."
 )
 class CMCollection(CMBaseAction):
-    """
-    Display comprehensive information about a specific ConfigMgr collection including all members.
-    Supports lookup by Collection ID or name pattern.
-    """
 
     _collection_id = Arg(position=0, default="", description="Collection ID")
     _collection_name = Arg(short_name="n", long_name="name", default="", description="Collection name pattern")

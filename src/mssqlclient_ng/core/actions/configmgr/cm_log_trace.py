@@ -19,15 +19,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-find-assignments", "cm-log-trace"],
 )
 class CMLogTrace(CMBaseAction):
-    """
-    Trace a deployment type GUID from ConfigMgr client logs back to its assignments,
-    collections, and deployment settings.
-
-    Accepted GUID formats:
-    - Full: "ScopeId_xxx/DeploymentType_xxx"
-    - Partial: "DeploymentType_xxx"
-    - GUID only: "xxx-xxx-xxx-xxx-xxx"
-    """
 
     _guid = Arg(position=0, required=True, description="Deployment type GUID (full ScopeId_, partial DeploymentType_, or bare UUID)")
 

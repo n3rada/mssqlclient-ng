@@ -16,27 +16,6 @@ from ...services.database import DatabaseContext
     "Display directory tree structure in Linux tree-style format.",
 )
 class Tree(BaseAction):
-    r"""
-    Display directory tree structure using xp_dirtree.
-
-    This action uses the undocumented but widely-used xp_dirtree extended procedure
-    to enumerate directories and files on the SQL Server filesystem. The output is
-    formatted to match the Linux 'tree' command style.
-
-    The tree representation uses Unicode box-drawing characters by default:
-    - ├── for intermediate items
-    - └── for the last item in a directory
-    - │   for vertical lines continuing to subdirectories
-    - Indentation to show hierarchy levels
-
-    Use --unicode:false or -u:false flag to fall back to ASCII characters (|, \, |) for legacy terminals
-
-    Note: Paths containing spaces must be enclosed in quotes.
-    Examples:
-        tree "C:\Program Files" 3
-        tree "C:\My Documents" --depth 5
-        tree C:\Windows 2 --files false
-    """
 
     _path = Arg(position=0, default=".", description="Directory path to enumerate")
     _depth = Arg(position=1, short_name="d", long_name="depth", default=3, description="Recursion depth (1-255, default: 3)")

@@ -95,25 +95,6 @@ def _parse_ber_length(data: bytes, offset: int) -> tuple[int, int]:
     "Extract SQL login passwords via LDAP simple bind interception using a local CLR listener. Requires CONTROL SERVER or sysadmin.",
 )
 class AdsiCredentialExtractor(BaseAction):
-    """
-    Captures cleartext credentials via LDAP simple bind interception.
-
-    Starts a local TCP listener that accepts an LDAP simple bind, then triggers
-    an OPENQUERY against an ADSI linked server pointing at localhost. SQL Server
-    performs the bind using the configured linked login credentials in cleartext.
-
-    Requires sysadmin or CONTROL SERVER (to modify linked server data source).
-    For unprivileged capture via an external listener, use adsi-redirect instead.
-
-    Scenario A: Existing ADSI server with explicit linked login:
-        The bind uses the configured linked login credentials.
-
-    Scenario B: --temp flag to create a temporary useself=TRUE server:
-        Captures the current SQL context's password (useful when landing
-        as an unknown SQL login via a linked server chain).
-
-    Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
-    """
 
     _target_server = Arg(position=0, default="", description="ADSI server name")
     _use_temporary_server = Arg(short_name="t", long_name="temp", default="", description="Use temporary server")

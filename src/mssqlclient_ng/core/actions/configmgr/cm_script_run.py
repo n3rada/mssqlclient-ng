@@ -17,11 +17,6 @@ from ...services.configmgr import CMService
     "cm-script-run", "Execute PowerShell script on target device via BGB notification channel (requires ResourceID and script GUID)."
 )
 class CMScriptRun(CMBaseAction):
-    """
-    Execute a PowerShell script on a target device through ConfigMgr's BGB notification channel.
-    Requires script GUID (from cm-scripts or cm-script-add) and target ResourceID (from cm-devices).
-    Returns Task ID for monitoring with cm-script-status.
-    """
 
     _resource_id = Arg(short_name="r", long_name="resourceid", required=True, description="Target device ResourceID (from cm-devices)")
     _script_guid = Arg(short_name="g", long_name="scriptguid", required=True, description="Script GUID (from cm-scripts)")

@@ -17,23 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["find"],
 )
 class Search(BaseAction):
-    """
-    Search for keywords in column names and data across databases.
-
-    Usage:
-    - search <keyword>: Search all accessible databases for keyword (default behavior)
-    - search <keyword> <database>: Search specific database only
-    - search <keyword> <schema.table>: Search specific table in current database
-    - search <keyword> <database.schema.table>: Search specific table in specific database
-    - search <keyword> -c: Search column names only (no row data)
-
-    Examples:
-    - search password: Search for 'password' in all databases
-    - search password music: Search for 'password' in music database only
-    - search admin dbo.users: Search only in dbo.users table (current database)
-    - search admin music.dbo.users: Search only in music.dbo.users table
-    - search email -c: Find columns containing 'email' (fast)
-    """
 
     _keyword = Arg(position=0, required=True, description="Keyword to search for")
     _columns_only = Arg(short_name="c", long_name="columns", toggle=True, description="Search column names only (fast)")

@@ -17,10 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-aad-apps", "cm-aad"],
 )
 class CMAadApps(CMBaseAction):
-    """
-    Enumerate Azure AD application registrations stored in ConfigMgr for CMG and co-management.
-    Shows AAD tenant IDs, application (client) IDs, and encrypted secret key blobs.
-    """
 
     _filter = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by application name")
 

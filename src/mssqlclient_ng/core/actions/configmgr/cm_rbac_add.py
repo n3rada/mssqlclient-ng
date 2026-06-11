@@ -16,10 +16,6 @@ from ...services.configmgr import CMService
     aliases=["cm-admin-add"],
 )
 class CMRbacAdd(CMBaseAction):
-    """
-    Create a stealthy RBAC admin by mimicking an existing admin's attributes.
-    Queries existing admins, selects a template, and creates a new admin with matching patterns.
-    """
 
     _account_name = Arg(position=0, required=True, description="Account to add as CM admin (DOMAIN\\user)")
 

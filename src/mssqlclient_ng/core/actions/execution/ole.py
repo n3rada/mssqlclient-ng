@@ -17,18 +17,6 @@ from ..factory import ActionFactory
     aliases=["oamethod"],
 )
 class ObjectLinkingEmbedding(BaseAction):
-    """
-    Execute operating system commands on the SQL Server using OLE Automation.
-
-    OLE (Object Linking and Embedding) is a Microsoft technology that allows embedding
-    and linking to documents and objects. In the context of SQL Server, OLE Automation
-    Procedures enable interaction with COM objects from within SQL Server. These objects
-    can perform tasks outside the database, such as file manipulation, network operations,
-    or other system-level activities.
-
-    This action uses sp_oacreate, sp_oamethod, and sp_oadestroy to interact with the
-    wscript.shell COM object for command execution.
-    """
 
     _command = Arg(position=0, remainder=True, required=True, description="OS command to execute")
 

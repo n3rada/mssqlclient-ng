@@ -16,23 +16,6 @@ from ...utils.formatters import OutputFormatter
     "List all tables in a specified database.",
 )
 class Tables(BaseAction):
-    """
-    Retrieves all tables and views from a database with row counts.
-
-    Supports filtering by name pattern, column name, row count, and
-    optional permission/column display.
-
-    Usage:
-        tables [database] [-n name] [-C] [-c column] [-r] [-p]
-
-    Options:
-        database           Target database (default: current)
-        -n, --name         Filter tables by name pattern (supports %)
-        -C, --columns      Show column names with types
-        -c, --column        Filter tables containing a column name pattern
-        -r, --rows         Filter out tables with 0 rows
-        -p, --permissions  Show permissions (slower)
-    """
 
     _database = Arg(position=0, long_name="database", default="", description="Target database (default: current)")
     _name_filter = Arg(short_name="n", long_name="name", default="", description="Filter tables by name pattern")

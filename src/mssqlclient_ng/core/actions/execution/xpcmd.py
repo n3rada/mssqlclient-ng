@@ -13,12 +13,6 @@ from ...services.database import DatabaseContext
 
 @ActionFactory.register("exec", "Execute OS commands on the SQL Server host via the command shell extended procedure and return output.")
 class XpCmd(BaseAction):
-    """
-    Execute operating system commands on the SQL Server using xp_cmdshell.
-
-    This action automatically enables xp_cmdshell if it's disabled, executes the
-    provided command, and returns the output line by line.
-    """
 
     _command = Arg(position=0, remainder=True, required=True, description="OS command to execute")
 

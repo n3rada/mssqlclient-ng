@@ -13,15 +13,6 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("users", "Enumerate server-level principals (logins) with their server roles, and database users in the current database context.")
 class Users(BaseAction):
-    """
-    Enumerates server-level principals (logins) and database users.
-
-    Displays:
-    - Server logins with their instance-wide server roles (sysadmin, securityadmin, etc.)
-    - Database users in the current database context
-
-    For database-level role memberships, use the 'roles' action instead.
-    """
 
     def execute(self, database_context: DatabaseContext) -> dict | None:
         """

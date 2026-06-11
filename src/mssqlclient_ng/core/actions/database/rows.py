@@ -13,17 +13,6 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("rows", "Retrieve and display rows from a specified table.")
 class Rows(BaseAction):
-    """
-    Retrieves all rows from a specified table.
-
-    Supports multiple formats:
-    - table: Uses current database and dbo schema (default)
-    - schema.table: Uses current database with specified schema
-    - database.schema.table: Fully qualified table name
-
-    Optional arguments:
-    - -l/--limit: Maximum number of rows to retrieve (default: 25, 0 = unlimited)
-    """
 
     _fqtn = Arg(position=0, required=True, description="Table name or FQTN (database.schema.table)")
     _limit = Arg(short_name="l", long_name="limit", default=25, description="Max rows to retrieve (0 = unlimited)")

@@ -17,10 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-deploymenttypes"],
 )
 class CMDeploymentTypes(CMBaseAction):
-    """
-    Display an overview of all ConfigMgr deployment types with searchable technical details.
-    Shows technology type, install commands, content paths, and detection methods.
-    """
 
     _technology = Arg(long_name="tech", default="", description="Filter by technology type")
     _content_path = Arg(long_name="content", default="", description="Filter by content path")

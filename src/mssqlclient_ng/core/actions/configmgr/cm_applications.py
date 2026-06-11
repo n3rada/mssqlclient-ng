@@ -17,10 +17,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-applications"],
 )
 class CMApplications(CMBaseAction):
-    """
-    Enumerate ConfigMgr applications with deployment types, installation commands, and detection methods.
-    Applications are the modern deployment model (since ConfigMgr 2012).
-    """
 
     _display_name = Arg(short_name="n", long_name="displayname", default="", description="Filter by display name")
     _model_name = Arg(short_name="m", long_name="modelname", default="", description="Filter by model name")

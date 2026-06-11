@@ -15,10 +15,6 @@ from ...utils.formatters import OutputFormatter
     "cm-programs", "Enumerate programs for legacy packages with command lines and decoded execution flags."
 )
 class CMPrograms(CMBaseAction):
-    """
-    Enumerate ConfigMgr programs (legacy package execution configurations) with command lines.
-    Programs define how packages are executed.
-    """
 
     _package_id = Arg(short_name="p", long_name="package", default="", description="Filter by PackageID")
     _program_name = Arg(short_name="n", long_name="name", default="", description="Filter by program name")

@@ -17,10 +17,6 @@ from ...utils.common import sid_bytes_to_string
     "Resolve the current login's Security Identifier (SID) with domain SID prefix and RID breakdown for AD accounts.",
 )
 class AdSid(BaseAction):
-    """
-    Retrieves the current user's SID using SUSER_SID() function.
-    Also extracts domain SID and RID if the user is a domain account.
-    """
 
     def execute(self, database_context: DatabaseContext) -> dict[str, str] | None:
         """

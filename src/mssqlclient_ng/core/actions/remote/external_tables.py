@@ -17,17 +17,6 @@ from ...utils.formatters import OutputFormatter
     "Enumerate external tables and their remote data locations.",
 )
 class ExternalTables(BaseAction):
-    """
-    Retrieve external tables configured on the SQL Server instance.
-
-    External tables provide virtual access to data stored outside the database:
-      - Azure SQL Database: Elastic Query tables accessing remote databases
-      - Azure Synapse: Tables backed by data lake files (Parquet, CSV)
-      - SQL Server with PolyBase: Tables accessing Hadoop / Azure Blob Storage
-
-    The 'Data Source' and 'Location' columns reveal the backing external source.
-    With SELECT permission you can query data from those external systems.
-    """
 
     def execute(
         self, database_context: DatabaseContext

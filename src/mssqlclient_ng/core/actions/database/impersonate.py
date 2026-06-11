@@ -18,13 +18,6 @@ from ...utils.formatters import OutputFormatter
     aliases=["impersonation", "imp"],
 )
 class Impersonation(BaseAction):
-    """
-    Check SQL Server impersonation permissions.
-
-    Lists all SQL logins and Windows principals, and checks which ones
-    can be impersonated by the current user. Sysadmin users can impersonate
-    any login.
-    """
 
     def execute(
         self, database_context: DatabaseContext
