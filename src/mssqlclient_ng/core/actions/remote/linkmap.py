@@ -2,7 +2,6 @@
 
 # Built-in imports
 import io
-from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 from typing import Any
 import time
@@ -16,6 +15,7 @@ from ..database.impersonation_map import ImpersonationMap
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...models.linked_servers import LinkedServers
+from ...utils import logbook
 from ...models.server import Server
 from ...models.server_execution_state import ServerExecutionState
 from ...utils.formatters import OutputFormatter
@@ -904,12 +904,8 @@ class LinkMap(BaseAction):
         try:
             action = ImpersonationMap()
 
-            logger.disable("")
-            try:
-                with redirect_stdout(io.StringIO()):
-                    raw = action.execute(database_context)
-            finally:
-                logger.enable("")
+            with logbook.silence():
+                raw = action.execute(database_context)
 
             if not raw or not isinstance(raw, list):
                 return chains

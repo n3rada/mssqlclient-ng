@@ -2,6 +2,7 @@
 
 # Built-in imports
 from abc import ABC, abstractmethod
+from typing import Any
 
 class IOutputFormatter(ABC):
     """
@@ -22,7 +23,7 @@ class IOutputFormatter(ABC):
         pass
 
     @abstractmethod
-    def convert_list_of_dicts(self, data: list[dict[str, any]]) -> str:
+    def convert_list_of_dicts(self, data: list[dict[str, Any]]) -> str:
         """Converts a list of dictionaries into a formatted table."""
         pass
 

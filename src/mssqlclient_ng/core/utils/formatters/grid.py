@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/utils/formatters/grid.py
 
 # Built-in imports
+from typing import Any
 
 # Local library imports
 from .base import IOutputFormatter
@@ -85,7 +86,7 @@ class GridFormatter(IOutputFormatter):
         lines.append(self._bot_border(widths))
         return "\n" + "\n".join(lines) + "\n"
 
-    def convert_list_of_dicts(self, data: list[dict[str, any]]) -> str:
+    def convert_list_of_dicts(self, data: list[dict[str, Any]]) -> str:
         if not data:
             return "No data available."
 

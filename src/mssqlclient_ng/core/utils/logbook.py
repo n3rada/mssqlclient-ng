@@ -21,6 +21,8 @@ Is this message about...
 import os
 import sys
 import logging
+import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 # Third party library imports
@@ -70,6 +72,23 @@ _stderr_handler_id: int | None = None
 _file_handler_id: int | None = None
 _active_stream = sys.stderr
 _active_log_file: Path | None = None
+
+# Thread-local silence flag: when set, _silence_filter drops all log records
+_silence = threading.local()
+
+
+def _silence_filter(record) -> bool:
+    return not getattr(_silence, "active", False)
+
+
+@contextmanager
+def silence():
+    """Context manager: suppress all loguru output for the current thread."""
+    _silence.active = True
+    try:
+        yield
+    finally:
+        _silence.active = False
 
 
 def _xdg_state_dir(app_name: str = "mssqlclient-ng") -> Path:
@@ -177,6 +196,7 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
         level=level,
         format=_format_message,
         colorize=True,
+        filter=_silence_filter,
     )
 
     # --- File handler (rotating, UTC timestamps)
@@ -202,6 +222,7 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
             compression="zip",
             encoding="utf-8",
             enqueue=True,  # Thread-safe
+            filter=_silence_filter,
         )
 
         logger.trace(f"Logger initialized at level {level} on {stream_name}")
@@ -247,6 +268,7 @@ def set_level(level: str) -> None:
         level=level,
         format=_format_message,
         colorize=True,
+        filter=_silence_filter,
     )
 
     # Remove and re-add the file handler at the new level
@@ -266,6 +288,7 @@ def set_level(level: str) -> None:
             compression="zip",
             encoding="utf-8",
             enqueue=True,
+            filter=_silence_filter,
         )
 
     # Update impacket's standard logging level too

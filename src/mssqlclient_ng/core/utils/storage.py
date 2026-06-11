@@ -370,22 +370,22 @@ class OutputCache:
 
     def flush(
         self,
-        execution_server: str = "",
-        system_user: str = "",
-        chain_spec: str = "",
-        database: str = "",
+        execution_server: str | None = None,
+        system_user: str | None = None,
+        chain_spec: str | None = None,
+        database: str | None = None,
     ) -> int:
         """
-        Flush cached outputs. If context fields are provided, flush only
+        Flush cached outputs. If execution_server is provided, flush only
         that context directory. Otherwise flush the entire cache.
 
         Returns:
             Number of files deleted.
         """
         deleted = 0
-        if execution_server:
+        if execution_server is not None:
             ctx = self._context_hash(
-                execution_server, system_user, chain_spec, database
+                execution_server, system_user or "", chain_spec or "", database or ""
             )
             ctx_dir = self._cache_dir / ctx
             if ctx_dir.is_dir():

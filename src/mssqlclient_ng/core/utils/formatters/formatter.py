@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/utils/formatters/formatter.py
 
 # Built-in imports
+from typing import Any
 
 # Third-party imports
 from loguru import logger
@@ -68,7 +69,7 @@ class OutputFormatter:
         )
 
     @classmethod
-    def convert_list_of_dicts(cls, data: list[dict[str, any]]) -> str:
+    def convert_list_of_dicts(cls, data: list[dict[str, Any]]) -> str:
         """Converts a list of dictionaries into the current output format."""
         return cls._current_formatter.convert_list_of_dicts(data)
 

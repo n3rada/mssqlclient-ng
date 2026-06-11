@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/utils/formatters/markdown.py
 
 # Built-in imports
+from typing import Any
 
 # Local library imports
 from .base import IOutputFormatter
@@ -62,7 +63,7 @@ class MarkdownFormatter(IOutputFormatter):
 
         return "\n" + "\n".join(lines) + "\n"
 
-    def convert_list_of_dicts(self, data: list[dict[str, any]]) -> str:
+    def convert_list_of_dicts(self, data: list[dict[str, Any]]) -> str:
         """Converts a list of dictionaries into a markdown table."""
         if not data:
             return "No data available."
