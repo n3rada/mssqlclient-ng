@@ -847,23 +847,13 @@ class Terminal:
             return
 
         row = chains[chain_id - 1]
-        command = row.get("Command") or row.get("command", "")
-        if not command:
-            logger.error(f"Chain #{chain_id} has no command")
+        link_spec = row.get("Links", "")
+        if not link_spec:
+            logger.error(f"Chain #{chain_id} has no links")
             return
 
-        # The command is "HOST/imp -l CHAIN_ARG" - extract the -l part
-        if " -l " not in command:
-            logger.error(f"Cannot parse chain command: {command}")
-            return
-
-        link_spec = command.split(" -l ", 1)[1]
-
-        # Also extract host impersonation if present
-        host_part = command.split(" -l ", 1)[0].strip().strip('"')
-        host_impersonation = []
-        if "/" in host_part:
-            host_impersonation = host_part.split("/")[1:]
+        host_part = row.get("Host", "")
+        host_impersonation = host_part.split("/")[1:] if "/" in host_part else []
 
         # Apply host impersonation first
         if host_impersonation:
@@ -936,9 +926,9 @@ class Terminal:
         Usage: !revert
         Executes REVERT to restore the pre-impersonation login identity."""
         try:
-            self._database_context.user_service.revert_impersonation()
-            self._refresh_user_info()
-            self._log_current_identity()
+            if self._database_context.user_service.revert_impersonation():
+                self._refresh_user_info()
+                self._log_current_identity()
         except Exception as e:
             logger.error(f"Error reverting impersonation: {e}")
 

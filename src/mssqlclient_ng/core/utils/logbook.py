@@ -2,19 +2,27 @@
 
 """Logbook module for logging capabilities using Loguru.
 
-Is this message about...
+Log level guide (mirrors MSSQLand's LogLevel enum):
 
-├─ Internal framework/library mechanics?
-│  └─ Use TRACE
-│
-├─ Something the user might need to debug their usage?
-│  └─ Use DEBUG
-│
-├─ Normal operational information?
-│  └─ Use INFO
-│
-└─ Something went wrong or needs attention?
-   └─ Use WARNING/ERROR
+  TRACE   — Developer-level internal mechanics: loop detection, cache hits, RPC
+             prefix matching, retry counters. Invisible to operators by default.
+             Passes through logbook.silence() so diagnostic tracing remains
+             visible even during silenced sub-operations (same as MSSQLand's
+             Logger.TemporarilySilent which still allows Trace through).
+
+  DEBUG   — User-facing detail the operator might need to diagnose their own
+             usage: skipped servers, negative-cache hits, failed impersonation
+             attempts. Suppressed by logbook.silence().
+
+  INFO    — Normal operational progress: connection milestones, chain
+             discovery, link counts. Always shown unless silenced.
+
+  SUCCESS — Positive completion events: chain found, escalation detected.
+
+  WARNING — Unexpected but recoverable state: no linked servers, query
+             failures that fall back gracefully.
+
+  ERROR   — Hard failures that abort the current operation.
 """
 
 # Built-in imports

@@ -175,6 +175,10 @@ class OutputCache:
     # Actions that manage their own caching or produce side effects
     _EXCLUDED_ACTIONS = frozenset(
         {
+            "linkmap",
+            "linksmap",
+            "chains",
+            "tunnel",  # linkmap: manages own display + ChainStore
             "query",
             "sql",  # arbitrary queries
             "exec",

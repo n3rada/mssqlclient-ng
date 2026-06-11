@@ -408,6 +408,13 @@ ORDER BY sp.principal_id;""")
         """
         # For linked servers, pop from the impersonation chain (like C#'s PopLinkedImpersonation)
         if not self._query_service.linked_servers.is_empty:
+            chain = self._query_service.linked_servers.server_chain
+            if not chain[-1].impersonation_users:
+                logger.warning(
+                    "No impersonation to revert at the current chain endpoint. "
+                    "Use !unlink to go back a hop or !unlink-all to clear the chain."
+                )
+                return False
             self._pop_linked_impersonation()
             self._admin_status_cache.clear()
             return True

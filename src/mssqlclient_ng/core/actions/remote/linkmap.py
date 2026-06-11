@@ -2,9 +2,10 @@
 
 # Built-in imports
 import io
+import time
+from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 from typing import Any
-import time
 
 # Third party imports
 from loguru import logger
@@ -192,7 +193,9 @@ class LinkMap(BaseAction):
     def execute(self, database_context: DatabaseContext) -> Any | None:
         server_name = database_context.server.hostname
 
+        logger.info("Mapping linked server topology")
         logger.info(f"Maximum recursion depth: {self._limit}")
+        logger.warning("This may take several minutes depending on chain depth and impersonation paths.")
 
         # Capture starting impersonation for command generation
         self._starting_impersonation = list(
@@ -224,16 +227,23 @@ class LinkMap(BaseAction):
             if provider.startswith("SQLNCLI") or provider.startswith("MSOLEDBSQL"):
                 sql_server_links.append(row)
 
+        total_found = len(all_linked_servers)
+        no_vis_suffix = (
+            f" ({len(no_visibility_links)} require impersonation to determine mapping)"
+            if no_visibility_links
+            else ""
+        )
+        logger.info(f"Found {total_found} linked server(s){no_vis_suffix}")
+
         if no_visibility_links:
-            logger.debug(
-                f"Linked servers with no visibility (current user): {len(no_visibility_links)}"
+            logger.trace(
+                f"Linked servers with no visibility into linked_logins (current user): {len(no_visibility_links)}"
             )
             for row in no_visibility_links:
-                logger.debug(
+                logger.trace(
                     f"  {row.get('Link')} ({row.get('Provider')}) - will retry under impersonation"
                 )
 
-        logger.debug(f"SQL Server linked servers (chainable): {len(sql_server_links)}")
         for row in sql_server_links:
             link = _get_row_string(row, "Link")
             local_login = _get_row_string(row, "Local Login")
@@ -243,7 +253,7 @@ class LinkMap(BaseAction):
             desc = f"{local_login} [{access}]" if local_login else access
             if remote_login:
                 desc += f" \u2192 {remote_login}"
-            logger.debug(f"  {link} [{desc}]")
+            logger.trace(f"  {link} [{desc}]")
 
         # Create root node
         fixed_root_roles, custom_root_roles = (
@@ -293,6 +303,8 @@ class LinkMap(BaseAction):
         force_impersonation_discovery = (
             len(sql_server_links) == 0 and len(no_visibility_links) > 0
         )
+        if not self._root_node.is_sysadmin:
+            logger.info("Enumerating impersonable login paths")
         reachable_chains: list[list[str]] = (
             []
             if self._root_node.is_sysadmin
@@ -300,11 +312,9 @@ class LinkMap(BaseAction):
         )
 
         if reachable_chains:
-            logger.debug(
-                f"Reachable login chains from current user: {len(reachable_chains)}"
-            )
+            logger.success(f"{len(reachable_chains)} impersonable login path(s) found")
             for chain in reachable_chains:
-                logger.debug(f"  [{' -> '.join(chain)}]")
+                logger.trace(f"[{' -> '.join(chain)}]")
         elif force_impersonation_discovery:
             logger.warning(
                 "No impersonable logins found. Cannot gain visibility into linked server mappings."
@@ -325,6 +335,8 @@ class LinkMap(BaseAction):
                 all_sql_links[key] = (row, None)
 
         # Additional links visible from each transitive impersonation chain
+        if reachable_chains:
+            logger.info("Expanding link visibility across impersonation contexts")
         for chain in reachable_chains:
             if _is_system_account(chain[-1]):
                 continue
@@ -350,9 +362,7 @@ class LinkMap(BaseAction):
                             all_sql_links[key] = (row, chain)
                             gained += 1
                 if gained > 0:
-                    logger.debug(
-                        f"  Gained visibility into {gained} link mapping(s) via [{' -> '.join(chain)}]"
-                    )
+                    logger.info(f"+{gained} link(s) visible as [{' -> '.join(chain)}]")
             except Exception as ex:
                 logger.debug(
                     f"Failed to query linked servers via chain [{' -> '.join(chain)}]: {ex}"
@@ -377,7 +387,7 @@ class LinkMap(BaseAction):
                 if chain_key not in all_sql_links:
                     all_sql_links[chain_key] = (existing_row, chain)
 
-        logger.info(f"Total reachable SQL Server linked servers: {len(all_sql_links)}")
+        logger.info(f"Exploring {len(all_sql_links)} SQL Server chainable link(s)")
 
         start_time = time.time()
 
@@ -427,6 +437,8 @@ class LinkMap(BaseAction):
                     "and no impersonation chain available."
                 )
                 continue
+
+            logger.info(f"Probing {remote_server}")
 
             visited_in_chain: set[str] = {starting_hash}
             current_path: list[ServerNode] = []
@@ -518,7 +530,7 @@ class LinkMap(BaseAction):
             self._chain_store.save(server_name, chain_rows)
             logger.info("Use !chain <id> to apply a chain from the table above")
 
-        return self._all_chains
+        return None
 
     # ------------------------------------------------------------------
     # Recursive exploration
@@ -581,9 +593,10 @@ class LinkMap(BaseAction):
                 )
                 return
 
-            logger.debug(
-                f"Logged in to server '{target_server}' (actual: {actual_server_name}) "
-                f"as: '{remote_logged_in_user}' [{mapped_user}]"
+            reached_label = (
+                f"{target_server} [{actual_server_name}]"
+                if actual_server_name.lower() != target_server.lower()
+                else target_server
             )
 
             # Early re-entry check
@@ -635,14 +648,14 @@ class LinkMap(BaseAction):
             new_path = current_path + [current_node]
 
             # Deduplicate: skip if this exact chain was already discovered
-            chain_display = self._format_chain_progress(new_path)
-            if chain_display in self._seen_chain_displays:
+            via_display = self._build_via_display(new_path)
+            if via_display in self._seen_chain_displays:
                 return
-            self._seen_chain_displays.add(chain_display)
+            self._seen_chain_displays.add(via_display)
 
             parent_node.children.append(current_node)
             self._all_chains.append(new_path)
-            logger.info(f"Chain #{len(self._all_chains)}: {chain_display}")
+            logger.info(f"Reached {reached_label} as '{remote_logged_in_user}' via {via_display}")
 
             # If already explored, leaf is enough
             if already_explored:
@@ -656,7 +669,11 @@ class LinkMap(BaseAction):
                 if is_sysadmin
                 else self._get_reachable_login_chains(database_context)
             )
-            logger.debug(
+            if remote_reachable_chains:
+                logger.trace(
+                    f"{len(remote_reachable_chains)} impersonable path(s) on {target_server}"
+                )
+            logger.trace(
                 f"Reachable login chains on '{target_server}': {len(remote_reachable_chains)}"
             )
 
@@ -705,6 +722,9 @@ class LinkMap(BaseAction):
                         steps = [ImpersonationStep(login=login) for login in chain]
                         steps[-1].roles = chain_end_roles
                         current_node.escalation_paths.append(steps)
+                        logger.info(
+                            f"Escalation path on {target_server}: [{' -> '.join(chain)}]"
+                        )
 
                     chain_links = self._get_linked_servers_with_access(database_context)
                     if chain_links:
@@ -753,7 +773,7 @@ class LinkMap(BaseAction):
                     if not _is_system_account(local_login):
                         remote_sql_links.append((server_link, local_login, row, chain))
 
-            logger.debug(
+            logger.trace(
                 f"Exploring SQL Server links on '{target_server}' (found {len(remote_sql_links)})"
             )
 
@@ -904,7 +924,7 @@ class LinkMap(BaseAction):
         try:
             action = ImpersonationMap()
 
-            with logbook.silence():
+            with logbook.silence(), redirect_stdout(io.StringIO()):
                 raw = action.execute(database_context)
 
             if not raw or not isinstance(raw, list):
@@ -1060,14 +1080,8 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
     # Display: Real-time progress
     # ------------------------------------------------------------------
 
-    def _format_chain_progress(self, path: list[ServerNode]) -> str:
-        """
-        Format a discovered chain for real-time display using LinkedServers.format_chain_display().
-
-        Example:
-            LAB-SQL01 (operator) ─(operator)─> LAB-SQL02 ─(john → john-a)─> LAB-SQL03 (john-a) ★
-        """
-        # Build Server objects from the path (same logic as _build_chain_row)
+    def _build_via_display(self, path: list[ServerNode]) -> str:
+        """Build the chain display string for a path (without endpoint login suffix)."""
         server_list: list[Server] = []
         for i, node in enumerate(path):
             if i > 0 and node.impersonation_chain:
@@ -1078,22 +1092,27 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
 
         linked_servers = LinkedServers(server_list)
 
-        # Initial impersonation: starting_impersonation + first node's impersonation
         initial_imp = list(self._starting_impersonation)
         if path and path[0].impersonation_chain:
             initial_imp.extend(s.login for s in path[0].impersonation_chain)
 
         assert self._root_node is not None
-        result = linked_servers.format_chain_display(
+        return linked_servers.format_chain_display(
             initial_host=self._root_node.alias,
             initial_login=self._root_node.logged_in_user,
             initial_impersonation=initial_imp or None,
         )
 
-        # Append endpoint login and privilege marker
+    def _format_chain_progress(self, path: list[ServerNode]) -> str:
+        """
+        Format a discovered chain for display: chain path + endpoint login + privilege marker.
+
+        Example:
+            LAB-SQL01 (operator) ─(operator)─> LAB-SQL02 ─(john → john-a)─> LAB-SQL03 (john-a) ★
+        """
+        result = self._build_via_display(path)
         last_node = path[-1]
         result += f" ({last_node.logged_in_user}){last_node.privilege_marker}"
-
         return result
 
     # ------------------------------------------------------------------
