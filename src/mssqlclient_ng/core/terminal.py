@@ -134,6 +134,7 @@ class Terminal:
         self._command_handlers: dict[str, Callable[[str], None]] = {
             "help": self._handle_help,
             "debug": self._handle_debug,
+            "trace": self._handle_trace,
             "chain": self._handle_chain,
             "format": self._handle_format,
             "link": self._handle_link,
@@ -709,6 +710,19 @@ class Terminal:
             self._log_level = "DEBUG"
             logbook.setup_logging(self._log_level)
             logger.info("🔊 Debug mode enabled")
+
+    def _handle_trace(self, _command_line: str) -> None:
+        """Toggle trace logging on/off.
+        Usage: !trace
+        Switches between TRACE and INFO log levels for the current session."""
+        if self._log_level == "TRACE":
+            self._log_level = "INFO"
+            logbook.setup_logging(self._log_level)
+            logger.info("🔇 Trace mode disabled")
+        else:
+            self._log_level = "TRACE"
+            logbook.setup_logging(self._log_level)
+            logger.info("🔊 Trace mode enabled")
 
     def _handle_flush(self, command_line: str) -> None:
         """Flush cached action outputs.
