@@ -56,11 +56,16 @@ class ImpersonationMap(BaseAction):
         starting_login = database_context.user_service.system_user or ""
 
         if database_context.user_service.is_admin():
-            logger.success(
-                "Current user is sysadmin; can impersonate any login directly — "
-                "no chain mapping needed"
-            )
-            return []
+            logger.success("Current user is sysadmin; can impersonate any login directly")
+            rows = database_context.query_service.execute_table(_IMPERSONATABLE_QUERY)
+            if not rows:
+                logger.warning("No impersonatable logins found")
+                return []
+            result = [{"Login": r.get("name", "")} for r in rows if r.get("name")]
+            result.sort(key=lambda r: r["Login"].lower())
+            print(OutputFormatter.convert_list_of_dicts(result))
+            logger.success(f"Found {len(result)} impersonatable login(s)")
+            return result
 
         all_chains: list[dict[str, Any]] = []
         self._build_map(
