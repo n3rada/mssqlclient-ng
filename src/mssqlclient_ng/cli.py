@@ -603,7 +603,7 @@ def main() -> int:
 
         else:
             # Starting interactive shell - only create Terminal instance here
-            terminal_instance = Terminal(database_context)
+            terminal_instance = Terminal(database_context, log_level=log_level)
             terminal_instance.start(
                 prefix=args.prefix,
                 multiline=args.multiline,
