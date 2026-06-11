@@ -217,6 +217,16 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
     )
 
 
+def get_level() -> str:
+    """Return the current active log level name from the stderr handler."""
+    if _stderr_handler_id is not None and _stderr_handler_id in logger._core.handlers:
+        levelno = logger._core.handlers[_stderr_handler_id].levelno
+        for name in ("TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"):
+            if logger.level(name).no == levelno:
+                return name
+    return "INFO"
+
+
 def set_level(level: str) -> None:
     """Silently switch the active log level without re-initializing handlers."""
     global _stderr_handler_id, _file_handler_id

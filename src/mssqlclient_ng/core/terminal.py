@@ -113,11 +113,9 @@ class Terminal:
     def __init__(
         self,
         database_context: DatabaseContext,
-        log_level: str = "INFO",
     ):
 
         self._database_context = database_context
-        self._log_level = log_level
 
         # Store original user information for restoration after unlinking
         self._original_mapped_user = database_context.server.mapped_user
@@ -702,26 +700,22 @@ class Terminal:
         """Toggle debug logging on/off.
         Usage: !debug
         Switches between DEBUG and INFO log levels for the current session."""
-        if self._log_level == "DEBUG":
-            self._log_level = "INFO"
-            logbook.set_level(self._log_level)
+        if logbook.get_level() == "DEBUG":
+            logbook.set_level("INFO")
             logger.info("🔇 Debug mode disabled")
         else:
-            self._log_level = "DEBUG"
-            logbook.set_level(self._log_level)
+            logbook.set_level("DEBUG")
             logger.info("🔊 Debug mode enabled")
 
     def _handle_trace(self, _command_line: str) -> None:
         """Toggle trace logging on/off.
         Usage: !trace
         Switches between TRACE and INFO log levels for the current session."""
-        if self._log_level == "TRACE":
-            self._log_level = "INFO"
-            logbook.set_level(self._log_level)
+        if logbook.get_level() == "TRACE":
+            logbook.set_level("INFO")
             logger.info("🔇 Trace mode disabled")
         else:
-            self._log_level = "TRACE"
-            logbook.set_level(self._log_level)
+            logbook.set_level("TRACE")
             logger.info("🔊 Trace mode enabled")
 
     def _handle_flush(self, command_line: str) -> None:
