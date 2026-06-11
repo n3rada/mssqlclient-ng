@@ -16,6 +16,10 @@ from ...services.configmgr import CMService
 
 @ActionFactory.register("cm-script-add", "Upload PowerShell script to ConfigMgr bypassing approval workflow (auto-approved, hidden from console).")
 class CMScriptAdd(CMBaseAction):
+    """
+    Upload a PowerShell script to ConfigMgr's Scripts table for later execution via cm-script-run.
+    Automatically sets script to approved state. Returns script GUID needed for cm-script-run.
+    """
 
     _script_content = Arg(position=0, long_name="content", required=True, description="PowerShell script content")
     _script_name = Arg(short_name="n", long_name="name", default="", description="Script name (auto-generated if omitted)")

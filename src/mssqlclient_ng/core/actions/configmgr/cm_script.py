@@ -17,6 +17,10 @@ from ...utils.formatters import OutputFormatter
     "cm-script", "Display detailed information for a specific script including full content and parameters."
 )
 class CMScript(CMBaseAction):
+    """
+    Display detailed information for a specific ConfigMgr PowerShell script
+    including full content and parameters.
+    """
 
     _script_guid = Arg(position=0, required=True, description="Script GUID")
 

@@ -22,6 +22,21 @@ from ..factory import ActionFactory
     "clr", "Deploy and execute custom CLR assemblies."
 )
 class ClrExecution(BaseAction):
+    """
+    Deploy and execute .NET CLR assemblies on SQL Server.
+
+    This action allows loading custom .NET DLLs from the local filesystem
+    and executing stored procedures defined within them. The DLL must contain a
+    class named 'StoredProcedures' with static methods representing SQL procedures.
+
+    The workflow:
+    1. Read the DLL bytes
+    2. Compute SHA-512 hash for trusted assembly registration
+    3. Enable CLR and register the assembly
+    4. Create a stored procedure linked to the assembly method
+    5. Execute the procedure
+    6. Cleanup (drop procedure, assembly, and hash)
+    """
 
     _dll_path = Arg(position=0, required=True, description="Path to the DLL (local file)")
     _class_name = Arg(position=1, required=True, default="StoredProcedures", description="Class name containing the function")

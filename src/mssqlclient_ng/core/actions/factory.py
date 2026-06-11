@@ -226,12 +226,7 @@ class ActionFactory:
         print()
         print(description)
 
-        # Class docstring (skip if same as description)
-        doc = (action.__class__.__doc__ or "").strip()
-        if doc and doc != description:
-            print()
-            for line in doc.splitlines():
-                print(f"  {line}" if line.strip() else "")
+        # Class docstrings are for developers — never render them in user-facing help.
 
         # Positional arguments section
         if positional_args:

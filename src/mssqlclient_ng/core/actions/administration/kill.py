@@ -12,6 +12,11 @@ from ...services.database import DatabaseContext
 
 @ActionFactory.register("kill", "Terminate SQL Server sessions by session ID or kill all running sessions.")
 class Kill(BaseAction):
+    """
+    Terminates SQL Server sessions by session ID or kills all sessions.
+
+    Can target a specific session ID or use 'all' to kill all active sessions.
+    """
 
     _target = Arg(position=0, required=True, description="Session ID or 'all'")
 

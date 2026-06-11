@@ -13,6 +13,15 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("sessions", "Display active SQL Server sessions with login and connection information.", aliases=["who"])
 class Sessions(BaseAction):
+    """
+    Display active SQL Server sessions with connection information.
+
+    Shows details about all active sessions including session ID, login time,
+    host name, program name, client interface, and login name.
+
+    Usage:
+        sessions      # list all active sessions
+    """
 
     def execute(self, database_context=None) -> list[dict[str, Any]] | None:
         """

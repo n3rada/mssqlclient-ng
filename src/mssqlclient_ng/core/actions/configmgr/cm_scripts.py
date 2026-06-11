@@ -13,6 +13,10 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("cm-scripts", "Enumerate PowerShell scripts with metadata overview (excludes script content).")
 class CMScripts(CMBaseAction):
+    """
+    Enumerate PowerShell scripts stored in ConfigMgr.
+    Use 'cm-script <GUID>' to view full details and script content.
+    """
 
     _name = Arg(position=0, short_name="n", long_name="name", default="", description="Filter by script name")
 

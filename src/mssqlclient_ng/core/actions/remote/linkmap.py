@@ -137,6 +137,19 @@ def _is_system_account(login: str) -> bool:
     aliases=["linksmap", "chains", "tunnel"],
 )
 class LinkMap(BaseAction):
+    """
+    Recursively explores all accessible linked server chains, mapping execution paths.
+    Uses a tree structure for efficient storage and cleaner output.
+
+    Features:
+    - Tree-based visualization with ASCII art and privilege markers
+    - Impersonation chain discovery to gain additional link visibility
+    - Negative caching of failed link attempts
+    - Role-based context caching
+    - Provider-based filtering (SQL Server vs other linked servers)
+    - Privilege escalation path detection
+    - Chain command generation for reproduction
+    """
 
     DEFAULT_MAX_DEPTH = 7
     MAX_ALLOWED_DEPTH = 15

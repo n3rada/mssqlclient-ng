@@ -27,6 +27,16 @@ class ProcedureMode(Enum):
     aliases=["procs", "sprocs"],
 )
 class Procedures(BaseAction):
+    """
+    Manages stored procedures in the database.
+
+    Modes:
+    - list: Lists all stored procedures with permissions (default)
+    - exec <schema.procedure> [args]: Executes a stored procedure with optional arguments
+    - read <schema.procedure>: Reads the definition of a stored procedure
+    - search <keyword>: Searches for procedures containing a keyword in their definition
+    - create <file_path> [database_name]: Creates a stored procedure from a SQL file
+    """
 
     _mode = Arg(position=0, default="list", description="Mode: list, exec, read, search, create")
     _procedure_name = Arg(position=1, default="", description="Procedure name (schema.procedure) for exec/read")

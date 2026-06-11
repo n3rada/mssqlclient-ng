@@ -13,6 +13,10 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("requests", "Display currently executing SQL requests with query text and wait information.")
 class Requests(BaseAction):
+    """
+    Retrieves currently executing SQL requests on the SQL Server instance.
+    Shows session details, command status, wait types, and blocking information.
+    """
 
     def execute(self, database_context: DatabaseContext) -> list[dict] | None:
         logger.info("Currently executing SQL requests")

@@ -17,6 +17,18 @@ from ...utils.formatters import OutputFormatter
     "Enumerate database-scoped credentials used by External Data Sources.",
 )
 class ExternalCredentials(BaseAction):
+    """
+    Retrieve database-scoped credentials from sys.database_scoped_credentials.
+
+    Database-scoped credentials store authentication information for:
+      - External Data Sources (Elastic Query, PolyBase)
+      - Azure Blob Storage access
+      - Cross-database authentication in Azure SQL Database
+
+    The 'In Use' column shows whether the credential is referenced by at least
+    one external data source.  Credential identities may reveal architecture
+    details or high-value service accounts.
+    """
 
     def execute(
         self, database_context: DatabaseContext

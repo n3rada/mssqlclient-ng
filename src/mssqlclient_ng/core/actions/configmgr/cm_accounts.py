@@ -14,6 +14,10 @@ from ...utils.formatters import OutputFormatter
     "cm-accounts", "Enumerate encrypted credentials (NAA, Client Push, Task Sequence) for decryption on site server."
 )
 class CMAccounts(CMBaseAction):
+    """
+    Enumerate ConfigMgr user accounts including Network Access Accounts (NAA),
+    Client Push accounts, and Task Sequence accounts.
+    """
 
     def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info(

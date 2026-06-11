@@ -18,6 +18,21 @@ from ...utils.formatters import OutputFormatter
     aliases=["audits", "audit-status"],
 )
 class Audit(BaseAction):
+    """
+    Enumerate SQL Server audit objects and their event specifications.
+
+    Queries sys.server_audits, sys.server_audit_specifications, and
+    sys.server_audit_specification_details to reveal what actions are
+    being logged, where logs are sent, and what failure behaviour is configured.
+
+    Useful before any noisy operation:
+      - Is auditing active? Which audit objects are enabled?
+      - What event groups are captured (failed logins, schema changes, etc.)?
+      - Where do logs go (file, Windows Event Log, Application Log)?
+      - Is ON_FAILURE = SHUTDOWN set? (service dies if the audit log fills up)
+
+    Requires VIEW SERVER STATE (held by the public role by default).
+    """
 
     def execute(
         self, database_context: DatabaseContext

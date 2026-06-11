@@ -34,6 +34,19 @@ def _is_system_account(login: str) -> bool:
     aliases=["impersonate-chains", "impmap", "impchains"],
 )
 class ImpersonationMap(BaseAction):
+    """
+    Discover all transitive impersonation chains available to the current login.
+
+    Performs a recursive DFS: for each impersonatable login, impersonates it
+    and checks which further logins it can in turn impersonate, up to a maximum
+    depth of 10 hops.  Loop detection prevents infinite recursion.
+
+    Output columns:
+      Hops          — number of EXECUTE AS steps in the chain
+      Starting Login — the login we started from (current user)
+      Middle Logins  — intermediate logins (empty for direct 1-hop chains)
+      End Login      — the final reachable login
+    """
 
     def execute(
         self, database_context: DatabaseContext

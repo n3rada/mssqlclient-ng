@@ -17,6 +17,20 @@ from ...utils.formatters import OutputFormatter
     aliases=["settings"],
 )
 class Config(BaseAction):
+    """
+    Configure SQL Server options using sp_configure or list configurations.
+
+    Modes:
+    1. list all configurations: config
+    2. Check specific option: config xp_cmdshell
+    3. set option: config xp_cmdshell 1
+
+    Usage:
+        config                      # list all configuration options
+        config xp_cmdshell          # Check status of xp_cmdshell
+        config xp_cmdshell 1        # Enable xp_cmdshell
+        config xp_cmdshell 0        # Disable xp_cmdshell
+    """
 
     _option_name = Arg(position=0, default="", description="Configuration option name (omit to list all)")
     _value = Arg(position=1, default="", description="Value to set: 1/0 or enable/disable (omit to show current)")

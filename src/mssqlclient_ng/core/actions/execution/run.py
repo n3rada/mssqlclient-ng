@@ -13,6 +13,16 @@ from ...utils.common import normalize_windows_path
 
 @ActionFactory.register("run", "Execute a file on the SQL Server filesystem using OLE Automation.")
 class RunExecutable(BaseAction):
+    """
+    Execute a remote file on the SQL Server filesystem.
+
+    This action runs executables, scripts, or batch files on the SQL Server using
+    multiple methods in order of preference:
+    1. OLE Automation with WScript.Shell
+    2. xp_cmdshell (fallback)
+
+    The action verifies the file exists before attempting execution.
+    """
 
     _file_path = Arg(position=0, required=True, description="Remote file path to execute")
     _arguments = Arg(position=1, remainder=True, default="", description="Additional arguments to pass to the file")

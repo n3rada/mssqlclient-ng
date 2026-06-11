@@ -17,6 +17,10 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-distribution-points"],
 )
 class CMDistributionPoints(CMBaseAction):
+    """
+    Enumerate ConfigMgr distribution points with content library paths and network shares.
+    Distribution points store all deployed content.
+    """
 
     _server = Arg(short_name="s", long_name="server", default="", description="Filter by server name")
     _active_only = Arg(short_name="a", long_name="active", toggle=True, description="Show only active distribution points")

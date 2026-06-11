@@ -17,6 +17,14 @@ from ...utils.common import normalize_windows_path
     aliases=["del", "delete"],
 )
 class RemoveFile(BaseAction):
+    """
+    Delete a remote file using OLE Automation Procedures.
+
+    Uses Scripting.FileSystemObject.DeleteFile via sp_OACreate/sp_OAMethod.
+    If OLE Automation is disabled, attempts to enable it once before retrying.
+
+    Requires OLE Automation Procedures to be enabled (or ALTER SETTINGS to enable them).
+    """
 
     _file_path = Arg(position=0, required=True, description="Remote file path to delete")
 

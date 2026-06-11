@@ -13,6 +13,11 @@ from ...utils.formatters import OutputFormatter
     "whoami", "Display current user context, roles, and accessible databases.", aliases=["id", "groups"]
 )
 class Whoami(BaseAction):
+    """
+    Displays detailed information about the current user.
+
+    Shows user identity, server roles (fixed and custom), database roles, and accessible databases.
+    """
 
     def execute(self, database_context: DatabaseContext) -> dict | None:
         """

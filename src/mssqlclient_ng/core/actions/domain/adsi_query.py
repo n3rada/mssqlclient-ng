@@ -20,6 +20,10 @@ from ..factory import ActionFactory
     aliases=["ldap"],
 )
 class AdsiQuery(BaseAction):
+    """
+    Performs LDAP queries against ADSI linked servers.
+    Allows querying Active Directory objects through SQL Server's OPENQUERY.
+    """
 
     _domain_fqdn = Arg(position=0, required=True, description="Domain FQDN (e.g. domain.local)")
     _adsi_server_name = Arg(position=1, default="", description="ADSI linked server name (auto-creates temp if omitted)")

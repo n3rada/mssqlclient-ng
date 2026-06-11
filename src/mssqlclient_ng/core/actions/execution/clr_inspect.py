@@ -13,6 +13,13 @@ from ..factory import ActionFactory
     aliases=["assembly"],
 )
 class ClrInspect(BaseAction):
+    """
+    Inspect a specific user-defined CLR assembly in the current database.
+
+    Displays the assembly metadata (CLR name, permission set, dates) and
+    the full list of stored procedures or functions it exports, including
+    the mapped .NET class and method name for each.
+    """
 
     _assembly_name = Arg(position=0, required=True, description="Assembly name to inspect")
 

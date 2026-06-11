@@ -40,6 +40,14 @@ END AS AgentStatus;"""
     aliases=["agents"],
 )
 class Jobs(BaseAction):
+    """
+    Enumerate SQL Server Agent jobs.
+
+    By default shows one row per job with step count and subsystem summary.
+    Use --commands/-c to expand into per-step rows with full command text.
+    Use --name/-n to filter by job name (substring match).
+    Use --limit/-l to cap result count (default: 25).
+    """
 
     _name = Arg(short_name="n", long_name="name", default="", description="Filter by job name (substring match)")
     _show_commands = Arg(short_name="c", long_name="commands", toggle=True, description="Expand into per-step rows with full command text")

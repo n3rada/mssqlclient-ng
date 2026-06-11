@@ -135,6 +135,13 @@ SYSTEM_PROC_DESCRIPTIONS = {
     aliases=["extendedprocs", "sysprocs"],
 )
 class ExtendedProcs(BaseAction):
+    """
+    Enumerate extended stored procedures available on the SQL Server instance.
+
+    Extended procedures (xp_*) are powerful native procedures that can interact
+    with the operating system, registry, and perform administrative tasks.
+    This action lists all available extended procedures and checks execution permissions.
+    """
 
     def execute(
         self, database_context: DatabaseContext

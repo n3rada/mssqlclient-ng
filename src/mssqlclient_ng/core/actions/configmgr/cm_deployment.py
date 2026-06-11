@@ -17,6 +17,10 @@ from ...utils.formatters import OutputFormatter
     aliases=["cm-assignment"],
 )
 class CMDeployment(CMBaseAction):
+    """
+    Display detailed information about a specific ConfigMgr deployment/assignment.
+    Shows deployment settings, targeted collection, schedule, and execution behavior.
+    """
 
     _assignment_id = Arg(position=0, required=True, description="Assignment ID")
 

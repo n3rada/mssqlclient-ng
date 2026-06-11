@@ -15,6 +15,10 @@ from ...utils.formatters import OutputFormatter
     "cm-packages", "Enumerate ConfigMgr packages with source paths, versions, and program counts."
 )
 class CMPackages(CMBaseAction):
+    """
+    Enumerate ConfigMgr packages with their properties, source locations, and program details.
+    Packages are the legacy deployment model.
+    """
 
     _name = Arg(short_name="n", long_name="name", default="", description="Filter by package name")
     _source_path = Arg(short_name="s", long_name="source", default="", description="Filter by source path")

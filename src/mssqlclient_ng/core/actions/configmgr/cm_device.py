@@ -15,6 +15,10 @@ from ...utils.formatters import OutputFormatter
     "cm-device", "Display comprehensive information about a specific device including all deployments and targeted content."
 )
 class CMDevice(CMBaseAction):
+    """
+    Display comprehensive information about a specific ConfigMgr-managed device.
+    Shows device details, collection memberships, deployments, and targeted content.
+    """
 
     _device_name = Arg(position=0, short_name="n", long_name="name", required=True, description="Device name")
 

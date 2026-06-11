@@ -17,6 +17,18 @@ from ...services.database import DatabaseContext
     aliases=["passwords"],
 )
 class Hashes(BaseAction):
+    """
+    Extract SQL Server login password hashes from master.sys.sql_logins.
+
+    Hash formats:
+      - SQL Server 2000-2008:  0x0100... -> hashcat mode 131
+      - SQL Server 2012+:      0x0200... -> hashcat mode 1731
+
+    Output format: username:0x<hash>  (hashcat compatible)
+
+    Requires VIEW SERVER STATE or sysadmin role.
+    Not available on Azure SQL Database.
+    """
 
     def execute(
         self, database_context: DatabaseContext

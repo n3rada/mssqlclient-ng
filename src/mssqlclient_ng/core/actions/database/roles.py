@@ -13,6 +13,16 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("roles", "List all database roles and their members in the current database.")
 class Roles(BaseAction):
+    """
+    Enumerates database-level roles and their members in the current database.
+
+    Displays:
+    - Fixed database roles (db_owner, db_datareader, db_datawriter, etc.) and their members
+    - Custom database roles and their members
+
+    This provides a role-centric view showing which users belong to each database role.
+    For server-level logins and instance-wide privileges, use the 'users' action instead.
+    """
 
     def execute(self, database_context: DatabaseContext) -> list | None:
         """

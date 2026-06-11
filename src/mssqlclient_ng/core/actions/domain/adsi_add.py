@@ -14,6 +14,10 @@ from ...utils.common import generate_random_string
 
 @ActionFactory.register("adsi-add", "Create an ADSI linked server (auto-generates name if omitted).")
 class AdsiAdd(BaseAction):
+    """
+    Creates an ADSI linked server for LDAP querying via OPENQUERY.
+    Auto-generates the server name if omitted.
+    """
 
     _server_name = Arg(position=0, default=None, description="ADSI linked server name")
     _data_source = Arg(position=1, default="adsdatasource", description="OLE DB data source")

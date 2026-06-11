@@ -16,6 +16,12 @@ from ...utils.formatters import OutputFormatter
     "ad-domain", "Resolve the AD domain name and SID the SQL Server is joined to, using the Domain Admins group as the pivot principal."
 )
 class DomainSid(BaseAction):
+    """
+    Retrieves the domain SID using SUSER_SID and DEFAULT_DOMAIN functions.
+
+    Queries a known group (Domain Admins) to obtain the domain SID,
+    then strips the trailing RID to get the domain SID prefix.
+    """
 
     def execute(self, database_context: DatabaseContext) -> dict | None:
         """

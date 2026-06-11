@@ -13,6 +13,12 @@ from ..factory import ActionFactory
     aliases=["assemblies"],
 )
 class ClrList(BaseAction):
+    """
+    Enumerate all user-defined CLR assemblies registered in the current database.
+
+    Shows name, CLR name, permission set (SAFE/EXTERNAL/UNSAFE), creation date,
+    modification date, and the number of stored procedures each assembly exports.
+    """
 
     def execute(self, database_context: DatabaseContext) -> object:
         logger.info("Enumerating user-defined CLR assemblies")

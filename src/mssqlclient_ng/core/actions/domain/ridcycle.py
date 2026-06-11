@@ -21,6 +21,10 @@ BATCH_SIZE = 1000
     aliases=["rid-brute"],
 )
 class RidCycle(BaseAction):
+    """
+    RID enumeration via cycling through RIDs using SUSER_SNAME(SID_BINARY('S-...-RID')).
+    Enumerates domain objects (users and groups), not group membership.
+    """
 
     _max_rid = Arg(position=0, default=10000, description="Maximum RID to enumerate (default: 10000)")
     _format = Arg(long_name="format", default="", description="Output format: bash, python, table")

@@ -18,6 +18,15 @@ _DISABLE_ALIASES = {"del", "off", "0", "false", "disable"}
     "Enable or disable data access (OPENQUERY) on linked servers.",
 )
 class DataAccess(BaseAction):
+    """
+    Toggle the 'data access' option on a linked server via sp_serveroption.
+
+    Data access controls whether OPENQUERY and four-part naming can retrieve
+    data from the linked server.
+
+    Enable aliases:  add, on, 1, true, enable
+    Disable aliases: del, off, 0, false, disable
+    """
 
     _action = Arg(position=0, required=True, description="Action: enable/on/1/add or disable/off/0/del")
     _linked_server_name = Arg(position=1, required=True, description="Linked server name")

@@ -13,6 +13,10 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register("cm-health", "Display client health diagnostics and communication status for troubleshooting client issues.")
 class CMHealth(CMBaseAction):
+    """
+    Display ConfigMgr client health diagnostics and communication status.
+    Shows check-in times, inventory cycles, health evaluation results.
+    """
 
     _filter = Arg(position=0, short_name="f", long_name="filter", default="", description="Filter by device name")
     _limit = Arg(long_name="limit", default=25, description="Cap result count")

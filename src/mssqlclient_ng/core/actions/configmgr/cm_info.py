@@ -14,6 +14,10 @@ from ...utils.formatters import OutputFormatter
     "cm-info", "Display ConfigMgr site information (site code, version, build, database server, management points) for infrastructure mapping."
 )
 class CMInfo(CMBaseAction):
+    """
+    Display ConfigMgr site information including site code, version, build,
+    database server, and management point details.
+    """
 
     def execute(self, database_context: DatabaseContext) -> list | None:
         logger.info("Detecting ConfigMgr databases")

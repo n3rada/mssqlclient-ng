@@ -14,6 +14,10 @@ BUILT_IN_CMPIVOT_GUID = "7DC6B6F1-E7F6-43C1-96E0-E1D16BC25C14"
 
 @ActionFactory.register("cm-script-delete", "Remove script from ConfigMgr by GUID to clean up operational artifacts.")
 class CMScriptDelete(CMBaseAction):
+    """
+    Remove a script from ConfigMgr's Scripts table by GUID.
+    Blocks deletion of built-in CMPivot script.
+    """
 
     _script_guid = Arg(position=0, short_name="g", long_name="guid", required=True, description="Script GUID to delete")
 

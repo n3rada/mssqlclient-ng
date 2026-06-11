@@ -18,6 +18,12 @@ from ...utils.formatters import OutputFormatter
     "Display detailed information about a specific Agent job including all steps, schedule, and history.",
 )
 class Job(BaseAction):
+    """
+    Display detailed information about a specific SQL Server Agent job.
+
+    Shows job metadata, all steps with commands, schedules, and recent execution history.
+    Accepts job name or job_id GUID as identifier.
+    """
 
     _job_identifier = Arg(
         position=0, required=True, description="Job name or job_id GUID"

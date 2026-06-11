@@ -18,6 +18,13 @@ from ...utils.formatters import OutputFormatter
     aliases=["linkedservers"],
 )
 class Links(BaseAction):
+    """
+    Enumerate linked SQL servers and their configurations.
+
+    Lists all linked servers configured on the SQL Server instance along with
+    their authentication mappings, access settings (RPC Out, OPENQUERY), and
+    collation compatibility.
+    """
 
     def execute(
         self, database_context: DatabaseContext
