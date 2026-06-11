@@ -24,6 +24,13 @@ from .core import actions  # noqa: F401
 from .core.actions.factory import ActionFactory
 from .core.actions.execution import query
 
+def _log_identity(server_name: str, system_user: str, mapped_user: str) -> None:
+    if mapped_user and mapped_user != system_user:
+        logger.info(f"Logged in on {server_name} as {system_user} (mapped to {mapped_user})")
+    else:
+        logger.info(f"Logged in on {server_name} as {system_user}")
+
+
 def build_parser() -> argparse.ArgumentParser:
 
     parser = argparse.ArgumentParser(
@@ -291,13 +298,13 @@ def main() -> int:
         parser.print_help()
         return 0
 
-    # Determine log level: --log-level takes precedence, then --debug, then --trace, then default INFO
+    # Determine log level: --log-level takes precedence, then --trace, then --debug, then INFO
     if args.log_level:
         log_level = args.log_level
-    elif args.debug:
-        log_level = "DEBUG"
     elif args.trace:
         log_level = "TRACE"
+    elif args.debug:
+        log_level = "DEBUG"
     else:
         log_level = "INFO"
 
@@ -419,7 +426,7 @@ def main() -> int:
 
         # Override hostname with target_ip if provided
         if args.target_ip:
-            remote_name = args.host
+            remote_name = server_instance.hostname  # preserve clean name for Kerberos SPN
             server_instance.hostname = args.target_ip
         else:
             remote_name = server_instance.hostname
@@ -470,8 +477,7 @@ def main() -> int:
         database_context.server.mapped_user = user_name
         database_context.server.system_user = system_user
 
-        logger.info(f"Logged in on {database_context.server.hostname} as {system_user}")
-        logger.info(f"Mapped to the user: {user_name}")
+        _log_identity(database_context.server.hostname, system_user, user_name)
 
         # Compute effective user and source principal (handles group-based access via AD groups)
         # Only works for Windows authentication (NTLM/Kerberos) on on-premises SQL Server
@@ -501,8 +507,7 @@ def main() -> int:
             database_context.server.mapped_user = user_name
             database_context.server.system_user = system_user
 
-            logger.info(f"Login: {system_user}")
-            logger.info(f"Mapped to user: {user_name}")
+            _log_identity(database_context.server.hostname, system_user, user_name)
 
         # If linked servers are provided, set them up
         if args.links:
@@ -529,10 +534,7 @@ def main() -> int:
                     )
                     return 1
 
-                logger.info(
-                    f"Logged in on {database_context.query_service.execution_server} as {system_user}"
-                )
-                logger.info(f"Mapped to the user: {user_name}")
+                _log_identity(database_context.query_service.execution_server, system_user, user_name)
 
             except Exception as exc:
                 logger.error(f"Failed to set up linked servers: {exc}")
@@ -540,10 +542,9 @@ def main() -> int:
 
         # Compute and display the final execution context
         database_context.query_service.compute_execution_database()
-        if database_context.query_service.execution_database:
-            logger.info(
-                f"Execution database: {database_context.query_service.execution_database}"
-            )
+        logger.info(
+            f"Execution database: {database_context.query_service.execution_database or 'default'}"
+        )
 
         # Detect Azure SQL on the final execution server
         _ = database_context.query_service.is_azure_sql
