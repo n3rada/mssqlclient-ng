@@ -1232,18 +1232,12 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         for chain in ordered:
             chain_id += 1
             hops = self._get_total_hops(chain)
-            row = self._build_chain_row(chain, hops, chain_id)
-            rows.append(row)
+            rows.append(self._build_row(chain, hops, chain_id))
 
-            # Add escalation path rows for the last node
             last_node = chain[-1]
             for escalation in last_node.escalation_paths:
                 chain_id += 1
-                esc_hops = hops + len(escalation)
-                esc_row = self._build_escalation_row(
-                    chain, escalation, esc_hops, chain_id
-                )
-                rows.append(esc_row)
+                rows.append(self._build_row(chain, hops + len(escalation), chain_id, escalation))
 
         if rows:
             print(OutputFormatter.convert_list_of_dicts(rows))
@@ -1270,72 +1264,17 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             return 1
         return 0
 
-    def _build_chain_row(
-        self, chain: list[ServerNode], hops: int, chain_id: int
-    ) -> dict[str, Any]:
-        """Build a row for the chain summary table."""
-        last_node = chain[-1]
-
-        # Build linked server list for -l argument
-        server_list: list[Server] = []
-        for i, node in enumerate(chain):
-            if i > 0 and node.impersonation_chain:
-                server_list[-1].impersonation_users = [
-                    s.login for s in node.impersonation_chain
-                ]
-            server_list.append(Server(hostname=node.alias, impersonation_users=[]))
-
-        linked_servers = LinkedServers(server_list)
-        chain_arg = linked_servers.get_chain_arguments()
-
-        # Build host argument
-        assert self._root_node is not None
-        host_arg = bracket_identifier(self._root_node.alias)
-        host_impersonation = list(self._starting_impersonation)
-        if chain and chain[0].impersonation_chain:
-            host_impersonation.extend(s.login for s in chain[0].impersonation_chain)
-        if host_impersonation:
-            host_arg += "/" + "/".join(host_impersonation)
-
-        # Full command
-        command = f"{host_arg} -l {chain_arg}"
-
-        # Endpoint display
-        endpoint = last_node.alias
-        if last_node.alias.lower() != last_node.actual_name.lower():
-            endpoint = f"{last_node.alias} [{last_node.actual_name}]"
-
-        # Privilege level
-        if last_node.is_sysadmin:
-            privilege = "sysadmin"
-        elif last_node.is_elevated:
-            privilege = ", ".join(
-                r for r in last_node.server_roles if r.lower() in ELEVATED_ROLES
-            )
-        else:
-            privilege = ""
-
-        return {
-            "#": chain_id,
-            "Endpoint": endpoint,
-            "Login": last_node.logged_in_user,
-            "Mapped To": last_node.mapped_user,
-            "Hops": hops,
-            "Server Roles": privilege,
-            "Command": command,
-        }
-
-    def _build_escalation_row(
+    def _build_row(
         self,
         chain: list[ServerNode],
-        escalation: list[ImpersonationStep],
         hops: int,
         chain_id: int,
+        escalation: list[ImpersonationStep] | None = None,
     ) -> dict[str, Any]:
-        """Build a row for a privilege escalation path."""
+        """Build a row for a reachable chain. When escalation is provided,
+        the row reflects the escalated login and appends its impersonation to the last hop."""
         last_node = chain[-1]
 
-        # Build linked server list with escalation on the last server
         server_list: list[Server] = []
         for i, node in enumerate(chain):
             if i > 0 and node.impersonation_chain:
@@ -1344,13 +1283,11 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
                 ]
             server_list.append(Server(hostname=node.alias, impersonation_users=[]))
 
-        # Add escalation impersonation on the last server
-        server_list[-1].impersonation_users = [s.login for s in escalation]
+        if escalation is not None:
+            server_list[-1].impersonation_users = [s.login for s in escalation]
 
         linked_servers = LinkedServers(server_list)
-        chain_arg = linked_servers.get_chain_arguments()
 
-        # Build host argument
         assert self._root_node is not None
         host_arg = bracket_identifier(self._root_node.alias)
         host_impersonation = list(self._starting_impersonation)
@@ -1359,33 +1296,41 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         if host_impersonation:
             host_arg += "/" + "/".join(host_impersonation)
 
-        # Full command
-        command = f"{host_arg} -l {chain_arg}"
+        endpoint = (
+            last_node.alias
+            if last_node.alias.lower() == last_node.actual_name.lower()
+            else f"{last_node.alias} [{last_node.actual_name}]"
+        )
 
-        # Endpoint
-        endpoint = last_node.alias
-        if last_node.alias.lower() != last_node.actual_name.lower():
-            endpoint = f"{last_node.alias} [{last_node.actual_name}]"
-
-        # Privilege from escalation endpoint
-        last_step = escalation[-1]
-        if last_step.is_sysadmin:
-            privilege = "sysadmin"
-        elif any(r.lower() in ELEVATED_ROLES for r in last_step.roles):
-            privilege = ", ".join(
-                r for r in last_step.roles if r.lower() in ELEVATED_ROLES
-            )
+        if escalation is not None:
+            last_step = escalation[-1]
+            login = last_step.login
+            mapped_to = ""
+            if last_step.is_sysadmin:
+                privilege = "sysadmin"
+            elif any(r.lower() in ELEVATED_ROLES for r in last_step.roles):
+                privilege = ", ".join(r for r in last_step.roles if r.lower() in ELEVATED_ROLES)
+            else:
+                privilege = ", ".join(last_step.roles)
         else:
-            privilege = ", ".join(last_step.roles)
+            login = last_node.logged_in_user
+            mapped_to = last_node.mapped_user
+            if last_node.is_sysadmin:
+                privilege = "sysadmin"
+            elif last_node.is_elevated:
+                privilege = ", ".join(r for r in last_node.server_roles if r.lower() in ELEVATED_ROLES)
+            else:
+                privilege = ""
 
         return {
             "#": chain_id,
             "Endpoint": endpoint,
-            "Login": last_step.login,
-            "Mapped To": "",
+            "Login": login,
+            "Mapped To": mapped_to,
             "Hops": hops,
             "Server Roles": privilege,
-            "Command": command,
+            "Host": host_arg,
+            "Links": linked_servers.get_chain_arguments(),
         }
 
     # ------------------------------------------------------------------
