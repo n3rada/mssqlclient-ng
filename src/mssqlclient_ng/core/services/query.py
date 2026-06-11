@@ -421,6 +421,8 @@ class QueryService:
                     "This query requires RPC and cannot be executed via OPENQUERY."
                 )
 
+            query = self._wrap_ddl_for_linked_server(query)
+
             if (
                 self._linked_servers.use_remote_procedure_call
                 and self._linked_servers.has_non_rpc_servers
@@ -437,6 +439,28 @@ class QueryService:
             logger.debug(f"Linked query: {final_query}")
 
         return final_query
+
+    @staticmethod
+    def _wrap_ddl_for_linked_server(query: str) -> str:
+        """
+        Wraps DDL statements that must be the first in their T-SQL batch inside
+        EXEC('...') so that the impersonation steps prepended by the linked server
+        chain do not violate the batch rule for CREATE/ALTER PROCEDURE, FUNCTION,
+        TRIGGER, and VIEW. Single quotes inside the query are escaped before wrapping.
+        No-op when the query does not start with one of these keywords.
+        """
+        trimmed = query.lstrip().upper()
+        ddl_prefixes = (
+            "CREATE PROCEDURE", "CREATE PROC ",
+            "ALTER PROCEDURE",  "ALTER PROC ",
+            "CREATE FUNCTION",  "ALTER FUNCTION",
+            "CREATE TRIGGER",   "ALTER TRIGGER",
+            "CREATE VIEW",      "ALTER VIEW",
+        )
+        if any(trimmed.startswith(p) for p in ddl_prefixes):
+            escaped = query.replace("'", "''")
+            return f"EXEC('{escaped}')"
+        return query
 
     def _requires_rpc(self, sql: str) -> bool:
         """
