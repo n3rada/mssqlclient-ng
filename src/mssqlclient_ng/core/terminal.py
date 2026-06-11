@@ -784,10 +784,11 @@ class Terminal:
             if self._database_context.query_service.linked_servers.is_empty:
                 logger.info("No linked servers currently configured")
             else:
-                chain_parts = (
-                    self._database_context.query_service.linked_servers.get_chain_parts()
+                chain_display = self._database_context.query_service.linked_servers.format_chain_display(
+                    initial_host=self._original_execution_server or "",
+                    initial_login=self._original_system_user,
                 )
-                logger.info(f"Current linked server chain: {' -> '.join(chain_parts)}")
+                logger.info(f"Current linked server chain: {chain_display}")
             return
 
         link_spec = parts[1].strip()

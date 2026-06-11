@@ -231,19 +231,10 @@ class LinkedServers:
         # Initial impersonation becomes the connector to the first linked server
         result += self._format_connector(initial_impersonation)
 
-        for i, server in enumerate(self.server_chain):
+        for server in self.server_chain:
             result += server.hostname
-            is_last = i == len(self.server_chain) - 1
-            users = server.impersonation_users
-
-            if is_last:
-                # Last server: impersonation is the execution context
-                if users:
-                    cascade = " → ".join(users)
-                    result += f" (as {cascade})"
-            else:
-                # Intermediate: impersonation shown in connector
-                result += self._format_connector(users)
+            # Impersonation always shown in the outgoing connector arrow
+            result += self._format_connector(server.impersonation_users)
 
         return result
 
