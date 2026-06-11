@@ -54,10 +54,12 @@ class XpCmd(BaseAction):
             if rows:
                 print()
                 for row in rows:
-                    output = str(row[0]).strip()
-                    if output and output.upper() != "NULL":
-                        print(output)
-                        output_lines.append(output)
+                    cell = row[0]
+                    if cell is None or str(cell).upper() == "NULL":
+                        continue
+                    line = str(cell).rstrip()
+                    print(line)
+                    output_lines.append(line)
 
                 return output_lines
 
