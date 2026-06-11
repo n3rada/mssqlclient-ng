@@ -704,11 +704,11 @@ class Terminal:
         Switches between DEBUG and INFO log levels for the current session."""
         if self._log_level == "DEBUG":
             self._log_level = "INFO"
-            logbook.setup_logging(self._log_level)
+            logbook.set_level(self._log_level)
             logger.info("🔇 Debug mode disabled")
         else:
             self._log_level = "DEBUG"
-            logbook.setup_logging(self._log_level)
+            logbook.set_level(self._log_level)
             logger.info("🔊 Debug mode enabled")
 
     def _handle_trace(self, _command_line: str) -> None:
@@ -717,11 +717,11 @@ class Terminal:
         Switches between TRACE and INFO log levels for the current session."""
         if self._log_level == "TRACE":
             self._log_level = "INFO"
-            logbook.setup_logging(self._log_level)
+            logbook.set_level(self._log_level)
             logger.info("🔇 Trace mode disabled")
         else:
             self._log_level = "TRACE"
-            logbook.setup_logging(self._log_level)
+            logbook.set_level(self._log_level)
             logger.info("🔊 Trace mode enabled")
 
     def _handle_flush(self, command_line: str) -> None:

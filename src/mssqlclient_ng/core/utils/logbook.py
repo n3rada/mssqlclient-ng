@@ -65,6 +65,13 @@ def _format_message(record):
         "\n{exception}"
     )
 
+# Tracks active handler IDs so set_level can replace them without noise
+_stderr_handler_id: int | None = None
+_file_handler_id: int | None = None
+_active_stream = sys.stderr
+_active_log_file: Path | None = None
+
+
 def _xdg_state_dir(app_name: str = "mssqlclient-ng") -> Path:
     """Get platform-appropriate log directory following XDG standards."""
 
@@ -138,6 +145,8 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
         stream: Output stream ('err' for stderr, 'out' for stdout)
         enable_file: Whether to enable file logging (default: True)
     """
+    global _stderr_handler_id, _file_handler_id, _active_stream, _active_log_file
+
     level = level.upper()
 
     # Validate log level
@@ -153,12 +162,14 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
         output_stream = sys.stderr
         stream_name = "stderr"
 
+    _active_stream = output_stream
+
     # Remove all Loguru handlers to avoid duplicates
     logger.remove()
 
     # Add custom formatted handler
     # enqueue=False for synchronous output to maintain ordering when using print()
-    logger.add(
+    _stderr_handler_id = logger.add(
         output_stream,
         enqueue=False,
         backtrace=True,
@@ -173,6 +184,7 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
         log_dir = _xdg_state_dir()
         log_dir.mkdir(parents=True, exist_ok=True)
         log_file = log_dir / "mssqlclient-ng.log"
+        _active_log_file = log_file
 
         # File format without colors
         file_format = (
@@ -181,12 +193,12 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
             "{exception}"
         )
 
-        logger.add(
+        _file_handler_id = logger.add(
             log_file,
             format=file_format,
             level=level,
             rotation="10 MB",
-            retention=f"14 days",
+            retention="14 days",
             compression="zip",
             encoding="utf-8",
             enqueue=True,  # Thread-safe
@@ -195,6 +207,7 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
         logger.trace(f"Logger initialized at level {level} on {stream_name}")
         logger.trace(f"Log file: {log_file} (rotation 10 MB, retention 14 days)")
     else:
+        _file_handler_id = None
         logger.trace(f"Logger initialized at level {level} on {stream_name} (file logging disabled)")
 
     # Setup Impacket logging interception with same level
@@ -202,3 +215,48 @@ def setup_logging(level: str = "INFO", stream: str = "err", enable_file: bool = 
     logger.trace(
         f"Impacket logging intercepted and redirected to Loguru at level {level}"
     )
+
+
+def set_level(level: str) -> None:
+    """Silently switch the active log level without re-initializing handlers."""
+    global _stderr_handler_id, _file_handler_id
+
+    level = level.upper()
+    valid_levels = ["TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+    if level not in valid_levels:
+        return
+
+    # Remove and re-add the stderr handler at the new level
+    if _stderr_handler_id is not None:
+        logger.remove(_stderr_handler_id)
+    _stderr_handler_id = logger.add(
+        _active_stream,
+        enqueue=False,
+        backtrace=True,
+        diagnose=True,
+        level=level,
+        format=_format_message,
+        colorize=True,
+    )
+
+    # Remove and re-add the file handler at the new level
+    if _file_handler_id is not None and _active_log_file is not None:
+        logger.remove(_file_handler_id)
+        file_format = (
+            "{time:YYYY-MM-DD HH:mm:ss.SSS!UTC} (UTC) "
+            "[{level:7}] {message}\n"
+            "{exception}"
+        )
+        _file_handler_id = logger.add(
+            _active_log_file,
+            format=file_format,
+            level=level,
+            rotation="10 MB",
+            retention="14 days",
+            compression="zip",
+            encoding="utf-8",
+            enqueue=True,
+        )
+
+    # Update impacket's standard logging level too
+    setup_impacket_logging(level=level)
