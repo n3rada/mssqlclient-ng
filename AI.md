@@ -103,6 +103,11 @@ When adding or changing an action:
 5. Route SQL execution through [src/mssqlclient_ng/core/services/query.py](src/mssqlclient_ng/core/services/query.py), not ad-hoc wrappers.
 6. For ConfigMgr actions, follow [src/mssqlclient_ng/core/actions/configmgr/cm_base.py](src/mssqlclient_ng/core/actions/configmgr/cm_base.py).
 
+## Git Conventions
+
+- Commit messages must follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): short description`. One-liner, no body unless strictly necessary.
+- Always sign the commits with `-S`.
+
 ## Testing and Quality Gates
 
 - Run tests with `uv run pytest -v`.

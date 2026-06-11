@@ -339,6 +339,24 @@ def main() -> int:
 
     use_kerberos = False
 
+    # Require explicit credentials — no silent anonymous SQL auth
+    if not args.ntlm_relay and not any(
+        [
+            args.username,
+            args.windows_auth,
+            args.kerberos,
+            args.hashes,
+            getattr(args, "aesKey", None),
+            args.no_pass,
+        ]
+    ):
+        logger.error("No credentials provided.")
+        logger.error(
+            "Use -u/-p for SQL auth, -u/-p -windows-auth for Windows auth, "
+            "-k for Kerberos, -H for pass-the-hash, or -no-pass to connect without a password."
+        )
+        return 1
+
     if args.ntlm_relay:
         from .core.services.ntlmrelay import RelayMSSQL
 
