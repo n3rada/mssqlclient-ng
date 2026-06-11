@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "job-proxies",
-    "Enumerate SQL Server Agent proxy accounts, subsystem mappings, and login mappings",
+    "Enumerate Agent proxy accounts, mapped credentials, logins, and allowed subsystems.",
 )
 class JobProxies(BaseAction):
     """

@@ -9,7 +9,7 @@ from ..factory import ActionFactory
 
 @ActionFactory.register(
     "clr-list",
-    "list user-defined CLR assemblies in the current database",
+    "Enumerate user-defined CLR assemblies in the current database.",
     aliases=["assemblies"],
 )
 class ClrList(BaseAction):

@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-collection", "Display details of a specific ConfigMgr collection"
+    "cm-collection", "Display comprehensive information about a specific collection including all member devices and deployments."
 )
 class CMCollection(CMBaseAction):
     """

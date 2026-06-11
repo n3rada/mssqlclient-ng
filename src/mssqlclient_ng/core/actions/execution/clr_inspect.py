@@ -9,7 +9,7 @@ from ..factory import ActionFactory
 
 @ActionFactory.register(
     "clr-inspect",
-    "Show exported procedures and metadata for a named CLR assembly",
+    "Show exported procedures and metadata for a named CLR assembly.",
     aliases=["assembly"],
 )
 class ClrInspect(BaseAction):

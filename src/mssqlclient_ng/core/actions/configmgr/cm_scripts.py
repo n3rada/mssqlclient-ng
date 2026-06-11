@@ -11,7 +11,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("cm-scripts", "Enumerate ConfigMgr PowerShell scripts")
+@ActionFactory.register("cm-scripts", "Enumerate PowerShell scripts with metadata overview (excludes script content).")
 class CMScripts(CMBaseAction):
     """
     Enumerate PowerShell scripts stored in ConfigMgr.

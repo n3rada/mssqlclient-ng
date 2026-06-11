@@ -10,7 +10,7 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "whoami", "Display current user identity and permissions", aliases=["id", "groups"]
+    "whoami", "Display current user context, roles, and accessible databases.", aliases=["id", "groups"]
 )
 class Whoami(BaseAction):
     """

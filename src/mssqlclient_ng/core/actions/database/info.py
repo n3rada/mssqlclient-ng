@@ -50,7 +50,7 @@ INFO_QUERIES = {
     },
 }
 
-@ActionFactory.register("info", "Retrieve SQL Server instance information")
+@ActionFactory.register("info", "Enumerate SQL Server instance properties: server name, version, edition, authentication mode, service account, data/log paths, OS details, and Azure service tier when applicable.")
 class Info(BaseAction):
     """
     Retrieve SQL Server instance information using DMVs and SERVERPROPERTY.

@@ -13,7 +13,7 @@ from ...utils.common import normalize_windows_path
 
 @ActionFactory.register(
     "rm",
-    "Delete a file on the SQL Server filesystem via OLE Automation (Scripting.FileSystemObject)",
+    "Delete a file on the SQL Server filesystem.",
     aliases=["del", "delete"],
 )
 class RemoveFile(BaseAction):

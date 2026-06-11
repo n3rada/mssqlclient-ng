@@ -13,7 +13,7 @@ from ...utils.common import normalize_windows_path
 
 @ActionFactory.register(
     "read",
-    "Read file content from the target server using OPENROWSET",
+    "Read file contents from the server's file system.",
     aliases=["cat"],
 )
 class FileRead(BaseAction):

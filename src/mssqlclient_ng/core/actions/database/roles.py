@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("roles", "Enumerate database-level roles and their members")
+@ActionFactory.register("roles", "List all database roles and their members in the current database.")
 class Roles(BaseAction):
     """
     Enumerates database-level roles and their members in the current database.

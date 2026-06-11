@@ -11,7 +11,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("cm-script-status", "Monitor ConfigMgr script execution status")
+@ActionFactory.register("cm-script-status", "Monitor script execution status and retrieve output from target devices by Task ID.")
 class CMScriptStatus(CMBaseAction):
     """
     Monitor execution status and retrieve output from scripts run via cm-script-run.

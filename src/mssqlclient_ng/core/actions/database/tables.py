@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "tables",
-    "list tables in a database with schemas and permissions",
+    "List all tables in a specified database.",
 )
 class Tables(BaseAction):
     """

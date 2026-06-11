@@ -11,7 +11,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("cm-devices", "Enumerate ConfigMgr-managed devices")
+@ActionFactory.register("cm-devices", "Enumerate managed devices with filtering by attributes for device discovery and inventory queries.")
 class CMDevices(CMBaseAction):
     """
     Enumerate ConfigMgr-managed devices with filtering by name, domain, user, IP, or collection.

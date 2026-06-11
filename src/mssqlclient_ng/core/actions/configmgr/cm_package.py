@@ -11,7 +11,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("cm-package", "Display details of a specific ConfigMgr package")
+@ActionFactory.register("cm-package", "Display comprehensive information about a specific package including programs and deployments.")
 class CMPackage(CMBaseAction):
     """Display detailed information about a specific ConfigMgr package including its programs."""
 

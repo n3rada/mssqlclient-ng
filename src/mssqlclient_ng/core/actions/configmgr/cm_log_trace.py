@@ -15,7 +15,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-trace",
-    "Trace a deployment type GUID to assignments and collections",
+    "Trace a deployment type GUID from client logs back to assignments and collections.",
     aliases=["cm-find-assignments", "cm-log-trace"],
 )
 class CMLogTrace(CMBaseAction):

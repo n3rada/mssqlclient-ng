@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-deployments",
-    "Enumerate ConfigMgr deployments",
+    "Enumerate active deployments showing what content is pushed to which collections for hijacking.",
     aliases=["cm-assignments"],
 )
 class CMDeployments(CMBaseAction):

@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
 @ActionFactory.register(
-    "user-add", "Create a new SQL Server login with server role privileges"
+    "user-add", "Create a SQL login with specified server role privileges (default: sysadmin)."
 )
 class CreateUser(BaseAction):
     """

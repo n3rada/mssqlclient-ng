@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 
 BUILT_IN_CMPIVOT_GUID = "7DC6B6F1-E7F6-43C1-96E0-E1D16BC25C14"
 
-@ActionFactory.register("cm-script-delete", "Delete a ConfigMgr script by GUID")
+@ActionFactory.register("cm-script-delete", "Remove script from ConfigMgr by GUID to clean up operational artifacts.")
 class CMScriptDelete(CMBaseAction):
     """
     Remove a script from ConfigMgr's Scripts table by GUID.

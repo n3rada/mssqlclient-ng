@@ -92,7 +92,7 @@ def _parse_ber_length(data: bytes, offset: int) -> tuple[int, int]:
 
 @ActionFactory.register(
     "adsi-creds",
-    "Capture cleartext credentials via LDAP simple bind interception on an ADSI linked server",
+    "Extract SQL login passwords via LDAP simple bind interception using a local CLR listener. Requires CONTROL SERVER or sysadmin.",
 )
 class AdsiCredentialExtractor(BaseAction):
     """

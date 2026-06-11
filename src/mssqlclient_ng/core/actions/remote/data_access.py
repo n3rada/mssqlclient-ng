@@ -15,7 +15,7 @@ _DISABLE_ALIASES = {"del", "off", "0", "false", "disable"}
 
 @ActionFactory.register(
     "data",
-    "Enable or disable data access (OPENQUERY) on a linked server",
+    "Enable or disable data access (OPENQUERY) on linked servers.",
 )
 class DataAccess(BaseAction):
     """

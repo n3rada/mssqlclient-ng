@@ -13,7 +13,7 @@ from ...utils.common import sid_bytes_to_string
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "ad-domain", "Retrieve the domain SID using SUSER_SID and DEFAULT_DOMAIN"
+    "ad-domain", "Resolve the AD domain name and SID the SQL Server is joined to, using the Domain Admins group as the pivot principal."
 )
 class DomainSid(BaseAction):
     """

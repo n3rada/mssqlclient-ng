@@ -12,7 +12,7 @@ from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
 from ...utils.common import generate_random_string
 
-@ActionFactory.register("adsi-add", "Create an ADSI linked server")
+@ActionFactory.register("adsi-add", "Create an ADSI linked server (auto-generates name if omitted).")
 class AdsiAdd(BaseAction):
     """
     Creates an ADSI linked server for LDAP querying via OPENQUERY.

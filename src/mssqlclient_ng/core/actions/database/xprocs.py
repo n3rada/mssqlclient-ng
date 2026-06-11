@@ -131,7 +131,7 @@ SYSTEM_PROC_DESCRIPTIONS = {
 
 @ActionFactory.register(
     "xprocs",
-    "Enumerate extended stored procedures available on SQL Server",
+    "Enumerate built-in extended (xp_*), OLE Automation (sp_OA*), and system procedures with execution permissions.",
     aliases=["extendedprocs", "sysprocs"],
 )
 class ExtendedProcs(BaseAction):

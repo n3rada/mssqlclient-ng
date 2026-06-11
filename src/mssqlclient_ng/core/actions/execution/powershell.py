@@ -13,7 +13,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
 @ActionFactory.register(
-    "powershell", "Execute PowerShell scripts via xp_cmdshell", aliases=["pwsh"]
+    "powershell", "Execute PowerShell scripts or commands on the SQL Server host. The script is base64-encoded and invoked non-interactively. Returns command output.", aliases=["pwsh"]
 )
 class PowerShell(XpCmd):
     """

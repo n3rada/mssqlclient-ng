@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "ext-sources",
-    "list external data sources (PolyBase, Azure Elastic Query, Azure Synapse)",
+    "Enumerate External Data Sources (Azure SQL Database, Synapse, PolyBase).",
 )
 class ExternalSources(BaseAction):
     """

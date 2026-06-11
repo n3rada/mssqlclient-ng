@@ -36,7 +36,7 @@ END AS AgentStatus;"""
 
 @ActionFactory.register(
     "jobs",
-    "list SQL Server Agent jobs with steps, subsystems, owner, and schedule info",
+    "Enumerate SQL Server Agent jobs with steps, commands, owner, and category.",
     aliases=["agents"],
 )
 class Jobs(BaseAction):

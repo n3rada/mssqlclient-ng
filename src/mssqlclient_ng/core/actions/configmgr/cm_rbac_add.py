@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 
 @ActionFactory.register(
     "cm-rbac-add",
-    "Create a stealthy RBAC admin in ConfigMgr",
+    "Create stealthy RBAC admin by mimicking existing admin attributes (dates, patterns).",
     aliases=["cm-admin-add"],
 )
 class CMRbacAdd(CMBaseAction):

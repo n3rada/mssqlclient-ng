@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "job-history",
-    "Display SQL Server Agent job execution history",
+    "Display SQL Server Agent job execution history with status and output messages.",
 )
 class JobHistory(BaseAction):
     """

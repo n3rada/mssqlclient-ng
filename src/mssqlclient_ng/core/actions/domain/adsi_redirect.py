@@ -13,7 +13,7 @@ from ...services.adsi import AdsiService
 
 @ActionFactory.register(
     "adsi-redirect",
-    "Redirect an ADSI linked server LDAP bind to an attacker-controlled listener",
+    "Redirect an ADSI linked server LDAP query to an attacker-controlled listener to capture cleartext credentials. No privileges required.",
 )
 class AdsiRedirect(BaseAction):
     """

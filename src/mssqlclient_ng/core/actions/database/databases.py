@@ -13,7 +13,7 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "databases", "list all databases with access and security information"
+    "databases", "List all databases with accessibility, owner, TRUSTWORTHY flag, state, and file paths."
 )
 class Databases(BaseAction):
     """

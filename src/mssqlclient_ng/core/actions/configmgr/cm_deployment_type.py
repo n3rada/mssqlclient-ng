@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-dt",
-    "Display detailed info about a specific deployment type",
+    "Display detailed technical information about a deployment type (detection method, install commands, requirements, XML).",
     aliases=["cm-deploymenttype"],
 )
 class CMDeploymentType(CMBaseAction):

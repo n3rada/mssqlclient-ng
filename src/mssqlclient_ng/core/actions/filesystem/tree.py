@@ -13,7 +13,7 @@ from ...services.database import DatabaseContext
 
 @ActionFactory.register(
     "tree",
-    "Display directory tree structure in Linux tree-style format",
+    "Display directory tree structure in Linux tree-style format.",
 )
 class Tree(BaseAction):
     r"""

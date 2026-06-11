@@ -133,7 +133,7 @@ def _is_system_account(login: str) -> bool:
 
 @ActionFactory.register(
     "linkmap",
-    "Recursively explore all accessible linked server chains with impersonation discovery",
+    "Recursively map linked server chains with loop detection, checking impersonation paths at each hop. Highlights reachable endpoints and privilege escalation opportunities. Unbounded runtime, invoke as a background task, not inline.",
     aliases=["linksmap", "chains", "tunnel"],
 )
 class LinkMap(BaseAction):

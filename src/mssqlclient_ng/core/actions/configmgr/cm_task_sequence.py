@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-tasksequence", "Display details of a specific task sequence"
+    "cm-tasksequence", "Display detailed information for a specific task sequence including all referenced content."
 )
 class CMTaskSequence(CMBaseAction):
     """

@@ -15,7 +15,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "job",
-    "Show detailed information about a specific SQL Server Agent job",
+    "Display detailed information about a specific Agent job including all steps, schedule, and history.",
 )
 class Job(BaseAction):
     """

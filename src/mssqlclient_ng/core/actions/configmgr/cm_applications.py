@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-apps",
-    "Enumerate ConfigMgr applications with deployment types",
+    "Enumerate applications with deployment types, install commands, and content locations for modification.",
     aliases=["cm-applications"],
 )
 class CMApplications(CMBaseAction):

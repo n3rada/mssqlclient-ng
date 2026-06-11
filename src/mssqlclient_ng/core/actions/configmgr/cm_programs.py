@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-programs", "Enumerate ConfigMgr programs with command lines"
+    "cm-programs", "Enumerate programs for legacy packages with command lines and decoded execution flags."
 )
 class CMPrograms(CMBaseAction):
     """

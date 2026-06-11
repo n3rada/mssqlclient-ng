@@ -11,7 +11,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-accounts", "Enumerate ConfigMgr user accounts (NAA, Client Push, etc.)"
+    "cm-accounts", "Enumerate encrypted credentials (NAA, Client Push, Task Sequence) for decryption on site server."
 )
 class CMAccounts(CMBaseAction):
     """

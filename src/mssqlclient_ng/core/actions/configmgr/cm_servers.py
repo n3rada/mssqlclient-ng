@@ -10,7 +10,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("cm-servers", "Enumerate ConfigMgr servers in site hierarchy")
+@ActionFactory.register("cm-servers", "Enumerate ConfigMgr site servers, management points, and distribution points in the hierarchy for infrastructure mapping.")
 class CMServers(CMBaseAction):
     """Enumerate ConfigMgr servers including site servers, management points, and distribution points."""
 

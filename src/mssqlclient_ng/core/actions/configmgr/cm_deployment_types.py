@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-dts",
-    "Enumerate ConfigMgr deployment types",
+    "Display an overview of all deployment types ordered by modification/creation date.",
     aliases=["cm-deploymenttypes"],
 )
 class CMDeploymentTypes(CMBaseAction):

@@ -13,7 +13,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
 @ActionFactory.register(
-    "job-exec", "Execute OS commands via SQL Server Agent temporary job"
+    "job-exec", "Dispatch OS commands asynchronously via SQL Server Agent (CmdExec, PowerShell, TSQL, VBScript). Returns immediately after queuing. Poll output with job-history."
 )
 class JobExec(BaseAction):
     """

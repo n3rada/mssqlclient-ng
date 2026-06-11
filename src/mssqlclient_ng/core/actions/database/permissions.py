@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "permissions",
-    "list permissions for the current user on server, databases, or specific table",
+    "Enumerate current user's permissions via fn_my_permissions. No argument shows server-level and database-level permissions plus accessible databases. Pass schema.table or database.schema.table to check object-level permissions.",
 )
 class Permissions(BaseAction):
     """

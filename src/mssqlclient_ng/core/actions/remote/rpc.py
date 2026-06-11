@@ -19,7 +19,7 @@ class RpcActionMode(Enum):
     ENABLE = "enable"
     DISABLE = "disable"
 
-@ActionFactory.register("rpc", "Enable or disable RPC Out option on a linked server")
+@ActionFactory.register("rpc", "Enable or disable RPC (Remote Procedure Calls) on linked servers.")
 class RemoteProcedureCall(BaseAction):
     """
     Manages the RPC Out option for linked servers.

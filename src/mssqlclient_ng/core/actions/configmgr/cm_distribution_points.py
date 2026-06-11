@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-dps",
-    "Enumerate ConfigMgr distribution points",
+    "Enumerate distribution points with content library paths for lateral movement and content poisoning.",
     aliases=["cm-distribution-points"],
 )
 class CMDistributionPoints(CMBaseAction):

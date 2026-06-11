@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("users", "list server principals and database users")
+@ActionFactory.register("users", "Enumerate server-level principals (logins) with their server roles, and database users in the current database context.")
 class Users(BaseAction):
     """
     Enumerates server-level principals (logins) and database users.

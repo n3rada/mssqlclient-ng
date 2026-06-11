@@ -11,7 +11,7 @@ from ..base import BaseAction
 from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("sessions", "list active SQL Server sessions", aliases=["who"])
+@ActionFactory.register("sessions", "Display active SQL Server sessions with login and connection information.", aliases=["who"])
 class Sessions(BaseAction):
     """
     Display active SQL Server sessions with connection information.

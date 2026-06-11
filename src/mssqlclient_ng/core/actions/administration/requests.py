@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("requests", "Display currently executing SQL requests")
+@ActionFactory.register("requests", "Display currently executing SQL requests with query text and wait information.")
 class Requests(BaseAction):
     """
     Retrieves currently executing SQL requests on the SQL Server instance.

@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-packages", "Enumerate ConfigMgr packages (legacy deployment)"
+    "cm-packages", "Enumerate ConfigMgr packages with source paths, versions, and program counts."
 )
 class CMPackages(CMBaseAction):
     """

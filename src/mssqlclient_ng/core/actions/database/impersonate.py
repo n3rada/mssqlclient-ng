@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "impersonate",
-    "Check which SQL logins can be impersonated by current user",
+    "Enumerate SQL logins and Windows principals with their impersonation status from the current context. If the current user is sysadmin, all principals are listed as implicitly impersonatable. Use impersonation-map to discover logins reachable through multi-hop EXECUTE AS paths.",
     aliases=["impersonation", "imp"],
 )
 class Impersonation(BaseAction):

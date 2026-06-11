@@ -11,7 +11,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("cm-health", "Display ConfigMgr client health diagnostics")
+@ActionFactory.register("cm-health", "Display client health diagnostics and communication status for troubleshooting client issues.")
 class CMHealth(CMBaseAction):
     """
     Display ConfigMgr client health diagnostics and communication status.

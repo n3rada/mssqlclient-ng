@@ -14,7 +14,7 @@ from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 from ...utils.common import convert_table_to_dicts
 
-@ActionFactory.register("authtoken", "Retrieve Windows authentication token groups")
+@ActionFactory.register("authtoken", "Display all groups from the Windows authentication token (AD, BUILTIN, NT AUTHORITY, etc.).")
 class AuthToken(BaseAction):
     """
     Retrieves all group memberships from the Windows authentication token.

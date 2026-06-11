@@ -16,7 +16,7 @@ from ..factory import ActionFactory
 
 @ActionFactory.register(
     "adsi-query",
-    "Perform LDAP queries against ADSI linked servers",
+    "Execute LDAP queries against Active Directory via an ADSI linked server using OPENQUERY.",
     aliases=["ldap"],
 )
 class AdsiQuery(BaseAction):

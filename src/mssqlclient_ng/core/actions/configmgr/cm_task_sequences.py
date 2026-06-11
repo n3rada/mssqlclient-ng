@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-tasksequences",
-    "Enumerate ConfigMgr task sequences",
+    "Enumerate all task sequences with summary information.",
     aliases=["cm-ts"],
 )
 class CMTaskSequences(CMBaseAction):

@@ -23,7 +23,7 @@ class ProcedureMode(Enum):
 
 @ActionFactory.register(
     "procedures",
-    "list, execute, read, search stored procedures or create from file",
+    "List, read, or execute stored procedures in the current database.",
     aliases=["procs", "sprocs"],
 )
 class Procedures(BaseAction):

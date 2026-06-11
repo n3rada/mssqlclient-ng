@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "ext-tables",
-    "list external tables (PolyBase / Elastic Query / Synapse)",
+    "Enumerate external tables and their remote data locations.",
 )
 class ExternalTables(BaseAction):
     """

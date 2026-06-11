@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "config",
-    "Configure SQL Server options or list configurations",
+    "List security-sensitive configuration options or set their values using sp_configure.",
     aliases=["settings"],
 )
 class Config(BaseAction):

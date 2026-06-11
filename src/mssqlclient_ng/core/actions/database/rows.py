@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 
-@ActionFactory.register("rows", "Retrieve all rows from a specified table")
+@ActionFactory.register("rows", "Retrieve and display rows from a specified table.")
 class Rows(BaseAction):
     """
     Retrieves all rows from a specified table.

@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-aadapps",
-    "Enumerate Azure AD applications in ConfigMgr",
+    "Enumerate Azure AD app registrations with encrypted secrets for cloud infrastructure access.",
     aliases=["cm-aad-apps", "cm-aad"],
 )
 class CMAadApps(CMBaseAction):

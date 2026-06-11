@@ -11,7 +11,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "oledb",
-    "Enumerate OLE DB providers and their registry settings",
+    "Enumerate OLE DB providers and their registry configuration.",
     aliases=["ole-providers"],
 )
 class OleDbProviders(BaseAction):

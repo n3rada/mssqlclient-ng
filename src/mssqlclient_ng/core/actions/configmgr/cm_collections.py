@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-collections", "Enumerate ConfigMgr collections with member counts"
+    "cm-collections", "Enumerate device and user collections with member counts for targeted deployment attacks."
 )
 class CMCollections(CMBaseAction):
     """

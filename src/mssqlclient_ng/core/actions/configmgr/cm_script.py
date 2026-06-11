@@ -14,7 +14,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-script", "Display details and content of a specific ConfigMgr script"
+    "cm-script", "Display detailed information for a specific script including full content and parameters."
 )
 class CMScript(CMBaseAction):
     """

@@ -14,7 +14,7 @@ from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 
 @ActionFactory.register(
-    "cm-script-run", "Execute a ConfigMgr script on a target device"
+    "cm-script-run", "Execute PowerShell script on target device via BGB notification channel (requires ResourceID and script GUID)."
 )
 class CMScriptRun(CMBaseAction):
     """

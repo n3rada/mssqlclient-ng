@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "links",
-    "Enumerate linked SQL servers and configurations",
+    "Enumerate linked servers and their login mappings: whether the caller is forwarded as-is (pass-through), substituted with a fixed remote credential (mapped), or blocked (denied). Also shows RPC out and OPENQUERY flags. Only returns entries visible to the current login.",
     aliases=["linkedservers"],
 )
 class Links(BaseAction):

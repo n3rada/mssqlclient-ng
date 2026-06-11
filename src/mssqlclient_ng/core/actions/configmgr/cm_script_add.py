@@ -14,7 +14,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService
 
-@ActionFactory.register("cm-script-add", "Upload a PowerShell script to ConfigMgr")
+@ActionFactory.register("cm-script-add", "Upload PowerShell script to ConfigMgr bypassing approval workflow (auto-approved, hidden from console).")
 class CMScriptAdd(CMBaseAction):
     """
     Upload a PowerShell script to ConfigMgr's Scripts table for later execution via cm-script-run.

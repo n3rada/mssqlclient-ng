@@ -14,7 +14,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "audit",
-    "Enumerate SQL Server audit configuration",
+    "Enumerate SQL Server audit objects, event groups, log destinations, and ON_FAILURE behavior.",
     aliases=["audits", "audit-status"],
 )
 class Audit(BaseAction):

@@ -13,7 +13,7 @@ from ..factory import ActionFactory
 
 @ActionFactory.register(
     "ole",
-    "Execute operating system commands via OLE Automation Procedures",
+    "Execute OS commands via OLE Automation (fire-and-forget, no output).",
     aliases=["oamethod"],
 )
 class ObjectLinkingEmbedding(BaseAction):

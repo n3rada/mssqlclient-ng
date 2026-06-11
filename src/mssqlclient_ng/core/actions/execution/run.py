@@ -11,7 +11,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
 
-@ActionFactory.register("run", "Execute a remote file on the SQL Server")
+@ActionFactory.register("run", "Execute a file on the SQL Server filesystem using OLE Automation.")
 class RunExecutable(BaseAction):
     """
     Execute a remote file on the SQL Server filesystem.

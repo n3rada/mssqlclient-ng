@@ -12,7 +12,7 @@ from ...services.database import DatabaseContext
 from ...services.adsi import AdsiService
 
 @ActionFactory.register(
-    "adsi-del", "Delete an ADSI linked server", aliases=["adsi-delete", "adsi-drop"]
+    "adsi-del", "Delete an ADSI linked server by name.", aliases=["adsi-delete", "adsi-drop"]
 )
 class AdsiDel(BaseAction):
     """

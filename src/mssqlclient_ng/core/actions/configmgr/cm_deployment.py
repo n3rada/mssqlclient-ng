@@ -13,7 +13,7 @@ from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
     "cm-deployment",
-    "Display details of a specific ConfigMgr deployment",
+    "Display detailed information about a specific deployment including rerun behavior and device status.",
     aliases=["cm-assignment"],
 )
 class CMDeployment(CMBaseAction):

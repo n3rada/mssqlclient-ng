@@ -11,7 +11,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-info", "Display ConfigMgr site information and infrastructure"
+    "cm-info", "Display ConfigMgr site information (site code, version, build, database server, management points) for infrastructure mapping."
 )
 class CMInfo(CMBaseAction):
     """

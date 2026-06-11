@@ -19,7 +19,7 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 
 @ActionFactory.register(
-    "clr", "Deploy and execute .NET CLR assemblies (DLL) on SQL Server"
+    "clr", "Deploy and execute custom CLR assemblies."
 )
 class ClrExecution(BaseAction):
     """

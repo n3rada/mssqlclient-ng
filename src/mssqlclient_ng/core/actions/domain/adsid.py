@@ -14,7 +14,7 @@ from ...utils.common import sid_bytes_to_string
 
 @ActionFactory.register(
     "ad-sid",
-    "Retrieves the current user's SID using SUSER_SID() function",
+    "Resolve the current login's Security Identifier (SID) with domain SID prefix and RID breakdown for AD accounts.",
 )
 class AdSid(BaseAction):
     """

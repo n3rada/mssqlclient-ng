@@ -12,7 +12,7 @@ from ...services.configmgr import CMService
 from ...utils.formatters import OutputFormatter
 
 @ActionFactory.register(
-    "cm-device", "Display detailed info about a specific ConfigMgr device"
+    "cm-device", "Display comprehensive information about a specific device including all deployments and targeted content."
 )
 class CMDevice(CMBaseAction):
     """

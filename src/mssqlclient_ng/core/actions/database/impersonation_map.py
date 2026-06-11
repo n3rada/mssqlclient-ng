@@ -30,7 +30,7 @@ def _is_system_account(login: str) -> bool:
 
 @ActionFactory.register(
     "impersonation-map",
-    "Recursively map all transitive impersonation chains reachable from the current login",
+    "Map multi-hop EXECUTE AS impersonation chains reachable from the current login. Records system accounts as endpoints without recursing. No-op if the current user is already sysadmin. Output lists each chain with starting login, intermediate hops, and end login.",
     aliases=["impersonate-chains", "impmap", "impchains"],
 )
 class ImpersonationMap(BaseAction):

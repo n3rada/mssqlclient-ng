@@ -11,7 +11,7 @@ from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 
-@ActionFactory.register("exec", "Execute operating system commands via xp_cmdshell")
+@ActionFactory.register("exec", "Execute OS commands on the SQL Server host via the command shell extended procedure and return output.")
 class XpCmd(BaseAction):
     """
     Execute operating system commands on the SQL Server using xp_cmdshell.

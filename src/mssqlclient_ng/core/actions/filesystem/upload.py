@@ -13,7 +13,7 @@ from ..factory import ActionFactory
 from ...services.database import DatabaseContext
 from ...utils.common import normalize_windows_path
 
-@ActionFactory.register("upload", "Upload a local file to the SQL Server filesystem")
+@ActionFactory.register("upload", "Upload a local file to the SQL Server filesystem.")
 class Upload(BaseAction):
     """
     Upload a local file to the SQL Server filesystem.
