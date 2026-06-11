@@ -386,19 +386,31 @@ def main() -> int:
         username = args.username if args.username else ""
         password = args.password if args.password else ""
 
-        # Auto-split DOMAIN\user or DOMAIN/user when -d was not provided
+        # Auto-split DOMAIN\user, DOMAIN/user, or user@domain when -d was not provided
         if username and not domain:
             if "\\" in username:
                 domain, username = username.split("\\", 1)
             elif "/" in username and not username.startswith("/"):
                 domain, username = username.split("/", 1)
+            elif "@" in username:
+                username, domain = username.split("@", 1)
 
         logger.debug(
-            f"Parsed credentials — domain: {domain!r}, username: {username!r}, password set: {bool(password)}, hashes: {args.hashes!r}, windows_auth: {args.windows_auth}, kerberos: {args.kerberos}"
+            f"Parsed credentials - domain: {domain!r}, username: {username!r}, password set: {bool(password)}, hashes: {args.hashes!r}, windows_auth: {args.windows_auth}, kerberos: {args.kerberos}"
         )
         logger.debug(
-            f"Target — host arg: {args.host!r}, server hostname: {server_instance.hostname!r}, port: {server_instance.port}, dc_ip: {args.dc_ip!r}, target_ip: {getattr(args, 'target_ip', None)!r}"
+            f"Target - host arg: {args.host!r}, server hostname: {server_instance.hostname!r}, port: {server_instance.port}, dc_ip: {args.dc_ip!r}, target_ip: {getattr(args, 'target_ip', None)!r}"
         )
+
+        # Show resolved identity before attempting connection
+        if args.kerberos:
+            auth_label = f"{domain}\\{username}" if domain else username
+            logger.info(f"Authenticating as {auth_label!r} via Kerberos")
+        elif args.windows_auth:
+            auth_label = f"{domain}\\{username}" if domain else username
+            logger.info(f"Authenticating as {auth_label!r} via Windows auth (NTLM)")
+        elif username:
+            logger.info(f"Authenticating as {username!r} via SQL auth")
 
         # Prompt for password if username provided but no password/hashes/aesKey
         if (
