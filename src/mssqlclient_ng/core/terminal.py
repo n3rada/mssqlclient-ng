@@ -108,6 +108,10 @@ class Terminal:
         "ula": "unlink-all",
         "al": "add-link",
         "ch": "chain",
+        "im": "impmap",
+        "impchains": "impmap",
+        "impersonate-chains": "impmap",
+        "impersonation-map": "impmap",
     }
 
     def __init__(
@@ -134,6 +138,7 @@ class Terminal:
             "debug": self._handle_debug,
             "trace": self._handle_trace,
             "chain": self._handle_chain,
+            "impmap": self._handle_impmap,
             "format": self._handle_format,
             "link": self._handle_link,
             "unlink-all": self._handle_unlink_all,
@@ -756,6 +761,62 @@ class Terminal:
             return
         self._display_chain()
 
+    def _handle_impmap(self, command_line: str) -> None:
+        args = command_line.split()[1:]
+        self.execute_action("impersonation-map", args)
+
+    def _handle_impersonation_by_id(self, id_str: str) -> None:
+        """Apply a saved impersonation chain by its # index."""
+        try:
+            chain_id = int(id_str)
+        except ValueError:
+            logger.error(f"Invalid impersonation ID: #{id_str}")
+            return
+
+        ctx = self._cache_context()
+        cached_rows = self._output_cache.get_rows(
+            ctx[0], ctx[1], ctx[2], ctx[3], "impersonation-map", ""
+        )
+        if not cached_rows:
+            logger.info("No cached impersonation map — running !impmap first")
+            self.execute_action("impersonation-map", [])
+            cached_rows = self._output_cache.get_rows(
+                ctx[0], ctx[1], ctx[2], ctx[3], "impersonation-map", ""
+            )
+
+        if not cached_rows:
+            logger.error("No impersonation map available.")
+            return
+
+        # Find row by # field (sysadmin path uses {"#": N, "Login": ...},
+        # normal path uses {"#": N, "Middle Logins": ..., "End Login": ...})
+        row = next((r for r in cached_rows if r.get("#") == chain_id), None)
+        if row is None:
+            logger.error(f"#{chain_id} not found (valid: 1–{len(cached_rows)})")
+            return
+
+        # Sysadmin path: single-login row
+        if "Login" in row and "End Login" not in row:
+            chain: list[str] = [row["Login"]]
+        else:
+            middle = row.get("Middle Logins", "") or ""
+            end_login = row.get("End Login", "") or ""
+            chain = [l.strip() for l in middle.split(",") if l.strip()]
+            if end_login:
+                chain.append(end_login)
+
+        if not chain:
+            logger.error(f"#{chain_id} has no logins to apply")
+            return
+
+        for login in chain:
+            if not self._database_context.user_service.impersonate_user(login):
+                logger.error(f"Failed to impersonate '{login}'")
+                return
+
+        self._refresh_user_info()
+        self._log_current_identity()
+
     def _handle_format(self, command_line: str) -> None:
         """Change the output table format.
         Usage: !format [markdown|csv|grid]
@@ -898,16 +959,21 @@ class Terminal:
             self._log_server_context()
 
     def _handle_impersonate(self, command_line: str) -> None:
-        """Impersonate a SQL login on the current server.
-        Usage: !impersonate <login>
-        Executes EXECUTE AS LOGIN on the current connection.
-        Use !revert to restore the original identity."""
+        """Impersonate a SQL login or apply an impmap chain by ID.
+        Usage: !impersonate <login>   — impersonate by login name
+               !impersonate <#id>    — apply chain #id from !impmap"""
         parts = command_line.split(maxsplit=1)
         if len(parts) < 2:
-            logger.error("Usage: !impersonate <login>")
+            logger.error("Usage: !impersonate <login|#id>")
             return
 
-        login = parts[1].strip()
+        arg = parts[1].strip()
+        id_str = arg.lstrip("#")
+        if id_str.isdigit():
+            self._handle_impersonation_by_id(id_str)
+            return
+
+        login = arg
         try:
             if self._database_context.user_service.can_impersonate(login):
                 if self._database_context.user_service.impersonate_user(login):

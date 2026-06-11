@@ -61,8 +61,11 @@ class ImpersonationMap(BaseAction):
             if not rows:
                 logger.warning("No impersonatable logins found")
                 return []
-            result = [{"Login": r.get("name", "")} for r in rows if r.get("name")]
-            result.sort(key=lambda r: r["Login"].lower())
+            logins = sorted(
+                (r.get("name", "") for r in rows if r.get("name")),
+                key=str.lower,
+            )
+            result = [{"#": i + 1, "Login": login} for i, login in enumerate(logins)]
             print(OutputFormatter.convert_list_of_dicts(result))
             logger.success(f"Found {len(result)} impersonatable login(s)")
             return result
@@ -84,9 +87,12 @@ class ImpersonationMap(BaseAction):
         # Sort by hop count descending, then end login ascending
         all_chains.sort(key=lambda c: (-c["Hops"], c["End Login"]))
 
-        print(OutputFormatter.convert_list_of_dicts(all_chains))
+        # Prepend # index for selection via !impmap <id>
+        numbered = [{"#": i + 1, **row} for i, row in enumerate(all_chains)]
+
+        print(OutputFormatter.convert_list_of_dicts(numbered))
         logger.success(f"Found {len(all_chains)} impersonation chain(s)")
-        return all_chains
+        return numbered
 
     # ------------------------------------------------------------------
     # Internal helpers
