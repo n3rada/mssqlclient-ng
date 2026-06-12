@@ -21,7 +21,6 @@ from ...models.server import Server
 from ...models.server_execution_state import ServerExecutionState
 from ...utils.formatters import OutputFormatter
 from ...utils.common import bracket_identifier
-from ...utils.storage import ChainStore
 
 # Server roles that grant significant privileges beyond standard access.
 ELEVATED_ROLES: set[str] = {
@@ -155,9 +154,6 @@ class LinkMap(BaseAction):
     _limit = Arg(
         position=0, default=7, description="Maximum recursion depth (1-15, default: 7)"
     )
-    _force = Arg(
-        short_name="f", long_name="force", toggle=True, description="Re-explore even if saved chains exist"
-    )
 
     def __init__(self):
         super().__init__()
@@ -168,7 +164,6 @@ class LinkMap(BaseAction):
         self._all_chains: list[list[ServerNode]] = []
         self._seen_chain_displays: set[str] = set()
         self._starting_impersonation: list[str] = []
-        self._chain_store = ChainStore()
 
     def validate_arguments(self, additional_arguments: str = "") -> None:
         if not additional_arguments or not additional_arguments.strip():
@@ -176,9 +171,6 @@ class LinkMap(BaseAction):
 
         parts = additional_arguments.strip().split()
         for part in parts:
-            if part in ("--force", "-f"):
-                self._force = True
-                continue
             try:
                 depth = int(part)
                 if not (1 <= depth <= self.MAX_ALLOWED_DEPTH):
@@ -195,24 +187,6 @@ class LinkMap(BaseAction):
 
     def execute(self, database_context: DatabaseContext) -> Any | None:
         server_name = database_context.server.hostname
-        system_user = database_context.user_service.system_user or ""
-
-        if not self._force:
-            saved = self._chain_store.load(server_name, system_user)
-            if saved:
-                from datetime import datetime, timezone
-                updated = saved.get("last_updated", "unknown")
-                try:
-                    dt = datetime.fromisoformat(updated)
-                    updated = dt.strftime("%Y-%m-%d %H:%M UTC")
-                except Exception:
-                    pass
-                chain_rows: list[dict[str, Any]] = saved.get("chains", [])
-                logger.info(f"Loaded {len(chain_rows)} saved chain(s) from {updated} (use --force to re-explore)")
-                if chain_rows:
-                    print(OutputFormatter.convert_list_of_dicts(chain_rows))
-                    logger.info("Use !chain <id> to apply a chain from the table above")
-                return None
 
         logger.info("Mapping linked server topology")
         logger.info(f"Maximum recursion depth: {self._limit}")
@@ -546,12 +520,10 @@ class LinkMap(BaseAction):
         print()
         chain_rows = self._display_chain_commands()
 
-        # Persist discovered chains for future quick access
         if chain_rows:
-            self._chain_store.save(server_name, system_user, chain_rows)
             logger.info("Use !chain <id> to apply a chain from the table above")
 
-        return None
+        return chain_rows or None
 
     # ------------------------------------------------------------------
     # Recursive exploration

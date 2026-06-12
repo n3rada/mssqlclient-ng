@@ -281,20 +281,22 @@ class Terminal:
         Load saved chains for the current server and return [(id, summary), ...].
         Called lazily by ActionCompleter on each Tab press.
         """
-        from .utils.storage import ChainStore
-
-        store = ChainStore()
-        server_name = self._database_context.server.hostname
-        system_user = self._database_context.server.system_user or ""
-        saved = store.load(server_name, system_user)
-        if not saved or not saved.get("chains"):
+        rows = self._output_cache.get_rows(
+            self._original_execution_server or "",
+            self._original_system_user or "",
+            "",
+            self._original_execution_database or "",
+            "linkmap",
+            "",
+        )
+        if not rows:
             return []
         result = []
-        for i, row in enumerate(saved["chains"], start=1):
-            endpoint = row.get("Endpoint") or row.get("endpoint", "")
-            login = row.get("Login") or row.get("login", "")
-            roles = row.get("Server Roles") or row.get("server_roles", "")
-            hops = row.get("Hops") or row.get("hops", "")
+        for i, row in enumerate(rows, start=1):
+            endpoint = row.get("Endpoint", "")
+            login = row.get("Login", "")
+            roles = row.get("Server Roles", "")
+            hops = row.get("Hops", "")
             parts = [endpoint]
             if login:
                 parts.append(f"as {login}")
@@ -893,23 +895,23 @@ class Terminal:
             logger.error(f"Invalid chain ID: #{id_str}")
             return
 
-        from .utils.storage import ChainStore
+        chains = self._output_cache.get_rows(
+            self._original_execution_server or "",
+            self._original_system_user or "",
+            "",
+            self._original_execution_database or "",
+            "linkmap",
+            "",
+        )
 
-        store = ChainStore()
-        server_name = self._database_context.server.hostname
-        system_user = self._database_context.server.system_user or ""
-        saved = store.load(server_name, system_user)
-
-        if not saved or not saved.get("chains"):
-            logger.error(f"No saved chains for {server_name}. Run !linkmap first.")
+        if not chains:
+            logger.error("No saved chains. Run !linkmap first.")
             return
 
-        chains = saved["chains"]
-        if chain_id < 1 or chain_id > len(chains):
-            logger.error(f"Chain #{chain_id} not found (valid: 1-{len(chains)})")
+        row = next((r for r in chains if r.get("#") == chain_id), None)
+        if row is None:
+            logger.error(f"Chain #{chain_id} not found (valid: 1–{len(chains)})")
             return
-
-        row = chains[chain_id - 1]
         link_spec = row.get("Links", "")
         if not link_spec:
             logger.error(f"Chain #{chain_id} has no links")

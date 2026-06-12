@@ -3,7 +3,7 @@
 """Persistent data storage for mssqlclient-ng.
 
 Provides platform-appropriate directories (XDG on POSIX, APPDATA on Windows)
-and a chain store for saving/loading discovered linked server chains per server.
+and an output cache for persisting action results across sessions.
 """
 
 # Built-in imports
@@ -40,96 +40,8 @@ def get_data_dir() -> Path:
 
 
 def _sanitize_filename(name: str) -> str:
-    """Sanitize a server name for use as a filename component."""
-    # Replace characters not safe in filenames
+    """Sanitize a string for use as a filename component."""
     return "".join(c if c.isalnum() or c in ".-_" else "_" for c in name)
-
-
-class ChainStore:
-    """
-    Persists discovered linked server chains to disk, keyed by (server, user) context hash.
-
-    Storage layout:
-        <data_dir>/chains/<context_hash>.json
-
-    The context hash is derived from the starting server hostname and the system user
-    so that chains discovered as different identities on the same server are isolated.
-
-    Each JSON file contains:
-        {
-            "server": "<hostname>",
-            "user": "<system_user>",
-            "last_updated": "<ISO timestamp>",
-            "chains": [ ... ]
-        }
-    """
-
-    def __init__(self):
-        self._chains_dir = get_data_dir() / "chains"
-
-    @staticmethod
-    def _context_hash(server: str, user: str) -> str:
-        raw = f"{server}|{user}".upper()
-        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-
-    def _get_chain_file(self, server: str, user: str) -> Path:
-        return self._chains_dir / f"{self._context_hash(server, user)}.json"
-
-    def save(self, server: str, user: str, chains: list[dict[str, Any]]) -> None:
-        self._chains_dir.mkdir(parents=True, exist_ok=True)
-
-        data = {
-            "server": server,
-            "user": user,
-            "last_updated": datetime.now(timezone.utc).isoformat(),
-            "chains": chains,
-        }
-
-        chain_file = self._get_chain_file(server, user)
-        try:
-            chain_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
-            if os.name != "nt":
-                os.chmod(chain_file, 0o600)
-            logger.info(f"Saved {len(chains)} chain(s) to {chain_file}")
-        except OSError as ex:
-            logger.warning(f"Failed to save chains: {ex}")
-
-    def load(self, server: str, user: str) -> dict[str, Any] | None:
-        chain_file = self._get_chain_file(server, user)
-        if not chain_file.is_file():
-            return None
-
-        try:
-            return json.loads(chain_file.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as ex:
-            logger.warning(f"Failed to load chains from {chain_file}: {ex}")
-            return None
-
-    def delete(self, server: str, user: str) -> bool:
-        chain_file = self._get_chain_file(server, user)
-        if chain_file.is_file():
-            chain_file.unlink()
-            return True
-        return False
-
-    def list_servers(self) -> list[str]:
-        """
-        list all servers that have saved chains.
-
-        Returns:
-            list of server names with saved chains
-        """
-        if not self._chains_dir.is_dir():
-            return []
-
-        servers = []
-        for f in self._chains_dir.glob("*.json"):
-            try:
-                data = json.loads(f.read_text(encoding="utf-8"))
-                servers.append(data.get("server", f.stem))
-            except (OSError, json.JSONDecodeError):
-                servers.append(f.stem)
-        return servers
 
 
 class OutputCache:
@@ -147,10 +59,6 @@ class OutputCache:
     # Actions that manage their own caching or produce side effects
     _EXCLUDED_ACTIONS = frozenset(
         {
-            "linkmap",
-            "linksmap",
-            "chains",
-            "tunnel",  # linkmap: manages own display + ChainStore
             "query",
             "sql",  # arbitrary queries
             "exec",
