@@ -439,7 +439,6 @@ def main() -> int:
 
         if use_kerberos and not args.aesKey and not os.environ.get("KRB5CCNAME"):
             logger.error("KRB5CCNAME is not set. Point it to your ccache before using Kerberos.")
-            logger.error("Example: export KRB5CCNAME=/tmp/krb5cc_$(id -u)")
             return 1
 
         # Determine KDC host
