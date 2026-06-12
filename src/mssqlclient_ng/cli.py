@@ -2,6 +2,7 @@
 
 # Built-in imports
 import argparse
+import os
 import shlex
 import sys
 from getpass import getpass
@@ -414,13 +415,15 @@ def main() -> int:
         elif username:
             logger.info(f"Authenticating as {username!r} via SQL auth")
 
-        # Prompt for password if username provided but no password/hashes/aesKey
+        # Prompt for password if username provided but no password/hashes/aesKey.
+        # Skip when Kerberos is requested — ccache or AES key handles auth.
         if (
             username
             and not password
             and args.hashes is None
             and args.aesKey is None
             and not args.no_pass
+            and not args.kerberos
         ):
             password = getpass("Password: ")
 
@@ -433,6 +436,11 @@ def main() -> int:
 
         # Enable Kerberos if AES key is provided
         use_kerberos = args.kerberos or (args.aesKey is not None)
+
+        if use_kerberos and not args.aesKey and not os.environ.get("KRB5CCNAME"):
+            logger.error("KRB5CCNAME is not set. Point it to your ccache before using Kerberos.")
+            logger.error("Example: export KRB5CCNAME=/tmp/krb5cc_$(id -u)")
+            return 1
 
         # Determine KDC host
         kdc_host = args.kdcHost or args.dc_ip
