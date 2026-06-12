@@ -111,8 +111,8 @@ class JobExec(BaseAction):
             logger.success("Job cleaned up")
             return True
 
-        except Exception as ex:
-            logger.error(f"Agent job failed: {ex}")
+        except Exception:
+            logger.exception("Agent job failed")
             self._cleanup_job(database_context, job_name)
             return False
 

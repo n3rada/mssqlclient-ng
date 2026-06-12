@@ -104,8 +104,8 @@ class QueryService:
                 return (
                     server_name.split("\\")[0] if "\\" in server_name else server_name
                 )
-        except Exception as e:
-            logger.warning(f"Failed to get server name: {e}")
+        except Exception:
+            logger.warning("Failed to get server name")
 
         return "Unknown"
 
@@ -384,7 +384,7 @@ class QueryService:
                 else:
                     return 0
 
-            logger.error(f"Unexpected error during query execution: {e}")
+            logger.exception("Unexpected error during query execution")
             raise
 
     def _prepare_query(self, query: str) -> str:

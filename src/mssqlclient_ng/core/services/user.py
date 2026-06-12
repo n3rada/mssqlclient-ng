@@ -165,8 +165,8 @@ class UserService:
                 f"SELECT HAS_PERMS_BY_NAME(NULL, NULL, '{safe_perm}')"
             )
             result = int(val) == 1 if val is not None else False
-        except Exception as e:
-            logger.warning(f"Error checking permission '{permission}': {e}")
+        except Exception:
+            logger.warning(f"Error checking permission '{permission}'")
 
         self._permission_cache[cache_key] = result
         return result
@@ -311,8 +311,8 @@ WHERE lt.type = 'WINDOWS GROUP' AND sp.type = 'G'
 ORDER BY sp.principal_id;""")
 
             self.source_principal = str(group) if group else self._system_user
-        except Exception as ex:
-            logger.warning(f"Error determining effective user and source: {ex}")
+        except Exception:
+            logger.warning("Error determining effective user and source")
             self.effective_user = self._mapped_user or "Unknown"
             self.source_principal = self._system_user or "Unknown"
 
@@ -343,8 +343,8 @@ ORDER BY sp.principal_id;""")
         try:
             result = self._query_service.execute_scalar(query)
             return int(result) == 1 if result is not None else False
-        except Exception as e:
-            logger.warning(f"Error checking impersonation for user {user}: {e}")
+        except Exception:
+            logger.warning(f"Error checking impersonation for user {user}")
             return False
 
     def impersonate_user(self, user: str) -> bool:
@@ -391,10 +391,10 @@ ORDER BY sp.principal_id;""")
                         f"Impersonated user {user} for current connection (via master)"
                     )
                     return True
-                except Exception as retry_ex:
-                    logger.error(f"Failed to impersonate user {user}: {retry_ex}")
+                except Exception:
+                    logger.exception(f"Failed to impersonate user {user}")
                     return False
-            logger.error(f"Failed to impersonate user {user}: {e}")
+            logger.exception(f"Failed to impersonate user {user}")
             return False
 
     def revert_impersonation(self) -> bool:
@@ -426,8 +426,8 @@ ORDER BY sp.principal_id;""")
             self._admin_status_cache.clear()
             logger.debug("Reverted impersonation")
             return True
-        except Exception as e:
-            logger.error(f"Failed to revert impersonation: {e}")
+        except Exception:
+            logger.exception("Failed to revert impersonation")
             return False
 
     def _push_linked_impersonation(self, login: str) -> None:

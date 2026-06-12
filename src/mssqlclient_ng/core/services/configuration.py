@@ -46,8 +46,8 @@ class ConfigurationService:
                 logger.warning(f"Assembly '{assembly_name}' not found")
 
             return exists
-        except Exception as e:
-            logger.error(f"Error checking assembly '{assembly_name}': {e}")
+        except Exception:
+            logger.exception(f"Error checking assembly '{assembly_name}'")
             return False
 
     def check_assembly_modules(self, assembly_name: str) -> bool:
@@ -77,8 +77,8 @@ class ConfigurationService:
 
             logger.warning(f"Assembly '{assembly_name}' has no modules")
             return False
-        except Exception as e:
-            logger.error(f"Error checking assembly modules for '{assembly_name}': {e}")
+        except Exception:
+            logger.exception(f"Error checking assembly modules for '{assembly_name}'")
             return False
 
     def check_trusted_assembly(self, assembly_name: str) -> bool:
@@ -113,8 +113,8 @@ class ConfigurationService:
 
             logger.warning(f"Assembly '{assembly_name}' is not trusted")
             return False
-        except Exception as e:
-            logger.error(f"Error checking trusted assemblies: {e}")
+        except Exception:
+            logger.exception("Error checking trusted assemblies")
             return False
 
     def check_procedure(self, procedure_name: str) -> bool:
@@ -146,8 +146,8 @@ class ConfigurationService:
 
             logger.warning(f"Procedure '{procedure_name}' does not exist")
             return False
-        except Exception as e:
-            logger.error(f"Error checking procedures: {e}")
+        except Exception:
+            logger.exception("Error checking procedures")
             return False
 
     def set_configuration_option(self, option_name: str, value: int) -> bool:
@@ -183,10 +183,8 @@ class ConfigurationService:
                     f"Configuration option '{option_name}' is already set to {value}"
                 )
                 return True
-        except Exception as e:
-            logger.error(
-                f"Error checking configuration status for '{option_name}': {e}"
-            )
+        except Exception:
+            logger.exception(f"Error checking configuration status for '{option_name}'")
             return False
 
         try:
@@ -195,8 +193,8 @@ class ConfigurationService:
             self._query_service.execute_non_processing(query)
             logger.success(f"Successfully set '{option_name}' to {value}")
             return True
-        except Exception as e:
-            logger.warning(f"Failed to set configuration option '{option_name}': {e}")
+        except Exception:
+            logger.warning(f"Failed to set configuration option '{option_name}'")
             return False
 
     def register_trusted_assembly(
@@ -255,8 +253,8 @@ class ConfigurationService:
 
             logger.error("Failed to add hash to sys.trusted_assemblies")
             return False
-        except Exception as e:
-            logger.error(f"Error adding CLR hash: {e}")
+        except Exception:
+            logger.exception("Error adding CLR hash")
             return False
 
     def enable_data_access(self, server_name: str) -> bool:
@@ -282,8 +280,8 @@ class ConfigurationService:
 
             logger.error(f"Failed to enable data access for server '{server_name}'")
             return False
-        except Exception as e:
-            logger.error(f"Error enabling data access for server '{server_name}': {e}")
+        except Exception:
+            logger.exception(f"Error enabling data access for server '{server_name}'")
             return False
 
     def disable_data_access(self, server_name: str) -> bool:
@@ -309,8 +307,8 @@ class ConfigurationService:
 
             logger.error(f"Failed to disable data access for server '{server_name}'")
             return False
-        except Exception as e:
-            logger.error(f"Error disabling data access for server '{server_name}': {e}")
+        except Exception:
+            logger.exception(f"Error disabling data access for server '{server_name}'")
             return False
 
     def _is_data_access_enabled(self, server_name: str) -> bool:
@@ -332,10 +330,8 @@ class ConfigurationService:
                 return False
 
             return int(result) == 1
-        except Exception as e:
-            logger.error(
-                f"Error checking data access status for server '{server_name}': {e}"
-            )
+        except Exception:
+            logger.exception(f"Error checking data access status for server '{server_name}'")
             return False
 
     def drop_dependent_objects(self, assembly_name: str) -> bool:
@@ -408,10 +404,8 @@ class ConfigurationService:
                 f"All dependent objects for assembly '{assembly_name}' dropped successfully"
             )
             return True
-        except Exception as e:
-            logger.error(
-                f"Failed to drop dependent objects for assembly '{assembly_name}': {e}"
-            )
+        except Exception:
+            logger.exception(f"Failed to drop dependent objects for assembly '{assembly_name}'")
             return False
 
     def _enable_advanced_options(self) -> bool:
@@ -452,8 +446,8 @@ class ConfigurationService:
 
             logger.warning("Failed to verify 'show advanced options' was enabled")
             return False
-        except Exception as e:
-            logger.error(f"Error enabling advanced options: {e}")
+        except Exception:
+            logger.exception("Error enabling advanced options")
             return False
 
     def get_configuration_status(self, option_name: str) -> int:
@@ -498,6 +492,6 @@ class ConfigurationService:
             self._query_service.execute_non_processing(query)
             logger.success(f"Successfully set '{option_name}' to '{option_value}' on '{server_name}'")
             return True
-        except Exception as e:
-            logger.error(f"Error setting '{option_name}' on server '{server_name}': {e}")
+        except Exception:
+            logger.exception(f"Error setting '{option_name}' on server '{server_name}'")
             return False

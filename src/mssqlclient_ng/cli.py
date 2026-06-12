@@ -471,8 +471,8 @@ def main() -> int:
                 server=server_instance,
                 mssql_instance=auth_service.mssql_instance,
             )
-        except Exception as exc:
-            logger.error(f"Failed to establish database context: {exc}")
+        except Exception:
+            logger.exception("Failed to establish database context")
             auth_service.disconnect()
             return 1
 
@@ -535,16 +535,14 @@ def main() -> int:
                 # Get info from the final server in the chain
                 try:
                     user_name, system_user = database_context.user_service.get_info()
-                except Exception as exc:
-                    logger.error(
-                        f"Error retrieving user info from linked server: {exc}"
-                    )
+                except Exception:
+                    logger.exception("Error retrieving user info from linked server")
                     return 1
 
                 _log_identity(database_context.query_service.execution_server, system_user, user_name)
 
-            except Exception as exc:
-                logger.error(f"Failed to set up linked servers: {exc}")
+            except Exception:
+                logger.exception("Failed to set up linked servers")
                 return 1
 
         # Compute and display the final execution context
@@ -593,8 +591,8 @@ def main() -> int:
                     try:
                         action_instance.execute(database_context=database_context)
                         return 0
-                    except Exception as exc:
-                        logger.error(f"Action execution failed: {exc}")
+                    except Exception:
+                        logger.exception("Action execution failed")
                         return 1
 
             # Execute query if provided
@@ -619,8 +617,8 @@ def main() -> int:
             )
             return 0
 
-    except Exception as exc:
-        logger.error(f"Error in execution: {exc}")
+    except Exception:
+        logger.exception("Error in execution")
         return 1
     finally:
         # Clean up authentication service if it was created (non-relay mode)

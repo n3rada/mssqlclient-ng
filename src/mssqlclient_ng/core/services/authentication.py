@@ -166,8 +166,8 @@ class AuthenticationService:
             try:
                 self.mssql_instance.disconnect()
                 logger.debug("Connection closed")
-            except Exception as e:
-                logger.warning(f"Error closing connection: {e}")
+            except Exception:
+                logger.warning("Error closing connection")
             finally:
                 self.mssql_instance = None
 

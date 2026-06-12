@@ -193,8 +193,8 @@ class AdsiService:
         sql = f"SELECT * FROM OPENQUERY([{server_name}], '{escaped_query}')"
         try:
             return self._database_context.query_service.execute(sql)
-        except Exception as e:
-            logger.warning(f"{e}")
+        except Exception:
+            logger.warning("LDAP OPENQUERY execution failed")
             return None
 
     def open_query(
@@ -233,8 +233,8 @@ class AdsiService:
         try:
             result = self._database_context.query_service.execute(query)
             return result if result else None
-        except Exception as e:
-            logger.warning(f"{e}")
+        except Exception:
+            logger.warning("LDAP OPENQUERY execution failed")
             return None
 
     async def listen_for_request(self) -> list[dict[str, Any]] | None:
@@ -431,8 +431,8 @@ class AdsiService:
             )
             return True
 
-        except Exception as e:
-            logger.error(f"Error occurred during the ADSI exploit: {e}")
+        except Exception:
+            logger.exception("Error occurred during the ADSI exploit")
             logger.info(
                 f"Deleting LDAP server assembly '{self.assembly_name}', "
                 f"function '{self.function_name}' and trusted assembly hash"
@@ -450,8 +450,8 @@ class AdsiService:
                     self._database_context.query_service.execute_non_processing(
                         f"ALTER DATABASE {self._database_context.server.database} SET TRUSTWORTHY OFF;"
                     )
-                except Exception as exc:
-                    logger.warning(f"Failed to reset TRUSTWORTHY: {exc}")
+                except Exception:
+                    logger.warning("Failed to reset TRUSTWORTHY")
 
     def _get_ldap_server_assembly(self) -> tuple[str, str]:
         """
