@@ -446,9 +446,12 @@ class AdsiService:
             # Reset TRUSTWORTHY property for legacy servers
             if self._database_context.server.legacy:
                 logger.info("Resetting TRUSTWORTHY property")
-                self._database_context.query_service.execute_non_processing(
-                    f"ALTER DATABASE {self._database_context.server.database} SET TRUSTWORTHY OFF;"
-                )
+                try:
+                    self._database_context.query_service.execute_non_processing(
+                        f"ALTER DATABASE {self._database_context.server.database} SET TRUSTWORTHY OFF;"
+                    )
+                except Exception as exc:
+                    logger.warning(f"Failed to reset TRUSTWORTHY: {exc}")
 
     def _get_ldap_server_assembly(self) -> tuple[str, str]:
         """

@@ -28,6 +28,7 @@ class CMAccounts(CMBaseAction):
         if not databases:
             return None
 
+        results = None
         for db in databases:
             site_code = CMService.get_site_code(db)
             logger.info(f"ConfigMgr database: {db} (Site Code: {site_code})")

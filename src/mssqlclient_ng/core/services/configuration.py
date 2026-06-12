@@ -35,7 +35,8 @@ class ConfigurationService:
             True if the assembly exists; otherwise False
         """
         try:
-            query = f"SELECT name FROM sys.assemblies WHERE name='{assembly_name}';"
+            safe_name = assembly_name.replace("'", "''")
+            query = f"SELECT name FROM sys.assemblies WHERE name='{safe_name}';"
             result = self._query_service.execute_scalar(query)
             exists = result is not None and str(result) == assembly_name
 

@@ -25,7 +25,6 @@ class CMService:
         Gets all ConfigMgr databases on the server.
         If the current execution database is a CM_ database, returns only that one.
         """
-        current_db = self._query_service.execution_server
         # Check if we're already in a CM_ database context
         try:
             db_result = self._query_service.execute_scalar("SELECT DB_NAME()")
