@@ -1,13 +1,18 @@
 # ✈️ mssqlclient-ng
 
-The Python counterpart to [MSSQLand](https://github.com/n3rada/MSSQLand). `mssqlclient-ng` is built for interacting with [Microsoft SQL Server](https://en.wikipedia.org/wiki/Microsoft_SQL_Server) during your red team activities or any security audit. Designed to run from an external position, it allows you to pave your way across multiple linked servers and impersonate whoever you can along the way, emerging from the last hop with any desired action.
+The Python counterpart to [MSSQLand](https://github.com/n3rada/MSSQLand). `mssqlclient-ng` is a Python Microsoft SQL Server (MS SQL / MSSQL) client built for red team operations and penetration testing. It lets you interact with SQL Server instances over TDS, traverse linked server chains, and impersonate any login encountered along the way, emerging from the last hop ready to execute any action.
 
+- **Authentication**: SQL auth, Windows auth (NTLM), Kerberos, pass-the-hash, NTLM relay
+- **Linked server traversal**: chain multiple MS SQL servers with automatic `OPENQUERY` / `EXEC AT` wrapping
+- **Impersonation**: `EXECUTE AS LOGIN` at every hop, including cascading multi-user impersonation
+- **Interactive shell**: tab completion, persistent history, built-in commands, Markdown-ready output
+- **Non-interactive mode**: run any action or raw T-SQL query directly from the CLI for scripting
 
 <p align="center">
-    <img src="./media/example.png" alt="example">
+    <img src="./media/example.png" alt="mssqlclient-ng example">
 </p>
 
-It supports NTLM, Kerberos, and pass-the-hash authentication natively through [Impacket](https://github.com/fortra/impacket)'s TDS implementation, and can handle [NTLM relaying](https://en.wikipedia.org/wiki/NTLM#Security_concerns) 🔄
+Built on [Impacket](https://github.com/fortra/impacket)'s TDS implementation, it works from any Linux or Windows attack box and integrates naturally into Active Directory penetration testing workflows.
 
 > [!TIP]
 > If you have access to a MS SQL instance only through your implant/beacon, use [MSSQLand](https://github.com/n3rada/MSSQLand), the `C#` version built with assembly execution in mind.

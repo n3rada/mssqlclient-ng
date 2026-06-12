@@ -12,6 +12,31 @@ authors = [
 license = {text = "GPL-3.0-or-later"}
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
+keywords = [
+    "mssql", "sql-server", "microsoft-sql-server", "mssqlclient",
+    "pentesting", "red-team", "offensive-security", "post-exploitation",
+    "lateral-movement", "privilege-escalation",
+    "impacket", "ntlm-relay", "pass-the-hash", "kerberos",
+    "active-directory", "windows-authentication",
+    "linked-servers", "impersonation", "tds",
+    "security", "python",
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Database",
+    "Topic :: System :: Networking",
+]
+
 dependencies = [
     "impacket>=0.13.1",
     "loguru>=0.7.3",
