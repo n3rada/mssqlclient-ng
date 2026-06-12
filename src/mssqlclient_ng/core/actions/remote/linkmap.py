@@ -74,7 +74,7 @@ class ServerNode:
     is_sysadmin: bool = False
     server_roles: list[str] = field(default_factory=list)
     children: list["ServerNode"] = field(default_factory=list)
-    escalation_paths: list[list[ImpersonationStep]] = field(default_factory=list)
+    impersonation_paths: list[list[ImpersonationStep]] = field(default_factory=list)
 
     @property
     def is_elevated(self) -> bool:
@@ -131,7 +131,7 @@ def _is_system_account(login: str) -> bool:
 
 @ActionFactory.register(
     "linkmap",
-    "Recursively map linked server chains with loop detection, checking impersonation paths at each hop. Highlights reachable endpoints and privilege escalation opportunities. Unbounded runtime, invoke as a background task, not inline.",
+    "Recursively map linked server chains with loop detection, checking impersonation paths at each hop. Highlights reachable endpoints and privilege impersonation opportunities. Unbounded runtime, invoke as a background task, not inline.",
     aliases=["linksmap", "chains", "tunnel"],
 )
 class LinkMap(BaseAction):
@@ -145,7 +145,7 @@ class LinkMap(BaseAction):
     - Negative caching of failed link attempts
     - Role-based context caching
     - Provider-based filtering (SQL Server vs other linked servers)
-    - Privilege escalation path detection
+    - Impersonation path detection
     - Chain command generation for reproduction
     """
 
@@ -502,15 +502,15 @@ class LinkMap(BaseAction):
             if not self._root_node.children
             else self._count_leaf_nodes(self._root_node)
         )
-        total_escalations = self._count_escalation_paths(self._root_node)
+        total_impersonation_paths = self._count_impersonation_paths(self._root_node)
 
-        if total_chains == 0 and total_escalations == 0:
+        if total_chains == 0 and total_impersonation_paths == 0:
             logger.warning("No accessible linked server chains found.")
             return None
 
         summary = f"Found {total_chains} accessible chain(s)"
-        if total_escalations > 0:
-            summary += f" and {total_escalations} privilege escalation path(s)"
+        if total_impersonation_paths > 0:
+            summary += f" and {total_impersonation_paths} impersonation path(s)"
         summary += f" in {elapsed:.2f}s"
         logger.success(summary)
 
@@ -705,22 +705,22 @@ class LinkMap(BaseAction):
                 if not self._try_apply_impersonation_chain(database_context, chain):
                     continue
                 try:
-                    # Discover end-of-chain roles for escalation detection
+                    # Discover end-of-chain roles for impersonation path
                     fixed_chain_roles, custom_chain_roles = (
                         database_context.user_service.get_server_roles()
                     )
                     chain_end_roles = fixed_chain_roles + custom_chain_roles
                     chain_end_is_sysadmin = database_context.user_service.is_admin()
 
-                    # Record as escalation path if privileged
+                    # Record as impersonation path if privileged
                     if chain_end_is_sysadmin or any(
                         r.lower() in ELEVATED_ROLES for r in chain_end_roles
                     ):
                         steps = [ImpersonationStep(login=login) for login in chain]
                         steps[-1].roles = chain_end_roles
-                        current_node.escalation_paths.append(steps)
+                        current_node.impersonation_paths.append(steps)
                         logger.info(
-                            f"Escalation path on {target_server}: [{' -> '.join(chain)}]"
+                            f"Impersonation path on {target_server}: [{' -> '.join(chain)}]"
                         )
 
                     chain_links = self._get_linked_servers_with_access(database_context)
@@ -1066,10 +1066,10 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             count += self._count_leaf_nodes(child)
         return count
 
-    def _count_escalation_paths(self, node: ServerNode) -> int:
-        count = len(node.escalation_paths)
+    def _count_impersonation_paths(self, node: ServerNode) -> int:
+        count = len(node.impersonation_paths)
         for child in node.children:
-            count += self._count_escalation_paths(child)
+            count += self._count_impersonation_paths(child)
         return count
 
     # ------------------------------------------------------------------
@@ -1181,13 +1181,13 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
 
             for i, child in enumerate(node.children):
                 child_is_last = (
-                    i == len(node.children) - 1 and not node.escalation_paths
+                    i == len(node.children) - 1 and not node.impersonation_paths
                 )
                 self._display_tree_node(
                     child, server_child_indent, child_is_last, current_path
                 )
 
-            self._render_escalation_paths(node, server_child_indent)
+            self._render_impersonation_paths(node, server_child_indent)
         else:
             # No impersonation: render directly
             connector = "\u255a\u2550\u2550 " if is_last else "\u2560\u2550\u2550 "
@@ -1200,22 +1200,22 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
 
             for i, child in enumerate(node.children):
                 child_is_last = (
-                    i == len(node.children) - 1 and not node.escalation_paths
+                    i == len(node.children) - 1 and not node.impersonation_paths
                 )
                 self._display_tree_node(
                     child, child_indent, child_is_last, current_path
                 )
 
-            self._render_escalation_paths(node, child_indent)
+            self._render_impersonation_paths(node, child_indent)
 
     @staticmethod
-    def _render_escalation_paths(node: ServerNode, indent: str) -> None:
-        """Render privilege escalation paths discovered at a server node."""
-        if not node.escalation_paths:
+    def _render_impersonation_paths(node: ServerNode, indent: str) -> None:
+        """Render impersonation paths discovered at a server node."""
+        if not node.impersonation_paths:
             return
 
-        for p, path in enumerate(node.escalation_paths):
-            is_last = p == len(node.escalation_paths) - 1
+        for p, path in enumerate(node.impersonation_paths):
+            is_last = p == len(node.impersonation_paths) - 1
             connector = "\u2514\u2500\u2500 " if is_last else "\u251c\u2500\u2500 "
             chain_display = " \u2192 ".join(
                 f"{s.login}{s.privilege_marker}" for s in path
@@ -1246,9 +1246,9 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             rows.append(self._build_row(chain, hops, chain_id))
 
             last_node = chain[-1]
-            for escalation in last_node.escalation_paths:
+            for impersonation in last_node.impersonation_paths:
                 chain_id += 1
-                rows.append(self._build_row(chain, hops + len(escalation), chain_id, escalation))
+                rows.append(self._build_row(chain, hops + len(impersonation), chain_id, impersonation))
 
         if rows:
             print(OutputFormatter.convert_list_of_dicts(rows))
@@ -1280,9 +1280,9 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
         chain: list[ServerNode],
         hops: int,
         chain_id: int,
-        escalation: list[ImpersonationStep] | None = None,
+        impersonation: list[ImpersonationStep] | None = None,
     ) -> dict[str, Any]:
-        """Build a row for a reachable chain. When escalation is provided,
+        """Build a row for a reachable chain. When impersonation is provided,
         the row reflects the escalated login and appends its impersonation to the last hop."""
         last_node = chain[-1]
 
@@ -1294,8 +1294,8 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
                 ]
             server_list.append(Server(hostname=node.alias, impersonation_users=[]))
 
-        if escalation is not None:
-            server_list[-1].impersonation_users = [s.login for s in escalation]
+        if impersonation is not None:
+            server_list[-1].impersonation_users = [s.login for s in impersonation]
 
         linked_servers = LinkedServers(server_list)
 
@@ -1313,8 +1313,8 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             else f"{last_node.alias} [{last_node.actual_name}]"
         )
 
-        if escalation is not None:
-            last_step = escalation[-1]
+        if impersonation is not None:
+            last_step = impersonation[-1]
             login = last_step.login
             mapped_to = ""
             if last_step.is_sysadmin:
