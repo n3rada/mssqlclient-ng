@@ -223,6 +223,39 @@ Inside the interactive shell:
 !link --help
 ```
 
+## 🔧 Scripting and JSON Output
+
+All output formats are selected with `-o` / `--output-format`. The default is `markdown`. For scripting, piping to `jq`, or feeding results into an LLM, use `json`:
+
+```bash
+mssqlclient-ng <host> -u sa -p pass --action <action> -o json
+```
+
+Logs are always written to **stderr**; formatted data goes to **stdout**. The two streams never mix, so piping works cleanly without suppressing anything:
+
+```bash
+# filter results with jq
+mssqlclient-ng SQL01 -u sa -p pass --action users -o json | jq '.[].name'
+
+# inspect a specific field
+mssqlclient-ng SQL01 -u sa -p pass -q "SELECT * FROM sys.databases" -o json | jq '.[] | select(.name != "master")'
+
+# pass output directly to an LLM
+mssqlclient-ng SQL01 -u sa -p pass --action databases -o json | llm "which of these look like application databases?"
+
+# store to a file and query later
+mssqlclient-ng SQL01 -u sa -p pass --action linkmap -o json > linkmap.json
+jq '[.[] | .server]' linkmap.json
+```
+
+SQL `NULL` values are preserved as JSON `null` (not converted to empty strings). Binary columns are decoded as UTF-8 strings. All other types fall back to their string representation.
+
+Redirect stderr to silence logs when only the data matters:
+
+```bash
+mssqlclient-ng SQL01 -u sa -p pass --action users -o json 2>/dev/null | jq .
+```
+
 ## 📸 Clean Output for Clean Reports
 
 The tool's output, enriched with timestamps and valuable contextual information, is designed to produce visually appealing and professional results, making it ideal for capturing high-quality screenshots for any of your reports (e.g., customer deliverable, internal report, red team assessments).
