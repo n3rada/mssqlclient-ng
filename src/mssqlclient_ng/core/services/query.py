@@ -170,12 +170,7 @@ class QueryService:
         rows = self.execute(query, tuple_mode=False, silent=silent)
         if not rows:
             return []
-        return [self._normalize_row(row) for row in rows]
-
-    @staticmethod
-    def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
-        """Pass through rows; impacket returns None for SQL NULLs since PR #2185."""
-        return row
+        return list(rows)
 
     def execute_scalar(self, query: str, silent: bool = False) -> Any | None:
         """
