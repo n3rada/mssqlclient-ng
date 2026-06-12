@@ -285,7 +285,8 @@ class Terminal:
 
         store = ChainStore()
         server_name = self._database_context.server.hostname
-        saved = store.load(server_name)
+        system_user = self._database_context.server.system_user or ""
+        saved = store.load(server_name, system_user)
         if not saved or not saved.get("chains"):
             return []
         result = []
@@ -896,7 +897,8 @@ class Terminal:
 
         store = ChainStore()
         server_name = self._database_context.server.hostname
-        saved = store.load(server_name)
+        system_user = self._database_context.server.system_user or ""
+        saved = store.load(server_name, system_user)
 
         if not saved or not saved.get("chains"):
             logger.error(f"No saved chains for {server_name}. Run !linkmap first.")

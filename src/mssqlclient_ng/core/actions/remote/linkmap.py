@@ -195,9 +195,10 @@ class LinkMap(BaseAction):
 
     def execute(self, database_context: DatabaseContext) -> Any | None:
         server_name = database_context.server.hostname
+        system_user = database_context.user_service.system_user or ""
 
         if not self._force:
-            saved = self._chain_store.load(server_name)
+            saved = self._chain_store.load(server_name, system_user)
             if saved:
                 from datetime import datetime, timezone
                 updated = saved.get("last_updated", "unknown")
@@ -547,7 +548,7 @@ class LinkMap(BaseAction):
 
         # Persist discovered chains for future quick access
         if chain_rows:
-            self._chain_store.save(server_name, chain_rows)
+            self._chain_store.save(server_name, system_user, chain_rows)
             logger.info("Use !chain <id> to apply a chain from the table above")
 
         return None
