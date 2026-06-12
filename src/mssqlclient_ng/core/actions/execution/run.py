@@ -335,8 +335,6 @@ class RunExecutable(BaseAction):
                     for row in result:
                         # Handle NULL values and extract first column
                         output = row[0] if row and row[0] is not None else ""
-                        if output == "NULL":
-                            output = ""
 
                         print(output)
                         output_lines.append(output)

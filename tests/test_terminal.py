@@ -48,6 +48,7 @@ class TestTerminalInit:
             "debug",
             "trace",
             "chain",
+            "impmap",
             "format",
             "link",
             "unlink-all",

@@ -174,11 +174,8 @@ class QueryService:
 
     @staticmethod
     def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
-        """Convert impacket's 'NULL' sentinel strings to Python None."""
-        return {
-            k: (None if isinstance(v, str) and v.upper() == "NULL" else v)
-            for k, v in row.items()
-        }
+        """Pass through rows; impacket returns None for SQL NULLs since PR #2185."""
+        return row
 
     def execute_scalar(self, query: str, silent: bool = False) -> Any | None:
         """

@@ -106,10 +106,7 @@ def _get_row_string(row: dict[str, Any], column: str) -> str:
     val = row.get(column)
     if val is None:
         return ""
-    s = str(val)
-    if s.upper() == "NULL":
-        return ""
-    return s
+    return str(val)
 
 def _format_impersonation_context(
     chain: list[ImpersonationStep], fallback_login: str = "current login"
@@ -1018,9 +1015,8 @@ ORDER BY srv.provider, srv.modify_date DESC;"""
             return None
 
         # Compute Access column
-        # Note: impacket returns SQL NULL as the string 'NULL', not Python None
         def _is_null(val) -> bool:
-            return val is None or (isinstance(val, str) and val.upper() == "NULL")
+            return val is None
 
         def _to_int(val) -> int:
             if _is_null(val):

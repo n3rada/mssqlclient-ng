@@ -50,7 +50,7 @@ class AdSid(BaseAction):
             # Extract the SID from the query result (first column value)
             raw_sid_obj = next(iter(dt_sid[0].values())) if dt_sid[0] else None
 
-            if raw_sid_obj is None or raw_sid_obj == "NULL":
+            if raw_sid_obj is None:
                 logger.error("SUSER_SID() returned NULL.")
                 return None
 

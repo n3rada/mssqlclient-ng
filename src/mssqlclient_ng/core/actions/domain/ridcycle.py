@@ -141,7 +141,7 @@ class RidCycle(BaseAction):
                         username = next(iter(item.values())) if item else None
 
                         # Skip NULL or empty results
-                        if not username or username == "NULL":
+                        if not username:
                             continue
 
                         found_rid = start + result_index

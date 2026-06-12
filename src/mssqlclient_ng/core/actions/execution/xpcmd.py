@@ -55,7 +55,7 @@ class XpCmd(BaseAction):
                 print()
                 for row in rows:
                     cell = row[0]
-                    if cell is None or str(cell).upper() == "NULL":
+                    if cell is None:
                         continue
                     line = str(cell).rstrip()
                     print(line)
