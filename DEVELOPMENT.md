@@ -30,7 +30,9 @@ It is read by both human contributors and AI agents. If this file and [AI.md](AI
 
 3. Error handling and logging
 - Avoid broad `except Exception` unless re-raising, translating, or intentionally degrading behavior.
-- Inside exception handlers, prefer `logger.exception(...)` if available from `loguru` when traceback context matters.
+- Inside `except Exception` handlers, choose based on whether the tool stops or continues:
+  - **Tool stops** (re-raise or fatal failure): `logger.exception("...")` — ERROR level with full traceback; do not interpolate `{exc}` in the message.
+  - **Tool continues** (recoverable or per-item failure): `logger.error(f"...: {exc}")` — message only, no traceback.
 - Log level guide:
   - `logger.trace(...)`: developer-level internal mechanics — loop iteration detail, cache hits, retry counters, raw query routing. Invisible to operators by default. Intended for developers and AI-assisted diagnosis only, not for operator use.
   - `logger.debug(...)`: operator-facing detail useful to diagnose usage problems — skipped servers, failed impersonation attempts, negative-cache hits. Shown with `--debug`.
