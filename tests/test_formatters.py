@@ -1,12 +1,15 @@
 # tests/test_formatters.py
 
-"""Tests for output formatters (markdown, csv) and the OutputFormatter dispatcher."""
+"""Tests for output formatters (markdown, csv, json) and the OutputFormatter dispatcher."""
+
+import json
 
 import pytest
 
 from mssqlclient_ng.core.utils.formatters import OutputFormatter
 from mssqlclient_ng.core.utils.formatters.markdown import MarkdownFormatter
 from mssqlclient_ng.core.utils.formatters.csv import CsvFormatter
+from mssqlclient_ng.core.utils.formatters.json import JsonFormatter
 from mssqlclient_ng.core.utils.formatters import (
     normalize_value,
     dict_to_markdown_table,
@@ -47,10 +50,15 @@ class TestOutputFormatterDispatcher:
         with pytest.raises(ValueError, match="cannot be null or empty"):
             OutputFormatter.set_format("")
 
+    def test_set_json(self):
+        OutputFormatter.set_format("json")
+        assert OutputFormatter.current_format() == "json"
+
     def test_available_formats(self):
         formats = OutputFormatter.get_available_formats()
         assert "markdown" in formats
         assert "csv" in formats
+        assert "json" in formats
 
 
 # ── MarkdownFormatter ────────────────────────────────────────────────────
@@ -224,3 +232,52 @@ class TestFormatterUtilities:
         result = format_table(["H1"], [["v1"]])
         assert "H1" in result
         assert "v1" in result
+
+
+# ── JsonFormatter ─────────────────────────────────────────────────────────
+
+
+class TestJsonFormatter:
+    """Test JsonFormatter output."""
+
+    def setup_method(self):
+        self.fmt = JsonFormatter()
+
+    def test_format_name(self):
+        assert self.fmt.format_name == "json"
+
+    def test_convert_list_of_dicts(self):
+        data = [{"Name": "Alice", "Age": 30}, {"Name": "Bob", "Age": 25}]
+        result = json.loads(self.fmt.convert_list_of_dicts(data))
+        assert result[0]["Name"] == "Alice"
+        assert result[1]["Age"] == 25
+
+    def test_convert_list_of_dicts_empty(self):
+        assert self.fmt.convert_list_of_dicts([]) == "[]"
+
+    def test_convert_list_of_dicts_none_preserved(self):
+        data = [{"col": None}]
+        result = json.loads(self.fmt.convert_list_of_dicts(data))
+        assert result[0]["col"] is None
+
+    def test_convert_list_of_dicts_bytes_decoded(self):
+        data = [{"col": b"hello"}]
+        result = json.loads(self.fmt.convert_list_of_dicts(data))
+        assert result[0]["col"] == "hello"
+
+    def test_convert_dict(self):
+        data = {"host": "SQL01", "port": "1433"}
+        result = json.loads(self.fmt.convert_dict(data, "Key", "Value"))
+        assert result["host"] == "SQL01"
+        assert result["port"] == "1433"
+
+    def test_convert_list(self):
+        data = ["alpha", "beta"]
+        result = json.loads(self.fmt.convert_list(data, "Items"))
+        assert result == ["alpha", "beta"]
+
+    def test_output_is_valid_json(self):
+        data = [{"x": 1, "y": None, "z": b"\xff"}]
+        raw = self.fmt.convert_list_of_dicts(data)
+        parsed = json.loads(raw)
+        assert isinstance(parsed, list)

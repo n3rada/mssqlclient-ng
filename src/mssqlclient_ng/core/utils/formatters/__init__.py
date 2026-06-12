@@ -8,6 +8,7 @@ from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
 from .grid import GridFormatter
+from .json import JsonFormatter
 from .formatter import OutputFormatter
 
 __all__ = [
@@ -15,6 +16,7 @@ __all__ = [
     "MarkdownFormatter",
     "CsvFormatter",
     "GridFormatter",
+    "JsonFormatter",
     "OutputFormatter",
     "normalize_value",
     "dict_to_markdown_table",

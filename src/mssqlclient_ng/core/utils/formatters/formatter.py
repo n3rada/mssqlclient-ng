@@ -11,6 +11,7 @@ from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
 from .grid import GridFormatter
+from .json import JsonFormatter
 
 class OutputFormatter:
     """
@@ -46,6 +47,8 @@ class OutputFormatter:
             cls._current_formatter = CsvFormatter()
         elif format_lower in ("grid", "box", "table"):
             cls._current_formatter = GridFormatter()
+        elif format_lower == "json":
+            cls._current_formatter = JsonFormatter()
         else:
             available = ", ".join(cls.get_available_formats())
             raise ValueError(
@@ -57,7 +60,7 @@ class OutputFormatter:
     @classmethod
     def get_available_formats(cls) -> list[str]:
         """Gets a list of available format names."""
-        return ["markdown", "csv", "grid"]
+        return ["markdown", "csv", "grid", "json"]
 
     @classmethod
     def convert_dict(
