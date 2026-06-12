@@ -248,8 +248,6 @@ mssqlclient-ng SQL01 -u sa -p pass --action linkmap -o json > linkmap.json
 jq '[.[] | .server]' linkmap.json
 ```
 
-SQL `NULL` values are preserved as JSON `null` (not converted to empty strings). Binary columns are decoded as UTF-8 strings. All other types fall back to their string representation.
-
 Redirect stderr to silence logs when only the data matters:
 
 ```bash
