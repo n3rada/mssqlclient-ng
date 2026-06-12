@@ -3,9 +3,9 @@
 # Local library imports
 from . import __version__ as version
 
+
 def display_banner() -> str:
-    return rf"""
-                          _      _ _            _
+    return rf"""          _      _ _            _
                          | |    | (_)          | |
   _ __ ___  ___ ___  __ _| | ___| |_  ___ _ __ | |_
  | '_ ` _ \/ __/ __|/ _` | |/ __| | |/ _ \ '_ \| __|
