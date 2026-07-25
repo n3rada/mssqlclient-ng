@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "mssqlclient-ng"
 version = "0.9.1"
-description = "Enhanced version of impacket's mssqlclient.py. It lets you interact with Microsoft SQL Server (MS SQL / MSSQL) servers and their linked instances, impersonating any account encountered along the way, without requiring complex T-SQL queries."
+description = "Impacket-based Python client for Microsoft SQL Server (MS SQL / MSSQL) traversing linked-server chains of any depth with cascading login impersonation at every hop."
 authors = [
     {name = "n3rada",email = "72791564+n3rada@users.noreply.github.com"}
 ]
