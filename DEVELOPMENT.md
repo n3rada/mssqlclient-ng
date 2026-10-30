@@ -1,7 +1,12 @@
 # mssqlclient-ng: Development Guide
 
-This file is the authoritative reference for architecture, design, and extension patterns.
-It is read by both human contributors and AI agents. If this file and [AI.md](AI.md) ever conflict, this file takes precedence for architecture and design decisions.
+This file is the human-facing authoritative reference for architecture, design, and extension patterns.
+
+## Runtime and Integration Rules
+
+- Target Python 3.11 or newer within the range declared by [`pyproject.toml`](pyproject.toml), and use `uv` for environment and dependency workflows.
+- Keep behavior aligned with the corresponding [MSSQLand](https://github.com/n3rada/MSSQLand) action whenever practical. Document necessary differences caused by Python or Impacket constraints.
+- Before changing TDS, authentication, or low-level protocol flow, inspect the relevant current [Impacket](https://github.com/fortra/impacket) classes and call paths. Prefer its existing primitives to local protocol reimplementation.
 
 ## Source Map
 
@@ -105,6 +110,19 @@ When adding or changing an action:
 4. Ensure category `__init__.py` imports the new module so registration executes.
 5. Route SQL execution through [src/mssqlclient_ng/core/services/query.py](src/mssqlclient_ng/core/services/query.py), not ad-hoc wrappers.
 6. For ConfigMgr actions, follow [src/mssqlclient_ng/core/actions/configmgr/cm_base.py](src/mssqlclient_ng/core/actions/configmgr/cm_base.py).
+
+## Contribution and Commit Conventions
+
+- Submit one focused, signed commit for a completed change. Amend it during iteration instead of adding fixup commits.
+- Use the [Conventional Commits 1.0.0 specification](https://www.conventionalcommits.org/en/v1.0.0/) with one-line subjects and no commit body: `type(scope): summary` or `type: summary`.
+- Use `feat`, `fix`, `refactor`, `test`, `docs`, or `chore` as appropriate. Omit the scope rather than using empty parentheses.
+- Commit with the human contributor's configured identity. Never add an AI or LLM as a co-author or include AI-generated attribution trailers.
+- The human contributor is responsible for understanding, reviewing, signing, and owning every submitted change.
+- Preserve another contributor's commits and authorship on shared pull requests unless a history rewrite is explicitly agreed.
+
+Examples: `feat(auth): support channel binding`, `fix(query): preserve linked-server context`, `test(tds): cover truncated responses`, and `docs: explain Impacket routing`.
+
+Avoid vague subjects such as `fix stuff`, empty scopes such as `feat(): add an action`, multi-line messages, em dashes, and AI `Co-authored-by` trailers.
 
 ## Testing and Quality Gates
 
