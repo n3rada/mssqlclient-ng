@@ -33,11 +33,12 @@ class AzureDetect(BaseAction):
         self, database_context: DatabaseContext
     ) -> list[list[dict[str, Any]]] | None:
         qs = database_context.query_service
+        cached = qs.execution_server in qs._is_azure_sql_cache
 
         if not qs.is_azure_sql:
+            hint = " (cached)" if cached else ""
             logger.warning(
-                "This does not appear to be Azure SQL Database "
-                "(@@VERSION does not contain 'Microsoft SQL Azure')"
+                f"This does not appear to be Azure SQL Database{hint}"
             )
             return None
 
