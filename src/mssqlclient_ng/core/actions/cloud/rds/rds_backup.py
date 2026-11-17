@@ -10,6 +10,7 @@ from loguru import logger
 from ...base import Arg, BaseAction
 from ...factory import ActionFactory
 from ....services.database import DatabaseContext
+from .guard import requires_rds
 
 
 @ActionFactory.register(
@@ -69,6 +70,9 @@ class RdsBackup(BaseAction):
     def execute(
         self, database_context: DatabaseContext
     ) -> dict[str, Any] | None:
+        if not requires_rds(database_context):
+            return None
+
         qs = database_context.query_service
 
         db = self._database.replace("'", "''")
@@ -155,6 +159,9 @@ class RdsRestore(BaseAction):
     def execute(
         self, database_context: DatabaseContext
     ) -> dict[str, Any] | None:
+        if not requires_rds(database_context):
+            return None
+
         qs = database_context.query_service
 
         db = self._database.replace("'", "''")

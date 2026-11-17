@@ -32,7 +32,7 @@ class RdsDetect(BaseAction):
     ) -> list[list[dict[str, Any]]] | None:
         qs = database_context.query_service
 
-        if not self._is_rds(qs):
+        if not qs.is_rds:
             logger.warning(
                 "This does not appear to be Amazon RDS (rdsadmin database not found)"
             )
@@ -51,16 +51,6 @@ class RdsDetect(BaseAction):
             tables.append(failover)
 
         return tables or None
-
-    @staticmethod
-    def _is_rds(qs) -> bool:
-        try:
-            rows = qs.execute_table(
-                "SELECT name FROM sys.databases WHERE name = 'rdsadmin'"
-            )
-            return bool(rows)
-        except Exception:
-            return False
 
     @staticmethod
     def _enumerate_procedures(qs) -> list[dict[str, Any]]:

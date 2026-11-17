@@ -29,7 +29,8 @@ This file is the human-facing authoritative reference for architecture, design, 
 - Add explicit section comments for each group: `# Built-in imports`, `# Third-party imports`, `# Local imports`.
 
 2. Typing and modern Python
-- Use modern Python 3.11 typing syntax such as `X | Y` and `X | None`.
+- Follow the latest stable Python PEPs for typing and syntax: PEP 604 union `X | Y`, PEP 585 built-in generics (`list[int]` over `typing.List[int]`), PEP 695 `type` keyword aliases when targeting 3.12+.
+- Target Python 3.11; use concrete modern type annotations throughout.
 - Prefer concrete types over `Any` when practical.
 - Keep return types honest and narrow them explicitly when needed.
 
@@ -50,6 +51,16 @@ This file is the human-facing authoritative reference for architecture, design, 
 - Keep comments concise and non-obvious.
 - Prefer minimal diffs over broad refactors.
 - Do not introduce repo-wide style churn while solving local problems.
+
+5. Docstrings
+- Follow the [Google Python Style Guide §3.8](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) for all docstrings.
+- Use `"""triple double quotes"""` (PEP 257).
+- Summary line: one physical line, terminated by a period. Followed by a blank line, then the body.
+- Use `Args:`, `Returns:` (or `Yields:`), and `Raises:` sections with hanging indent.
+- Overridden methods decorated with `@override` don't need a docstring unless behavior materially differs.
+- Omit docstrings that only repeat the method name or add no information.
+- Class docstrings describe what the instance represents, not "Class that...".
+- Keep docstrings concise — one-line docstrings are fine when the name and signature are self-explanatory.
 
 ## Design Principles
 

@@ -72,7 +72,8 @@ class AiRest(BaseAction):
         )
 
     def execute(self, database_context: DatabaseContext) -> str | None:
-        if not requires_sql2025(database_context):
+        qs = database_context.query_service
+        if not qs.is_azure_sql and not requires_sql2025(database_context):
             return None
 
         logger.info(f"Invoking REST endpoint: [{self._method}] {self._url}")
