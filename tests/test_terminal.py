@@ -383,7 +383,7 @@ class TestTerminalBuiltinSingleSource:
         terminal._display_builtin_help("use")
         out = capsys.readouterr().out
         assert "\nUsage: !use [database]\n" in out
-        assert "Aliases" not in out
+        assert "Aliases: switch, db" in out or "Aliases: db, switch" in out
 
     def test_builtin_help_lists_aliases(self, mock_database_context, capsys):
         terminal = Terminal(mock_database_context)
