@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 # Local library imports
 from ..models.linked_servers import LinkedServers
+from ..models.server import Server
 
 class QueryService:
     """
@@ -64,6 +65,20 @@ class QueryService:
         else:
             self.execution_server = self._get_server_name()
             self.execution_database = self.get_current_database()
+
+    @property
+    def execution_major_version(self) -> int:
+        """
+        Major version of the execution server, 0 when unknown.
+
+        Uses the prelogin version for a direct connection and the @@VERSION
+        captured when the linked server chain was set; never queries.
+        """
+        if self._linked_servers.is_empty:
+            version = str(getattr(self.mssql_instance, "mssql_version", "") or "")
+        else:
+            version = self._full_version_string or ""
+        return Server.parse_major_version(version)
 
     @property
     def is_azure_sql(self) -> bool:
@@ -494,12 +509,20 @@ class QueryService:
             "SP_ADDLINKEDSRVLOGIN",
             "SP_DROPLINKEDSRVLOGIN",
             "SP_DROPSERVER",
+            "CREATE EXTERNAL MODEL",
+            "DROP EXTERNAL MODEL",
+            "ALTER DATABASE SCOPED CONFIGURATION",
         ]
 
         for cmd in rpc_prefixes:
             if s.startswith(cmd) or exec_stripped.startswith(cmd):
                 logger.trace(f"Query requires RPC: matched '{cmd.strip()}'")
                 return True
+
+        # Called from inside a DECLARE ... EXEC batch, so match anywhere
+        if "SP_INVOKE_EXTERNAL_REST_ENDPOINT" in s:
+            logger.trace("Query requires RPC: matched 'SP_INVOKE_EXTERNAL_REST_ENDPOINT'")
+            return True
 
         return False
 

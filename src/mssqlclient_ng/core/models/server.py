@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/models/server.py
 
 # Built-in imports
+import re
 
 # Third party imports
 from loguru import logger
@@ -77,7 +78,7 @@ class Server:
         self._version = value
 
         if value is not None:
-            major = self._parse_major_version(value)
+            major = self.parse_major_version(value)
             if major <= 13 and major > 0:
                 logger.warning(
                     f"Legacy server detected: version {value} (major version {major})"
@@ -91,7 +92,7 @@ class Server:
         """
         if self._version is None:
             return 0
-        return self._parse_major_version(self._version)
+        return self.parse_major_version(self._version)
 
     @property
     def legacy(self) -> bool:
@@ -102,25 +103,19 @@ class Server:
         return self.major_version <= 13 and self.major_version > 0
 
     @staticmethod
-    def _parse_major_version(version_string: str) -> int:
+    def parse_major_version(version_string: str | None) -> int:
         """
-        Parses the major version from the full version string.
+        Parses the major version from a version string.
 
-        Args:
-            version_string: The full version string (e.g., "15.00.2000")
+        Accepts a bare version ("15.00.2000"), Impacket's prelogin form
+        ("Microsoft SQL Server  (17.0.1000)") or @@VERSION text
+        ("Microsoft SQL Server 2025 (RTM) - 17.0.1000.7 (X64) ...").
 
         Returns:
             The major version number, or 0 if parsing fails
         """
-        if not version_string or not version_string.strip():
-            return 0
-
-        version_parts = version_string.split(".")
-
-        try:
-            return int(version_parts[0])
-        except (ValueError, IndexError):
-            return 0
+        match = re.search(r"(\d+)\.\d+", version_string or "")
+        return int(match.group(1)) if match else 0
 
     @property
     def impersonation_users(self) -> list[str]:
