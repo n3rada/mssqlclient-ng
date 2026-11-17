@@ -8,6 +8,9 @@ from .linkmap import LinkMap
 from .external_sources import ExternalSources
 from .external_credentials import ExternalCredentials
 from .external_tables import ExternalTables
+from .ai_models import AiModels
+from .ai_rest import AiRest
+from .ai_coerce import AiCoerce
 
 __all__ = [
     "SmbCoerce",
@@ -18,4 +21,7 @@ __all__ = [
     "ExternalSources",
     "ExternalCredentials",
     "ExternalTables",
+    "AiModels",
+    "AiRest",
+    "AiCoerce",
 ]
