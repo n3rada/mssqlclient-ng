@@ -147,6 +147,7 @@ class Terminal:
             "add-link": self._handle_add_link,
             "unlink": self._handle_unlink,
             "flush": self._handle_flush,
+            "use": self._handle_use,
         }
 
         self._output_cache = OutputCache()
@@ -178,6 +179,8 @@ class Terminal:
         self._database_context.query_service.execution_database = (
             self._original_execution_database
         )
+        # !use may have moved the direct session since startup
+        self._database_context.query_service.sync_execution_database()
         # Refresh from the live user_service (now that impersonation is reverted)
         # rather than trusting the stale cached original values.
         self._refresh_user_info()
@@ -547,6 +550,9 @@ class Terminal:
         logger.info(
             f"'{prefix}help' lists all actions, '{prefix}help <action>' shows usage."
         )
+        logger.info(
+            f"'{prefix}use <database>' switches database, '{prefix}link <server>' hops to a linked server."
+        )
 
         assert self._prompt_session is not None
 
@@ -625,6 +631,13 @@ class Terminal:
             )
             return
 
+        # A lone USE statement goes through !use so the prompt follows it and
+        # the switch persists through linked servers.
+        statement = user_input.strip().rstrip(";").strip()
+        if first == "use" and len(tokens) > 1 and ";" not in statement:
+            self._handle_use(statement)
+            return
+
         query_action = query.Query()
 
         try:
@@ -640,6 +653,8 @@ class Terminal:
             logger.warning(
                 "Keyboard interruption received during remote command execution."
             )
+        finally:
+            self._database_context.query_service.sync_execution_database()
 
     # ── Built-in Command Handlers ───────────────────────────────────────
 
@@ -714,6 +729,22 @@ class Terminal:
         print()
         logger.info(f"{len(all_actions)} action(s) — use !<action> --help for details")
 
+        if not term:
+            self._display_builtin_list()
+
+    def _display_builtin_list(self) -> None:
+        """Print every built-in terminal command with its aliases and summary."""
+        print()
+        print("Built-in commands:")
+        for name in sorted(self._command_handlers):
+            doc = (self._command_handlers[name].__doc__ or "").strip().splitlines()
+            summary = doc[0] if doc else ""
+            aliases = [k for k, v in self._BUILTIN_ALIASES.items() if v == name]
+            alias_str = f" [{', '.join(aliases)}]" if aliases else ""
+            print(f"  {self._prefix + name + alias_str:<35}{summary}")
+        print()
+        logger.info(f"Use {self._prefix}<command> --help for built-in usage")
+
     def _handle_debug(self, _command_line: str) -> None:
         """Toggle debug logging on/off.
         Usage: !debug
@@ -765,6 +796,9 @@ class Terminal:
         self._display_chain()
 
     def _handle_impmap(self, command_line: str) -> None:
+        """Map impersonation chains reachable from the current login.
+        Usage: !impmap [args]
+        Runs the impersonation-map action; apply a result with !impersonate #id."""
         args = command_line.split()[1:]
         self.execute_action("impersonation-map", args)
 
@@ -990,6 +1024,46 @@ class Terminal:
                 logger.warning(f"Cannot impersonate: {login}")
         except Exception as e:
             logger.error(f"Error during impersonation: {e}")
+
+    @staticmethod
+    def _normalize_database_name(raw: str) -> str:
+        """Strip a trailing semicolon and T-SQL brackets from a database name."""
+        name = raw.strip().rstrip(";").strip()
+        if len(name) >= 2 and name.startswith("[") and name.endswith("]"):
+            name = name[1:-1].replace("]]", "]")
+        return name
+
+    def _handle_use(self, command_line: str) -> None:
+        """Switch the execution database.
+        Usage: !use [database]
+        Without arguments, shows the current execution database.
+        On a direct connection, runs USE on the session.
+        Through linked servers, sets the database on the last hop of the chain.
+        A plain 'USE <database>' statement is handled the same way."""
+        query_service = self._database_context.query_service
+        parts = command_line.split(maxsplit=1)
+        if len(parts) == 1:
+            current = query_service.execution_database or "unknown"
+            logger.info(f"Execution database: {current}")
+            return
+
+        requested = self._normalize_database_name(parts[1])
+        if not requested:
+            logger.error("Usage: !use <database>")
+            return
+
+        try:
+            confirmed = query_service.change_database(requested)
+        except Exception as exc:
+            logger.error(f"Failed to switch to database '{requested}': {exc}")
+            return
+
+        if confirmed.lower() != requested.lower():
+            logger.warning(
+                f"Requested '{requested}' but the server reports '{confirmed}'"
+            )
+        else:
+            logger.success(f"Execution database: {confirmed}")
 
     def _handle_revert(self, _command_line: str) -> None:
         """Revert impersonation on the current connection.

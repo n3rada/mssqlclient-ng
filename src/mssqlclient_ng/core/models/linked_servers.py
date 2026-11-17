@@ -158,6 +158,18 @@ class LinkedServers:
             )
             self._recompute_chain()
 
+    def set_last_database(self, database: str | None) -> None:
+        """
+        Set the database context of the last server in the chain.
+
+        Raises:
+            ValueError: If the chain is empty
+        """
+        if not self.server_chain:
+            raise ValueError("Linked server chain is empty.")
+        self.server_chain[-1].database = database
+        self._recompute_chain()
+
     def clear(self) -> None:
         """
         Clear the linked server chain, removing all servers.

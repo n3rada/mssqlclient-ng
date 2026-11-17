@@ -326,6 +326,7 @@ class ActionCompleter(Completer):
             "add-link": "Add server to chain (e.g. SQL03/user@db)",
             "impersonate": "Impersonate a login on current connection (EXECUTE AS)",
             "revert": "Revert impersonation on current connection (REVERT)",
+            "use": "Show or switch the execution database",
         }
 
         # Aliases mapping to canonical command names

@@ -58,6 +58,7 @@ class TestTerminalInit:
             "unlink",
             "help",
             "flush",
+            "use",
         }
         assert set(terminal._command_handlers.keys()) == expected
 
@@ -169,6 +170,12 @@ class TestTerminalRestoreToOriginal:
         terminal._restore_to_original()
         mock_database_context.user_service.revert_impersonation.assert_called_once()
 
+    def test_syncs_session_database(self, mock_database_context):
+        """A direct-session !use before linking must survive !unlink-all."""
+        terminal = Terminal(mock_database_context)
+        terminal._restore_to_original()
+        mock_database_context.query_service.sync_execution_database.assert_called_once()
+
 
 class TestTerminalRefreshUserInfo:
     """Test _refresh_user_info helper."""
@@ -271,6 +278,74 @@ class TestTerminalHandleRevert:
         terminal._handle_revert("revert")
         mock_database_context.user_service.revert_impersonation.assert_called_once()
         mock_database_context.user_service.get_info.assert_called()
+
+
+class TestTerminalHandleUse:
+    """Test the !use built-in and raw USE routing."""
+
+    def test_no_argument_shows_current_database(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_use("use")
+        mock_database_context.query_service.change_database.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            ("use tempdb", "tempdb"),
+            ("use [my db];", "my db"),
+            ("use [odd]]name]", "odd]name"),
+        ],
+    )
+    def test_normalizes_name(self, mock_database_context, raw, expected):
+        mock_database_context.query_service.change_database.return_value = expected
+        terminal = Terminal(mock_database_context)
+        terminal._handle_use(raw)
+        mock_database_context.query_service.change_database.assert_called_once_with(
+            expected
+        )
+
+    def test_failure_does_not_raise(self, mock_database_context):
+        mock_database_context.query_service.change_database.side_effect = (
+            RuntimeError("no access")
+        )
+        terminal = Terminal(mock_database_context)
+        terminal._handle_use("use secret")
+
+    def test_matched_as_builtin(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        assert terminal._match_command("use tempdb") == terminal._handle_use
+        assert terminal._match_command("users") is None
+
+    def test_raw_use_statement_routes_to_use(self, mock_database_context):
+        mock_database_context.query_service.change_database.return_value = "tempdb"
+        terminal = Terminal(mock_database_context)
+        with patch("mssqlclient_ng.core.terminal.query.Query") as mock_query:
+            terminal._execute_raw_query("USE tempdb;")
+        mock_query.assert_not_called()
+        mock_database_context.query_service.change_database.assert_called_once_with(
+            "tempdb"
+        )
+
+    def test_raw_batch_with_use_runs_as_query_and_syncs(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        with patch("mssqlclient_ng.core.terminal.query.Query") as mock_query:
+            terminal._execute_raw_query("USE tempdb; SELECT 1")
+        mock_query.return_value.execute.assert_called_once()
+        mock_database_context.query_service.change_database.assert_not_called()
+        mock_database_context.query_service.sync_execution_database.assert_called_once()
+
+    def test_help_lists_builtins(self, mock_database_context, capsys):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_help("help")
+        out = capsys.readouterr().out
+        assert "Built-in commands:" in out
+        assert "!use" in out
+        assert "Switch the execution database." in out
+
+    def test_help_search_omits_builtin_list(self, mock_database_context, capsys):
+        terminal = Terminal(mock_database_context)
+        terminal._handle_help("help whoami")
+        assert "Built-in commands:" not in capsys.readouterr().out
 
 
 class TestTerminalHandleFormat:

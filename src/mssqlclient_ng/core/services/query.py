@@ -557,16 +557,63 @@ class QueryService:
 
         return affected
 
-    def change_database(self, database: str) -> None:
+    def change_database(self, database: str) -> str:
         """
-        Change the current database context.
+        Switch the execution database.
+
+        On a direct connection, runs USE on the session. Through linked
+        servers, sets the database on the last hop so every wrapped query
+        starts with USE, then confirms it with DB_NAME(). On failure the
+        previous database context is kept.
 
         Args:
             database: The database name to switch to
+
+        Returns:
+            The database the server reports after the switch
+
+        Raises:
+            ValueError: If the name is empty or the switch cannot be confirmed
+            SQLErrorException: If the server rejects the switch
         """
-        if database != self.mssql_instance.currentDB:
-            self.mssql_instance.changeDB(database)
-            self.mssql_instance.printReplies()
+        database = database.strip()
+        if not database:
+            raise ValueError("Database name cannot be empty.")
+
+        if self._linked_servers.is_empty:
+            escaped = database.replace("]", "]]")
+            self.execute_non_processing(f"USE [{escaped}];", silent=True)
+            self.execution_database = self.get_current_database()
+            return self.execution_database
+
+        previous = self._linked_servers.server_chain[-1].database
+        self._linked_servers.set_last_database(database)
+        try:
+            confirmed = self.execute_scalar("SELECT DB_NAME();", silent=True)
+        except Exception:
+            self._linked_servers.set_last_database(previous)
+            raise
+
+        if not confirmed:
+            self._linked_servers.set_last_database(previous)
+            raise ValueError(
+                f"Could not confirm database '{database}' on {self.execution_server}."
+            )
+
+        self.execution_database = str(confirmed)
+        return self.execution_database
+
+    def sync_execution_database(self) -> None:
+        """
+        Refresh execution_database from the session after raw SQL.
+
+        A USE inside a raw batch changes the session database on a direct
+        connection; through linked servers it only lasts for that batch.
+        """
+        if self._linked_servers.is_empty:
+            current = self.get_current_database()
+            if current:
+                self.execution_database = current
 
     def get_current_database(self) -> str:
         """

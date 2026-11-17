@@ -221,6 +221,9 @@ Inside the interactive shell:
 # Show help for a built-in command
 !help chain
 !link --help
+
+# Switch database (also works through linked servers)
+!use tempdb
 ```
 
 ## Scripting and JSON Output
