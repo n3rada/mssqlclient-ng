@@ -550,7 +550,7 @@ class Terminal:
             )
 
         logger.info(
-            f"type SQL directly or use '{prefix}<action> [args]' to run an action."
+            f"Type T-SQL directly or use '{prefix}<action> [args]' to run an action."
         )
         logger.info(
             f"'{prefix}help' lists all actions, '{prefix}help <action>' shows usage."
