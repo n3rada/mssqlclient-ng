@@ -8,6 +8,7 @@ from .clr import ClrExecution
 from .clr_list import ClrList
 from .clr_inspect import ClrInspect
 from .run import RunExecutable
+from .sql_file import SqlFile
 
 __all__ = [
     "Query",
@@ -18,4 +19,5 @@ __all__ = [
     "ClrList",
     "ClrInspect",
     "RunExecutable",
+    "SqlFile",
 ]

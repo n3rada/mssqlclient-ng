@@ -61,6 +61,8 @@ class OutputCache:
         {
             "query",
             "sql",  # arbitrary queries
+            "sql-file",
+            "source",  # arbitrary scripts
             "exec",
             "ole",
             "powershell",

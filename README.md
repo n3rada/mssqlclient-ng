@@ -224,6 +224,9 @@ Inside the interactive shell:
 
 # Switch database (also works through linked servers)
 !use tempdb
+
+# Run a local T-SQL script (batches split on GO, Tab completes the path)
+!sql-file ./enum.sql
 ```
 
 ## Scripting and JSON Output

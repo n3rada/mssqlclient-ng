@@ -4,7 +4,7 @@
 from typing import Callable
 
 # External library imports
-from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.document import Document
 
 # Local library imports
@@ -287,6 +287,9 @@ class ActionCompleter(Completer):
     Suggests available actions when user starts typing with prefix.
     """
 
+    # Actions whose first argument is a local file (canonical names)
+    _LOCAL_PATH_ACTIONS = {"sql-file", "upload"}
+
     # Commands that accept a chain ID as their first argument
     _CHAIN_ID_COMMANDS = {"chain", "ch", "tunnel", "linkmap", "linksmap", "chains"}
 
@@ -375,6 +378,14 @@ class ActionCompleter(Completer):
                     return
                 if cmd in self._FLUSH_COMMANDS:
                     yield from self._flush_completions(arg_prefix)
+                    return
+                canonical = ActionFactory.resolve_alias(cmd) or cmd
+                if (
+                    canonical in self._LOCAL_PATH_ACTIONS
+                    and not arg_prefix.startswith("-")
+                    and not any(c.isspace() for c in arg_prefix)
+                ):
+                    yield from self._local_path_completions(arg_prefix, complete_event)
                     return
                 # Fall back to the action's own Arg descriptors
                 yield from self._action_arg_completions(cmd, arg_prefix)
@@ -485,6 +496,11 @@ class ActionCompleter(Completer):
                     display=flag,
                     display_meta=desc,
                 )
+
+    def _local_path_completions(self, arg_prefix: str, complete_event):
+        """Yield local filesystem paths for actions that take a local file."""
+        completer = PathCompleter(expanduser=True)
+        yield from completer.get_completions(Document(arg_prefix), complete_event)
 
     def _flush_completions(self, arg_prefix: str):
         """Yield flag completions for !flush."""
