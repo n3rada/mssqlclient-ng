@@ -3,7 +3,7 @@
 # Built-in imports
 from typing import Any
 
-# Local library imports
+# Local imports
 from .base import IOutputFormatter
 
 class MarkdownFormatter(IOutputFormatter):
@@ -21,7 +21,7 @@ class MarkdownFormatter(IOutputFormatter):
         return "0x" + data.hex().upper()
 
     @staticmethod
-    def _format_value(value: any) -> str:
+    def _format_value(value: Any) -> str:
         """Formats a value for display in markdown table."""
         if value is None:
             return "NULL"

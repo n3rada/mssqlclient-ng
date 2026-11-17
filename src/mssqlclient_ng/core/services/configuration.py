@@ -3,15 +3,12 @@
 # Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from ..models.server import Server
 from .query import QueryService
 
 class ConfigurationService:
-    """
-    Service for managing SQL Server configuration options and CLR assemblies.
-    Provides methods for configuration, assembly management, and server options.
-    """
+    """SQL Server configuration and CLR assembly management service."""
 
     def __init__(self, query_service: QueryService, server: Server):
         """

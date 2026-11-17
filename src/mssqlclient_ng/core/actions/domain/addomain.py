@@ -1,8 +1,6 @@
 # mssqlclient_ng/core/actions/domain/addomain.py
 
-# Built-in imports
-
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 # Local imports

@@ -7,7 +7,7 @@ from typing import Callable
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
 from prompt_toolkit.document import Document
 
-# Local library imports
+# Local imports
 from ..actions.factory import ActionFactory
 
 # SQL keywords and built-in functions for autocompletion
@@ -282,10 +282,7 @@ SQL_FUNCTIONS = [
 ]
 
 class ActionCompleter(Completer):
-    """
-    Auto-completer for action commands.
-    Suggests available actions when user starts typing with prefix.
-    """
+    """Action command completer with argument-aware sub-completions."""
 
     # Actions whose first argument is a local file (canonical names)
     _LOCAL_PATH_ACTIONS = {"sql-file", "upload"}
@@ -477,9 +474,7 @@ class ActionCompleter(Completer):
                 )
 
 class SQLBuiltinCompleter(Completer):
-    """
-    Auto-completer for SQL keywords, functions, and system objects.
-    """
+    """Completer for SQL keywords, functions, and system objects."""
 
     def get_completions(self, document: Document, complete_event):
         """

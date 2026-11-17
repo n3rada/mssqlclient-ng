@@ -2,21 +2,21 @@
 
 """ConfigMgr (SCCM) database detection and utility service."""
 
+# Built-in imports
 import re
 import xml.etree.ElementTree as ET
 from typing import Any
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .query import QueryService
 
 class CMService:
-    """
-    Service for ConfigMgr/SCCM database detection and common operations.
-    Mirrors MSSQLand's CMService.cs functionality.
-    """
+    """ConfigMgr/SCCM database detection and common operations service."""
 
-    def __init__(self, query_service: QueryService):
+    def __init__(self, query_service: QueryService) -> None:
         self._query_service = query_service
         self._has_views_cache: dict[str, bool] = {}
 
@@ -76,14 +76,14 @@ class CMService:
             return False
 
     @staticmethod
-    def decode_offer_type(offer_type) -> str:
+    def decode_offer_type(offer_type: int | None) -> str:
         if offer_type is None:
             return "Unknown"
         val = int(offer_type)
         return {0: "Required", 2: "Available"}.get(val, f"Unknown ({val})")
 
     @staticmethod
-    def decode_feature_type(feature_type) -> str:
+    def decode_feature_type(feature_type: int | None) -> str:
         if feature_type is None:
             return "Unknown"
         val = int(feature_type)
@@ -103,7 +103,7 @@ class CMService:
         return mapping.get(val, f"Unknown ({val})")
 
     @staticmethod
-    def decode_deployment_intent(intent) -> str:
+    def decode_deployment_intent(intent: int | None) -> str:
         if intent is None:
             return "Unknown"
         val = int(intent)
@@ -112,7 +112,7 @@ class CMService:
         )
 
     @staticmethod
-    def decode_package_type(package_type) -> str:
+    def decode_package_type(package_type: int | None) -> str:
         if package_type is None:
             return "Package"
         val = int(package_type)
@@ -131,7 +131,7 @@ class CMService:
         return mapping.get(val, f"Unknown ({val})")
 
     @staticmethod
-    def decode_remote_client_flags(flags_val) -> str:
+    def decode_remote_client_flags(flags_val: int | None) -> str:
         if flags_val is None:
             return "None"
         flags = int(flags_val)
@@ -166,7 +166,7 @@ class CMService:
         return ", ".join(result) if result else "None"
 
     @staticmethod
-    def decode_program_flags(flags_val) -> str:
+    def decode_program_flags(flags_val: int | None) -> str:
         if flags_val is None:
             return "None"
         flags = int(flags_val)

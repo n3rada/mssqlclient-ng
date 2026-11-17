@@ -1,7 +1,5 @@
 # mssqlclient_ng/core/actions/execution/ole.py
 
-# Built-in imports
-
 # Third-party imports
 from loguru import logger
 

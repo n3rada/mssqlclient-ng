@@ -1,17 +1,13 @@
 # mssqlclient_ng/core/services/user.py
 
-# Built-in imports
-
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from .query import QueryService
 
 class UserService:
-    """
-    Service for managing user information, role membership, and impersonation.
-    """
+    """User information, role membership, and impersonation service."""
 
     def __init__(self, query_service: QueryService):
         """
@@ -44,7 +40,7 @@ class UserService:
 
     @mapped_user.setter
     def mapped_user(self, value: str | None) -> None:
-        """set the mapped database user."""
+        """Set the mapped database user."""
         self._mapped_user = value
 
     @property
@@ -54,7 +50,7 @@ class UserService:
 
     @system_user.setter
     def system_user(self, value: str | None) -> None:
-        """set the system login user."""
+        """Set the system login user."""
         self._system_user = value
 
     @property
@@ -64,7 +60,7 @@ class UserService:
 
     @effective_user.setter
     def effective_user(self, value: str | None) -> None:
-        """set the effective database user."""
+        """Set the effective database user."""
         self._effective_user = value
 
     @property
@@ -74,7 +70,7 @@ class UserService:
 
     @source_principal.setter
     def source_principal(self, value: str | None) -> None:
-        """set the source principal."""
+        """Set the source principal."""
         self._source_principal = value
 
     @property

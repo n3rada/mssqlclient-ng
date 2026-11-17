@@ -4,7 +4,7 @@
 import sys
 import threading
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 from impacket.examples.ntlmrelayx.attacks import PROTOCOL_ATTACKS, ProtocolAttack
@@ -20,12 +20,9 @@ from .database import DatabaseContext
 
 
 class RelayMSSQL:
-    """
-    NTLM Relay server for MSSQL authentication capture.
-    Manages relay servers and captured authenticated clients.
-    """
+    """NTLM relay server for MSSQL authentication capture."""
 
-    def __init__(self, hostname: str, port: int = 1433):
+    def __init__(self, hostname: str, port: int = 1433) -> None:
         self._threads: set = set()
         self._captured_client: dict | None = None
         self._capture_event = threading.Event()
@@ -39,7 +36,7 @@ class RelayMSSQL:
 
         self._register_attack()
 
-    def _register_attack(self):
+    def _register_attack(self) -> None:
         """Register custom attack class that captures to this instance."""
         relay_instance = self
 
@@ -60,7 +57,7 @@ class RelayMSSQL:
 
         PROTOCOL_ATTACKS["MSSQL"] = CustomMSSQLAttack
 
-    def start(self, smb2support: bool = False, ntlmchallenge: str | None = None):
+    def start(self, smb2support: bool = False, ntlmchallenge: str | None = None) -> None:
         minimal_protocol_clients = {"MSSQL": MSSQLRelayClient}
 
         loot_dir = str(get_data_dir() / "relay-loot")
@@ -126,7 +123,7 @@ class RelayMSSQL:
 
         return database_context
 
-    def stop_servers(self):
+    def stop_servers(self) -> None:
         """Stop all relay servers."""
         for thread in list(self._threads):
             if isinstance(thread, SMBRelayServer):

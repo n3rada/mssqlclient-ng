@@ -2,8 +2,10 @@
 
 """Enumerate ConfigMgr programs (legacy package execution configurations)."""
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..base import Arg
 from ..factory import ActionFactory

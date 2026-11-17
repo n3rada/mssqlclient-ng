@@ -3,18 +3,15 @@
 # Built-in imports
 import time
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 from impacket.tds import MSSQL
 
-# Local library imports
+# Local imports
 from ..models.server import Server
 
 class AuthenticationService:
-    """
-    Service for authenticating and managing MSSQL connections.
-    Stores authentication parameters for reconnection and duplication.
-    """
+    """MSSQL authentication and connection management service."""
 
     def __init__(
         self,

@@ -4,7 +4,7 @@
 import re
 from typing import Any, TYPE_CHECKING
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 from impacket.tds import SQLErrorException
 from impacket.tds import TDS_DONE_TOKEN, TDS_DONEINPROC_TOKEN, TDS_DONEPROC_TOKEN
@@ -13,14 +13,12 @@ if TYPE_CHECKING:
     # Import MSSQL only for type checking to avoid a runtime dependency
     from impacket.tds import MSSQL
 
-# Local library imports
+# Local imports
 from ..models.linked_servers import LinkedServers
 from ..models.server import Server
 
 class QueryService:
-    """
-    Service for executing SQL queries against MSSQL using impacket's TDS protocol.
-    """
+    """SQL query execution service using impacket's TDS protocol."""
 
     MAX_RETRIES = 3
 
@@ -53,8 +51,8 @@ class QueryService:
 
     @linked_servers.setter
     def linked_servers(self, value: LinkedServers | None) -> None:
-        """
-        set the linked servers configuration.
+        """Set the linked servers configuration.
+
         Updates the execution server to the last server in the chain.
         Queries @@SERVERNAME and @@VERSION from the linked server to resolve
         the real hostname (vs alias) and detect Azure SQL.

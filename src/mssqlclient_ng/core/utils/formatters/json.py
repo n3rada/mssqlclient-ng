@@ -4,7 +4,7 @@
 import json
 from typing import Any
 
-# Local library imports
+# Local imports
 from .base import IOutputFormatter
 
 

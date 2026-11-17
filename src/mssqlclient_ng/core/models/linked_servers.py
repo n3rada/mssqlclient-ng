@@ -2,22 +2,16 @@
 
 from __future__ import annotations
 
-# Built-in imports
-
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from .server import Server
 from ..utils.common import bracket_identifier
 
 
 class LinkedServers:
-    """
-    Manages linked server chains for executing queries across multiple SQL Server instances.
-
-    Supports both OPENQUERY and EXEC AT (RPC) methods for chaining.
-    """
+    """Linked server chain for cross-instance query execution via OPENQUERY or EXEC AT."""
 
     def __init__(self, chain_input: str | list[Server] | "LinkedServers" | None = None):
         """

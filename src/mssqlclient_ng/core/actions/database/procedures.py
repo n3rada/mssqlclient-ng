@@ -3,7 +3,7 @@
 # Built-in imports
 from enum import Enum
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 # Local imports

@@ -2,8 +2,10 @@
 
 """Enumerate ConfigMgr user accounts."""
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

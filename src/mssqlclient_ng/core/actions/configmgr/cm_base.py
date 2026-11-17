@@ -2,8 +2,10 @@
 
 """Base class for ConfigMgr actions providing common SCCM database detection logic."""
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from ..base import BaseAction
 from ...services.database import DatabaseContext
 from ...services.configmgr import CMService

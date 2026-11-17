@@ -7,10 +7,10 @@ import shlex
 import sys
 from getpass import getpass
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from . import __version__, banner
 from .core.models import server
 from .core.models.linked_servers import LinkedServers

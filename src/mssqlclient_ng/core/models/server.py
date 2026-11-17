@@ -3,7 +3,7 @@
 # Built-in imports
 import re
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 class Server:
@@ -71,8 +71,8 @@ class Server:
 
     @version.setter
     def version(self, value: str | None) -> None:
-        """
-        set the server version and check if it's a legacy server.
+        """Set the server version and check if it's a legacy server.
+
         Logs a warning if major version <= 13 (SQL Server 2016 or older).
         """
         self._version = value
@@ -119,7 +119,7 @@ class Server:
 
     @property
     def impersonation_users(self) -> list[str]:
-        """list of impersonation users for cascading EXECUTE AS (like MSSQLand ImpersonationUsers)."""
+        """List of impersonation users for cascading EXECUTE AS."""
         return self._impersonation_users
 
     @impersonation_users.setter

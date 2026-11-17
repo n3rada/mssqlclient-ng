@@ -3,7 +3,7 @@
 # Built-in imports
 from typing import Any, Sequence
 
-# Local library imports
+# Local imports
 from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
@@ -28,7 +28,8 @@ __all__ = [
 
 def normalize_value(value: Any) -> str:
     """
-    Normalizes a value for display in a table.
+    Normalize a value for display in a table.
+
     Decodes bytes to UTF-8 strings, converts None to empty string, etc.
     """
     if isinstance(value, bytes):
@@ -41,7 +42,7 @@ def dict_to_markdown_table(
     dictionary: dict[str, str], column_one_header: str, column_two_header: str
 ) -> str:
     """
-    Converts a dictionary into a formatted table (uses current output format).
+    Convert a dictionary into a formatted table using the current output format.
     """
     return OutputFormatter.convert_dict(
         dictionary, column_one_header, column_two_header
@@ -49,13 +50,14 @@ def dict_to_markdown_table(
 
 def list_to_markdown_table(lst: Sequence[str], column_name: str) -> str:
     """
-    Converts a list of strings into a formatted table with a specified column name.
+    Convert a list of strings into a formatted table with a specified column name.
     """
     return OutputFormatter.convert_list(list(lst), column_name)
 
 def rows_to_markdown_table(rows: list[dict[str, Any]]) -> str:
     """
-    Converts a list of dictionaries (rows) into a formatted table.
+    Convert a list of row dictionaries into a formatted table.
+
     Each dict should have the same keys (column names).
     """
     return OutputFormatter.convert_list_of_dicts(rows)
@@ -64,7 +66,8 @@ def table_to_markdown(
     table: list[list[Any]], headers: list[str] | None = None
 ) -> str:
     """
-    Converts a 2D list (table) into a formatted table.
+    Convert a 2D list (table) into a formatted table.
+
     Optionally takes a list of column headers.
     """
     if not table or (headers is not None and not headers):
@@ -91,7 +94,8 @@ def table_to_markdown(
 
 def format_table(headers: list[str], table: list[list[Any]]) -> str:
     """
-    Formats a table with headers and data rows.
+    Format a table with headers and data rows.
+
     Alias for table_to_markdown for backward compatibility.
     """
     return table_to_markdown(table, headers)

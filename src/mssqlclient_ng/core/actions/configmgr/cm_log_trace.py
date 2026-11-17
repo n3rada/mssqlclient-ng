@@ -2,10 +2,13 @@
 
 """Trace a deployment type GUID to its assignments and collections."""
 
+# Built-in imports
 import re
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..base import Arg
 from ..factory import ActionFactory

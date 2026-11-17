@@ -1,11 +1,12 @@
 # mssqlclient_ng/core/services/database.py
 
+# Built-in imports
 from typing import TYPE_CHECKING
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from .query import QueryService
 from .user import UserService
 from .configuration import ConfigurationService
@@ -15,7 +16,9 @@ if TYPE_CHECKING:
     from ..models.server import Server
 
 class DatabaseContext:
-    def __init__(self, server: "Server", mssql_instance: "MSSQL"):
+    """Facade over query, user, and configuration services for a single connection."""
+
+    def __init__(self, server: "Server", mssql_instance: "MSSQL") -> None:
         self._server = server
         self._query_service = QueryService(mssql_instance)
         self._user_service = UserService(self._query_service)
@@ -46,7 +49,7 @@ class DatabaseContext:
         """The system user (login) before impersonation was applied."""
         return self._pre_impersonation_system
 
-    def _handle_impersonation(self):
+    def _handle_impersonation(self) -> bool:
         targets = self._server.impersonation_users
 
         for target in targets:
@@ -74,5 +77,5 @@ class DatabaseContext:
         return self._config_service
 
     @property
-    def server(self):
+    def server(self) -> "Server":
         return self._server

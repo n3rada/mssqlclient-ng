@@ -1,18 +1,13 @@
 # mssqlclient_ng/core/actions/factory.py
 
-# Built-in imports
-
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from .base import BaseAction
 
 class ActionFactory:
-    """
-    Factory for creating and managing action instances.
-    Uses a registry pattern to map action names to their classes and descriptions.
-    """
+    """Registry-based factory for action creation and lookup."""
 
     # Action registry: maps action names to (class, description)
     _registry: dict[str, tuple[type[BaseAction], str]] = {}
