@@ -290,58 +290,28 @@ class ActionCompleter(Completer):
     # Actions whose first argument is a local file (canonical names)
     _LOCAL_PATH_ACTIONS = {"sql-file", "upload"}
 
-    # Commands that accept a chain ID as their first argument
-    _CHAIN_ID_COMMANDS = {"chain", "ch", "tunnel", "linkmap", "linksmap", "chains"}
-
-    # Commands that accept an action/builtin name as their first argument
-    _HELP_COMMANDS = {"help", "h"}
-
-    # Commands that accept an output format name as their first argument
-    _FORMAT_COMMANDS = {"format"}
-
-    # Commands that accept --all / -a as their first argument
-    _FLUSH_COMMANDS = {"flush"}
+    # Commands (canonical names) that accept a chain ID as their first argument
+    _CHAIN_ID_COMMANDS = {"chain", "tunnel", "linkmap", "linksmap", "chains"}
 
     def __init__(
         self,
         prefix: str = "!",
         chain_loader: Callable[[], list[tuple[int, str]]] | None = None,
+        builtins: dict[str, str] | None = None,
+        aliases: dict[str, str] | None = None,
     ):
         """
         Args:
             prefix: The command prefix character (default "!")
             chain_loader: Optional callable returning [(id, summary), ...] for
                           chain ID completion. Called lazily on each completion.
+            builtins: Built-in command name -> one-line description
+            aliases: Built-in alias -> canonical built-in name
         """
         self.prefix = prefix
         self._chain_loader = chain_loader
-
-        # Built-in commands with descriptions
-        self.builtins = {
-            "help": "list actions or show help for a specific action/command",
-            "debug": "Toggle debug mode on/off",
-            "chain": "Display full connection chain with impersonation context",
-            "format": "Show or change the output table format",
-            "flush": "Flush cached action outputs for current or all contexts",
-            "link": "set linked server chain (e.g. SQL02/user;SQL03@db)",
-            "unlink": "Remove last server from chain",
-            "unlink-all": "Clear entire linked server chain",
-            "add-link": "Add server to chain (e.g. SQL03/user@db)",
-            "impersonate": "Impersonate a login on current connection (EXECUTE AS)",
-            "revert": "Revert impersonation on current connection (REVERT)",
-            "use": "Show or switch the execution database",
-        }
-
-        # Aliases mapping to canonical command names
-        self.aliases = {
-            "h": "help",
-            "imp": "impersonate",
-            "rev": "revert",
-            "ul": "unlink",
-            "ula": "unlink-all",
-            "al": "add-link",
-            "ch": "chain",
-        }
+        self.builtins = dict(builtins or {})
+        self.aliases = dict(aliases or {})
 
     def get_completions(self, document: Document, complete_event):
         """
@@ -367,16 +337,17 @@ class ActionCompleter(Completer):
             if len(parts) == 2 or (len(parts) == 1 and text.endswith(" ")):
                 cmd = parts[0].lower()
                 arg_prefix = parts[1] if len(parts) == 2 else ""
-                if cmd in self._CHAIN_ID_COMMANDS and self._chain_loader is not None:
+                builtin = self.aliases.get(cmd, cmd)
+                if builtin in self._CHAIN_ID_COMMANDS and self._chain_loader is not None:
                     yield from self._chain_id_completions(arg_prefix)
                     return
-                if cmd in self._HELP_COMMANDS:
-                    yield from self._help_completions(arg_prefix)
+                if builtin == "help":
+                    yield from self._command_name_completions(arg_prefix, "[builtin] ")
                     return
-                if cmd in self._FORMAT_COMMANDS:
+                if builtin == "format":
                     yield from self._format_completions(arg_prefix)
                     return
-                if cmd in self._FLUSH_COMMANDS:
+                if builtin == "flush":
                     yield from self._flush_completions(arg_prefix)
                     return
                 canonical = ActionFactory.resolve_alias(cmd) or cmd
@@ -391,70 +362,27 @@ class ActionCompleter(Completer):
                 yield from self._action_arg_completions(cmd, arg_prefix)
                 return
 
-            # Get all available actions
-            actions = ActionFactory.list_actions()
+            yield from self._command_name_completions(command_part)
 
-            # Filter actions that match what the user has typed
-            for action_name in actions:
-                if action_name.startswith(command_part.lower()):
-                    completion_text = action_name[len(command_part) :]
-                    description = (
-                        ActionFactory.get_action_description(action_name) or ""
-                    )
-                    yield Completion(completion_text, 0, display_meta=description)
+    def _command_name_completions(self, typed: str, builtin_tag: str = ""):
+        """Yield action and built-in names (and their aliases) starting with *typed*."""
+        typed_lower = typed.lower()
+        candidates: list[tuple[str, str]] = [
+            (name, ActionFactory.get_action_description(name) or "")
+            for name in ActionFactory.list_actions()
+        ]
+        candidates += [
+            (alias, f"→ {canonical}")
+            for alias, canonical in ActionFactory.list_aliases().items()
+        ]
+        candidates += [(name, f"{builtin_tag}{desc}") for name, desc in self.builtins.items()]
+        candidates += [
+            (alias, f"→ {self.prefix}{canonical}") for alias, canonical in self.aliases.items()
+        ]
 
-            # Also suggest action aliases
-            for alias, canonical in ActionFactory.list_aliases().items():
-                if alias.startswith(command_part.lower()):
-                    completion_text = alias[len(command_part) :]
-                    yield Completion(completion_text, 0, display_meta=f"→ {canonical}")
-
-            # Also suggest built-in commands
-            for builtin_name, builtin_desc in self.builtins.items():
-                if builtin_name.startswith(command_part.lower()):
-                    completion_text = builtin_name[len(command_part) :]
-                    yield Completion(completion_text, 0, display_meta=builtin_desc)
-
-            # Also suggest built-in command aliases
-            for alias, canonical in self.aliases.items():
-                if alias.startswith(command_part.lower()):
-                    completion_text = alias[len(command_part) :]
-                    yield Completion(
-                        completion_text,
-                        start_position=0,
-                        display_meta=f"→ !{canonical}",
-                    )
-
-    def _help_completions(self, arg_prefix: str):
-        """Yield completions for !help <name>: actions + built-in commands."""
-        prefix_lower = arg_prefix.lower()
-
-        # Registered actions
-        for name in ActionFactory.list_actions():
-            if name.startswith(prefix_lower):
-                desc = ActionFactory.get_action_description(name) or ""
-                yield Completion(name[len(arg_prefix) :], 0, display_meta=desc)
-
-        # Action aliases
-        for alias, canonical in ActionFactory.list_aliases().items():
-            if alias.startswith(prefix_lower):
-                yield Completion(
-                    alias[len(arg_prefix) :], 0, display_meta=f"→ {canonical}"
-                )
-
-        # Built-in commands
-        for name, desc in self.builtins.items():
-            if name.startswith(prefix_lower):
-                yield Completion(
-                    name[len(arg_prefix) :], 0, display_meta=f"[builtin] {desc}"
-                )
-
-        # Built-in aliases
-        for alias, canonical in self.aliases.items():
-            if alias.startswith(prefix_lower):
-                yield Completion(
-                    alias[len(arg_prefix) :], 0, display_meta=f"→ !{canonical}"
-                )
+        for name, meta in candidates:
+            if name.startswith(typed_lower):
+                yield Completion(name[len(typed) :], 0, display_meta=meta)
 
     def _action_arg_completions(self, action_name: str, arg_prefix: str):
         """Yield flag completions derived from an action's Arg descriptors.

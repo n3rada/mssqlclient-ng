@@ -350,6 +350,47 @@ class TestTerminalHandleUse:
         assert "Built-in commands:" not in capsys.readouterr().out
 
 
+class TestTerminalBuiltinSingleSource:
+    """Completer and help both derive from the built-in handler table."""
+
+    def _complete(self, terminal: Terminal, text: str) -> list[tuple[str, str]]:
+        from prompt_toolkit.completion import CompleteEvent
+        from prompt_toolkit.document import Document
+
+        completer = terminal._make_action_completer()
+        return [
+            (c.text, c.display_meta_text)
+            for c in completer.get_completions(Document(text), CompleteEvent())
+        ]
+
+    def test_completer_covers_every_handler_and_alias(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        completer = terminal._make_action_completer()
+        assert set(completer.builtins) == set(terminal._command_handlers)
+        assert completer.aliases == Terminal._BUILTIN_ALIASES
+
+    def test_completer_description_is_docstring_summary(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        assert ("e", "Switch the execution database.") in self._complete(terminal, "!us")
+
+    def test_help_alias_completes_builtins(self, mock_database_context):
+        terminal = Terminal(mock_database_context)
+        completions = self._complete(terminal, "!h us")
+        assert ("e", "[builtin] Switch the execution database.") in completions
+
+    def test_builtin_help_is_dedented(self, mock_database_context, capsys):
+        terminal = Terminal(mock_database_context)
+        terminal._display_builtin_help("use")
+        out = capsys.readouterr().out
+        assert "\nUsage: !use [database]\n" in out
+        assert "Aliases" not in out
+
+    def test_builtin_help_lists_aliases(self, mock_database_context, capsys):
+        terminal = Terminal(mock_database_context)
+        terminal._display_builtin_help("impersonate")
+        assert "Aliases: imp" in capsys.readouterr().out
+
+
 class TestTerminalHandleFormat:
     """Test format handler."""
 
