@@ -1,11 +1,9 @@
 # mssqlclient_ng/core/actions/domain/adsi_redirect.py
 
-# Built-in imports
-
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from ..base import BaseAction, Arg
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

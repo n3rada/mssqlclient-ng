@@ -1,6 +1,6 @@
 # mssqlclient_ng/banner.py
 
-# Local library imports
+# Local imports
 from . import __version__ as version
 
 def display_banner() -> str:

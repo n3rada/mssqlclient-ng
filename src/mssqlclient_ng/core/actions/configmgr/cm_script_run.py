@@ -2,11 +2,14 @@
 
 """Execute a PowerShell script on a target device through ConfigMgr BGB channel."""
 
+# Built-in imports
 import base64
 import uuid
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..base import Arg
 from ..factory import ActionFactory

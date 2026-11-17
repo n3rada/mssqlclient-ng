@@ -3,7 +3,7 @@
 # Built-in imports
 from typing import Any
 
-# Local library imports
+# Local imports
 from .base import IOutputFormatter
 
 # Box-drawing characters
@@ -33,7 +33,7 @@ class GridFormatter(IOutputFormatter):
         return "0x" + data.hex().upper()
 
     @staticmethod
-    def _format_value(value: any) -> str:
+    def _format_value(value: Any) -> str:
         if value is None:
             return "NULL"
         if isinstance(value, bytes):

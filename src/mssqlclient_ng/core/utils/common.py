@@ -9,7 +9,7 @@ import string
 from io import BytesIO
 from base64 import b64decode
 
-# Third party imports
+# Third-party imports
 from impacket.dcerpc.v5.dtypes import SID
 
 def generate_random_string(length: int) -> str:
@@ -228,7 +228,7 @@ def yes_no_prompt(question: str, default: bool = True) -> bool:
         print()  # New line
         return True
 
-def convert_table_to_dicts(headers, table_data):
+def convert_table_to_dicts(headers: list[str], table_data: list[list]) -> list[dict[str, object]]:
     """
     Convert table format (headers, rows) to list of dicts.
 

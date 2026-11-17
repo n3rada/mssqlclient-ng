@@ -6,7 +6,7 @@ from typing import Any
 # Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from .base import IOutputFormatter
 from .markdown import MarkdownFormatter
 from .csv import CsvFormatter
@@ -14,9 +14,7 @@ from .grid import GridFormatter
 from .json import JsonFormatter
 
 class OutputFormatter:
-    """
-    Main output formatter that delegates to the appropriate formatter.
-    """
+    """Delegating output formatter backed by a swappable format strategy."""
 
     _current_formatter: IOutputFormatter = MarkdownFormatter()
 

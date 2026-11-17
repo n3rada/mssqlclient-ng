@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 from typing import Any
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 # Local imports

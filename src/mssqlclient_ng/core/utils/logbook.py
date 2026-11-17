@@ -114,7 +114,7 @@ def _xdg_state_dir(app_name: str = "mssqlclient-ng") -> Path:
     return Path.home() / ".local" / "state" / app_name / "logs"
 
 class InterceptHandler(logging.Handler):
-    """Intercept standard logging and redirect to Loguru."""
+    """Standard logging handler that redirects records to Loguru."""
 
     def emit(self, record: logging.LogRecord):
         # Get corresponding Loguru level if it exists

@@ -4,7 +4,7 @@
 from enum import Enum
 from typing import Any
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 # Local imports

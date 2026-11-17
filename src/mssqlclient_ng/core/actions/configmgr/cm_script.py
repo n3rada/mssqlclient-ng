@@ -2,10 +2,13 @@
 
 """Display detailed info about a specific ConfigMgr script."""
 
+# Built-in imports
 import base64
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..base import Arg
 from ..factory import ActionFactory

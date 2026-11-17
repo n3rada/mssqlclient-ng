@@ -1,7 +1,9 @@
 # mssqlclient_ng/core/actions/execution/clr_inspect.py
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from ...services.database import DatabaseContext
 from ...utils.formatters import OutputFormatter
 from ..base import BaseAction, Arg

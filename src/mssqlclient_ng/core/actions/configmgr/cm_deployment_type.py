@@ -2,8 +2,10 @@
 
 """Display detailed info about a specific ConfigMgr deployment type."""
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..base import Arg
 from ..factory import ActionFactory

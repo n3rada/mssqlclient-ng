@@ -2,12 +2,13 @@
 Retrieves all group memberships from the Windows authentication token.
 """
 
+# Built-in imports
 from typing import Any
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from ..base import BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

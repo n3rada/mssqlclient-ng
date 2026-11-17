@@ -5,9 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 class IOutputFormatter(ABC):
-    """
-    Interface for output formatters that convert data structures to specific formats.
-    """
+    """Abstract base for output formatters that convert data structures to display strings."""
 
     @property
     @abstractmethod

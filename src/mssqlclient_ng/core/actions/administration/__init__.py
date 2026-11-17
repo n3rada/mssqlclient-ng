@@ -2,7 +2,7 @@
 Administration actions for SQL Server management.
 """
 
-# Import actions to trigger registration with ActionFactory
+# Local imports
 from ..administration.audit import Audit
 from ..administration.config import Config
 from ..administration.sessions import Sessions

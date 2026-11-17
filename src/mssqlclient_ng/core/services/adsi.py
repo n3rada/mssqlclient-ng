@@ -2,20 +2,22 @@
 
 # Built-in imports
 import asyncio
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
-# Local library imports
+# Local imports
 from ..utils import common
 
-class AdsiService:
-    """
-    Service for managing ADSI-linked servers and LDAP server assembly operations.
-    """
+if TYPE_CHECKING:
+    from impacket.tds import MSSQL
+    from .database import DatabaseContext
 
-    def __init__(self, database_context):
+class AdsiService:
+    """ADSI-linked server and LDAP server assembly management service."""
+
+    def __init__(self, database_context: "DatabaseContext") -> None:
         """
         Initialize the ADSI service.
 
@@ -301,7 +303,7 @@ class AdsiService:
             logger.error(f"Error while running LDAP server: {e}")
             return None
 
-    def _authenticate_listener(self, connection) -> bool:
+    def _authenticate_listener(self, connection: "MSSQL") -> bool:
         """
         Authenticate a listener connection using stored credentials.
 

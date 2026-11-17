@@ -2,12 +2,15 @@
 
 """Upload a PowerShell script to ConfigMgr."""
 
+# Built-in imports
 import hashlib
 import uuid
 import random
 
+# Third-party imports
 from loguru import logger
 
+# Local imports
 from .cm_base import CMBaseAction
 from ..base import Arg
 from ..factory import ActionFactory

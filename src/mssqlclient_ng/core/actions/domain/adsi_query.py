@@ -1,10 +1,8 @@
 # mssqlclient_ng/core/actions/domain/adsi_query.py
 
-# Built-in imports
-
 from loguru import logger
 
-# Local library imports
+# Local imports
 from ...utils.common import generate_random_string
 from ...utils.formatters import OutputFormatter
 

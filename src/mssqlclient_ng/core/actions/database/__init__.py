@@ -2,7 +2,7 @@
 Database actions for SQL Server database management.
 """
 
-# Import actions to trigger registration with ActionFactory
+# Local imports
 from ..database.authtoken import AuthToken
 from ..database.databases import Databases
 from ..database.xprocs import ExtendedProcs

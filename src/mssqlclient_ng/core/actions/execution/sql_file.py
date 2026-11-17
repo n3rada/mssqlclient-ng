@@ -9,7 +9,7 @@ from pathlib import Path
 from impacket.tds import SQLErrorException
 from loguru import logger
 
-# Local library imports
+# Local imports
 from ..base import Arg, BaseAction
 from ..factory import ActionFactory
 from ...services.database import DatabaseContext

@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-# Third party imports
+# Third-party imports
 from loguru import logger
 
 APP_NAME = "mssqlclient-ng"

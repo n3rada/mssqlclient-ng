@@ -24,7 +24,7 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples
 from pygments.lexers.sql import SqlLexer
 from pygments.styles import get_style_by_name
 
-# Local library imports
+# Local imports
 from .utils import logbook
 from .utils.common import yes_no_prompt
 from .utils.completions import (
@@ -98,6 +98,7 @@ class _TeeWriter:
         self._secondary.flush()
 
 class Terminal:
+    """Interactive SQL terminal with action dispatch, linked-server navigation, and caching."""
 
     # Aliases for built-in terminal commands
     _BUILTIN_ALIASES = {
@@ -119,7 +120,7 @@ class Terminal:
     def __init__(
         self,
         database_context: DatabaseContext,
-    ):
+    ) -> None:
 
         self._database_context = database_context
 
@@ -705,7 +706,7 @@ class Terminal:
         print()
 
     def _handle_help(self, command_line: str) -> None:
-        """list actions or show help for a specific one: !help [action|term]"""
+        """List actions or show help for a specific one: !help [action|term]"""
         parts = command_line.split(maxsplit=1)
         term = parts[1].strip() if len(parts) > 1 else None
 
@@ -893,7 +894,7 @@ class Terminal:
                 logger.error(str(e))
 
     def _handle_link(self, command_line: str) -> None:
-        """set or display the linked server chain.
+        """Set or display the linked server chain.
         Usage: !link [server[/user1[/user2]][@db][;server2/user@db2;...]]
         Without arguments, shows the current linked server chain.
         With a server spec, replaces the chain and hops to the target.
