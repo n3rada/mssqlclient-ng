@@ -226,11 +226,13 @@ class BaseAction(ABC):
             logger.debug("No arguments provided.")
             return []
 
-        # Use shlex to split respecting quotes
-        # Use posix=True (default) to properly strip quotes from arguments
+        # Use shlex in non-POSIX mode to preserve backslashes (Windows UNC paths),
+        # then strip surrounding quotes that non-POSIX mode keeps.
         try:
             splitted = [
-                arg for arg in shlex.split(additional_arguments) if arg != separator
+                arg.strip("'\"")
+                for arg in shlex.split(additional_arguments, posix=False)
+                if arg != separator
             ]
             logger.debug(f"Splitted arguments: {splitted}")
             return splitted
