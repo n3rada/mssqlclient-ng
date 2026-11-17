@@ -4,7 +4,7 @@
 
 mssqlclient-ng is the Python/Impacket counterpart of MSSQLand for external SQL Server access, authentication, linked-server traversal, and cascading impersonation.
 
-Read [`DEVELOPMENT.md`](DEVELOPMENT.md) when changing architecture, action behavior, Impacket/TDS use, authentication, query routing, impersonation, linked-server behavior, logging, output, or dependencies. For focused changes, read only the relevant section and its linked source files.
+Read [`DEVELOPMENT.md`](DEVELOPMENT.md) when changing architecture, action behavior, Impacket/TDS use, authentication, query routing, impersonation, linked-server behavior, logging, output, or dependencies. For focused changes, read only the relevant section and its linked source files. See [`PLATFORMS.md`](PLATFORMS.md) for cloud-specific constraints (Azure SQL, RDS).
 
 Before preparing a commit, pull the current branch with `git pull --rebase --autostash`; never commit against stale remote history. Then follow the human contribution and commit conventions in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
