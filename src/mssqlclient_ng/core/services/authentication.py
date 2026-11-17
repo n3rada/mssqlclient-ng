@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/services/authentication.py
 
 # Built-in imports
+import time
 
 # Third party imports
 from loguru import logger
@@ -84,6 +85,8 @@ class AuthenticationService:
             True if authentication was successful; otherwise False
         """
         try:
+            t0 = time.monotonic()
+
             # Create MSSQL connection
             self.mssql_instance = MSSQL(
                 address=self.server.hostname,
@@ -135,7 +138,10 @@ class AuthenticationService:
                 self.disconnect()
                 return False
 
-            logger.success(f"Successfully authenticated to {self.server.hostname}")
+            elapsed = time.monotonic() - t0
+            logger.success(
+                f"Successfully authenticated to {self.server.hostname} ({elapsed:.1f}s)"
+            )
             logger.info(f"Database: {self._database or 'default'}")
 
             # Update server version from connection
