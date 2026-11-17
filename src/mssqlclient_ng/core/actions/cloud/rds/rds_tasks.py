@@ -11,6 +11,7 @@ from ...base import Arg, BaseAction
 from ...factory import ActionFactory
 from ....services.database import DatabaseContext
 from ....utils.formatters import OutputFormatter
+from .guard import requires_rds
 
 
 @ActionFactory.register(
@@ -38,6 +39,9 @@ class RdsTasks(BaseAction):
     def execute(
         self, database_context: DatabaseContext
     ) -> list[dict[str, Any]] | None:
+        if not requires_rds(database_context):
+            return None
+
         qs = database_context.query_service
 
         if self._database:

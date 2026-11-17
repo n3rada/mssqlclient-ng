@@ -40,6 +40,7 @@ class QueryService:
 
         # Dictionary to cache Azure SQL detection for each execution server
         self._is_azure_sql_cache: dict[str, bool] = {}
+        self._is_rds_cache: dict[str, bool] = {}
 
         # Initialize execution server and database
         self.execution_server = self._get_server_name()
@@ -103,6 +104,28 @@ class QueryService:
             logger.debug(f"Detected Azure SQL Database on {self.execution_server}")
 
         return azure_status
+
+    @property
+    def is_rds(self) -> bool:
+        """
+        Checks if the current execution server is Amazon RDS for SQL Server.
+        Detected by the presence of the rdsadmin database. Cached per server.
+        """
+        if self.execution_server in self._is_rds_cache:
+            return self._is_rds_cache[self.execution_server]
+
+        try:
+            rows = self.execute_table(
+                "SELECT name FROM sys.databases WHERE name = 'rdsadmin'"
+            )
+            detected = bool(rows)
+        except Exception:
+            detected = False
+
+        self._is_rds_cache[self.execution_server] = detected
+        if detected:
+            logger.debug(f"Detected Amazon RDS on {self.execution_server}")
+        return detected
 
     def _get_server_name(self) -> str:
         """

@@ -11,6 +11,7 @@ from ...base import Arg, BaseAction
 from ...factory import ActionFactory
 from ....services.database import DatabaseContext
 from ....utils.formatters import OutputFormatter
+from .guard import requires_rds
 
 
 @ActionFactory.register(
@@ -28,6 +29,9 @@ class RdsS3List(BaseAction):
     def execute(
         self, database_context: DatabaseContext
     ) -> list[dict[str, Any]] | None:
+        if not requires_rds(database_context):
+            return None
+
         qs = database_context.query_service
         logger.info("Listing files in RDS staging directory (D:\\S3\\)")
 
@@ -93,6 +97,9 @@ class RdsS3Download(BaseAction):
             raise ValueError("S3 ARN is required")
 
     def execute(self, database_context: DatabaseContext) -> str | None:
+        if not requires_rds(database_context):
+            return None
+
         qs = database_context.query_service
 
         filename = self._filename
@@ -158,6 +165,9 @@ class RdsS3Upload(BaseAction):
     )
 
     def execute(self, database_context: DatabaseContext) -> str | None:
+        if not requires_rds(database_context):
+            return None
+
         qs = database_context.query_service
 
         overwrite = 1 if self._overwrite else 0
@@ -203,6 +213,9 @@ class RdsS3Delete(BaseAction):
     )
 
     def execute(self, database_context: DatabaseContext) -> bool:
+        if not requires_rds(database_context):
+            return False
+
         qs = database_context.query_service
         path = self._rds_path.replace("'", "''")
 
