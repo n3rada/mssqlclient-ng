@@ -10,7 +10,6 @@ Before preparing a commit, pull the current branch with `git pull --rebase --aut
 
 ## Core contracts
 
-- Maintain action and output parity with MSSQLand unless an Impacket or Python constraint requires a documented difference.
 - Inspect relevant Impacket internals before changing TDS, authentication, or low-level protocol behavior.
 - Keep SQL routing and wrapping in `QueryService`, identity and impersonation state in `DatabaseContext`, and capabilities in focused actions.
 - Use the `Arg` descriptor, formatter pipeline, and action registration/import flow rather than duplicating them.
