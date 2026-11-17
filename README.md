@@ -1,4 +1,4 @@
-# ✈️ mssqlclient-ng
+# mssqlclient-ng
 
 The Python counterpart to [MSSQLand](https://github.com/n3rada/MSSQLand). `mssqlclient-ng` is a Python Microsoft SQL Server (MS SQL / MSSQL) client built for red team operations and penetration testing. It lets you interact with SQL Server instances over TDS, traverse linked server chains, and impersonate any login encountered along the way, emerging from the last hop ready to execute any action.
 
@@ -20,7 +20,7 @@ Built on [Impacket](https://github.com/fortra/impacket)'s TDS implementation, it
 > [!NOTE]
 > Do not forget the basics. During a security assessment, it is sometimes easier to use [SQL Server Management Studio (SSMS)](https://learn.microsoft.com/en-us/ssms/).
 
-## 📦 Installation
+## Installation
 
 Prefer using [`uv`](https://docs.astral.sh/uv/), a fast Python package manager that installs tools in isolated environments. Alternatively, [`pipx`](https://pypa.github.io/pipx/) or `pip` work as well.
 
@@ -73,7 +73,7 @@ pip install mssqlclient-ng
 pip install 'git+https://github.com/n3rada/mssqlclient-ng.git'
 ```
 
-## 🧸 Usage
+## Usage
 
 ```shell
 mssqlclient-ng <host> [options] [--action <action> [action-args...]]
@@ -111,7 +111,7 @@ mssqlclient-ng LAB-SQL01 -windows-auth -u admin -hashes :NTHASH
 mssqlclient-ng LAB-SQL01/sa -windows-auth -u 'DOMAIN\user' -p 'password' --action whoami
 ```
 
-### 🔗 Linked Servers Chain
+### Linked Servers Chain
 
 Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the separator**:
 
@@ -153,11 +153,11 @@ Chain multiple SQL servers using the `-l` flag with **semicolon (`;`) as the sep
 > [!NOTE]
 > Port specification (`:port`) only applies to the initial host connection. Linked server chains (`-l`) use the linked server names as configured in `sys.servers`, not `hostname:port` combinations.
 
-## 🔍 Discovery
+## Discovery
 
 `mssqlclient-ng` does not include built-in discovery like [MSSQLand does](https://github.com/n3rada/MSSQLand#-discovery) because your Linux attack box already has mature tools for this. Here are the common approaches:
 
-### 📡 SQL Browser (UDP 1434)
+### SQL Browser (UDP 1434)
 
 Query the [SQL Server Browser service](https://learn.microsoft.com/en-us/sql/tools/configuration-manager/sql-server-browser-service) to enumerate instances, ports, and versions on a host:
 
@@ -165,11 +165,11 @@ Query the [SQL Server Browser service](https://learn.microsoft.com/en-us/sql/too
 nmap -sU -p 1434 --script ms-sql-info <target>
 ```
 
-### 📂 SPN Enumeration (Active Directory)
+### SPN Enumeration (Active Directory)
 
 Find SQL Server instances registered in AD via [Service Principal Names](https://learn.microsoft.com/en-us/sql/database-engine/configure-windows/register-a-service-principal-name-for-kerberos-connections) you can use any LDAP search tool.
 
-### 🔌 Port Scanning
+### Port Scanning
 
 Once a target host is confirmed alive, validate SQL Server presence with TDS protocol handshake (not just TCP SYN):
 
@@ -184,7 +184,7 @@ nmap -Pn -sS -p 1024-65535 --script ms-sql-info --open <target>
 > [!TIP]
 > Use `-Pn` to skip host discovery (the target is already known alive) and `-sS` for SYN scan to reduce noise. The `ms-sql-info` script performs a TDS pre-login handshake, confirming actual SQL Server instances rather than just open TCP ports.
 
-## 🔄 NTLM Relay
+## NTLM Relay
 
 mssqlclient-ng can act as an NTLM relay listener, capturing incoming authentication attempts and relaying them to a SQL Server target:
 
@@ -198,7 +198,7 @@ mssqlclient-ng <target_sql_server> -r -smb2support -t 120
 
 Once a connection is relayed, you land in the interactive shell authenticated as the relayed user. Pair this with [PetitPotam](https://github.com/topotam/PetitPotam), [PrinterBug](https://github.com/dirkjanm/krbrelayx), or any coercion technique to relay machine accounts to SQL Server.
 
-## ❓ Help
+## Help
 
 ```shell
 # Show all available options
@@ -223,7 +223,7 @@ Inside the interactive shell:
 !link --help
 ```
 
-## 🔧 Scripting and JSON Output
+## Scripting and JSON Output
 
 All output formats are selected with `-o` / `--output-format`. The default is `markdown`. For scripting, piping to `jq`, or feeding results into an LLM, use `json`:
 
@@ -254,19 +254,19 @@ Redirect stderr to silence logs when only the data matters:
 mssqlclient-ng SQL01 -u sa -p pass --action users -o json 2>/dev/null | jq .
 ```
 
-## 📸 Clean Output for Clean Reports
+## Clean Output for Clean Reports
 
 The tool's output, enriched with timestamps and valuable contextual information, is designed to produce visually appealing and professional results, making it ideal for capturing high-quality screenshots for any of your reports (e.g., customer deliverable, internal report, red team assessments).
 
 All output tables are Markdown-friendly and can be copied and pasted directly into your notes without any formatting hassle.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built upon [Impacket](https://github.com/fortra/impacket), based on the core [tds.py](https://github.com/fortra/impacket/blob/master/impacket/tds.py).
 - OOP design is really tied to [MSSQLand](https://github.com/n3rada/MSSQLand).
 - Terminal interface powered by [prompt_toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit).
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 **This tool is provided strictly for defensive security research, education, and authorized penetration testing.** You must have **explicit written authorization** before running this software against any system you do not own.
 
@@ -279,7 +279,7 @@ Acceptable environments include:
 
 Misuse of this project may result in legal action.
 
-## ⚖️ Legal Notice
+## Legal Notice
 
 Any unauthorized use of this tool in real-world environments or against systems without explicit permission from the system owner is strictly prohibited and may violate legal and ethical standards. The creators and contributors of this tool are not responsible for any misuse or damage caused.
 
