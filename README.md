@@ -229,6 +229,10 @@ Inside the interactive shell:
 !sql-file ./enum.sql
 ```
 
+## Cloud Targets
+
+Works against Azure SQL Database, Azure Managed Instance, and Amazon RDS for SQL Server. See [`PLATFORMS.md`](PLATFORMS.md) for a feature matrix and platform-specific constraints.
+
 ## Scripting and JSON Output
 
 All output formats are selected with `-o` / `--output-format`. The default is `markdown`. For scripting, piping to `jq`, or feeding results into an LLM, use `json`:
