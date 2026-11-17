@@ -4,7 +4,6 @@
 import inspect
 import io
 import os
-import shlex
 import sys
 from pathlib import Path
 from typing import Callable
@@ -107,6 +106,8 @@ class Terminal:
         "rev": "revert",
         "ul": "unlink",
         "ula": "unlink-all",
+        "switch": "use",
+        "db": "use",
         "al": "add-link",
         "ch": "chain",
         "im": "impmap",
@@ -352,17 +353,21 @@ class Terminal:
     def execute_action(
         self,
         action_name: str,
-        argument_list: list[str],
+        raw_args: str = "",
     ) -> object | None:
         """
-        Execute an action by its registered name with a list of arguments.
+        Execute an action by its registered name with a raw argument string.
+
+        The argument string is forwarded to the action's own parser without
+        an intermediate shlex round-trip, so backslashes (e.g. UNC paths) are
+        never mangled by POSIX shell quoting rules.
 
         Checks the output cache before executing. Use --force/-f to bypass
         the cache and re-execute the action (the fresh output replaces the cache).
 
         Args:
             action_name: The name of the action to execute
-            argument_list: list of arguments for the action
+            raw_args: Raw argument string for the action
 
         Returns:
             The result of the action's execution, or None on error
@@ -372,8 +377,9 @@ class Terminal:
             logger.error(f"Unknown action: {action_name}")
             return None
 
-        # Check if help is requested
-        if "--help" in argument_list or "-h" in argument_list:
+        # Check if help is requested (simple token check on the raw string)
+        tokens = raw_args.split()
+        if "--help" in tokens or "-h" in tokens:
             ActionFactory.display_action_help(action_name)
             return None
 
@@ -385,18 +391,17 @@ class Terminal:
         # For non-cacheable actions, pass --force/-f through to the action
         force = False
         if cacheable:
-            filtered_args = []
-            for arg in argument_list:
-                if arg in ("--force", "-f"):
+            filtered_tokens = []
+            for tok in tokens:
+                if tok in ("--force", "-f"):
                     force = True
                 else:
-                    filtered_args.append(arg)
+                    filtered_tokens.append(tok)
+            args_str = " ".join(filtered_tokens)
         else:
-            filtered_args = list(argument_list)
+            args_str = raw_args
 
         try:
-            # Use shlex.join to preserve arguments with spaces
-            args_str = shlex.join(filtered_args)
             action.validate_arguments(args_str)
         except ValueError as ve:
             logger.error(f"Argument validation error: {ve}")
@@ -604,8 +609,12 @@ class Terminal:
                     continue
 
                 # Otherwise dispatch to action system
-                action_name, *args = shlex.split(command_line)
-                self.execute_action(action_name, args)
+                # Split only the action name; pass the rest as a raw string
+                # so that backslashes (e.g. UNC paths) are never mangled.
+                parts = command_line.split(None, 1)
+                action_name = parts[0]
+                raw_args = parts[1] if len(parts) > 1 else ""
+                self.execute_action(action_name, raw_args=raw_args)
 
     def _match_command(self, command_line: str) -> Callable[[str], None] | None:
         """Match a command line against registered built-in handlers."""
@@ -808,8 +817,8 @@ class Terminal:
         """Map impersonation chains reachable from the current login.
         Usage: !impmap [args]
         Runs the impersonation-map action; apply a result with !impersonate #id."""
-        args = command_line.split()[1:]
-        self.execute_action("impersonation-map", args)
+        parts = command_line.split(None, 1)
+        self.execute_action("impersonation-map", parts[1] if len(parts) > 1 else "")
 
     def _handle_impersonation_by_id(self, id_str: str) -> None:
         """Apply a saved impersonation chain by its # index."""
@@ -825,7 +834,7 @@ class Terminal:
         )
         if not cached_rows:
             logger.info("No cached impersonation map — running !impmap first")
-            self.execute_action("impersonation-map", [])
+            self.execute_action("impersonation-map")
             cached_rows = self._output_cache.get_rows(
                 ctx[0], ctx[1], ctx[2], ctx[3], "impersonation-map", ""
             )

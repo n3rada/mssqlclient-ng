@@ -467,7 +467,7 @@ class TestCMRbacAddArguments(unittest.TestCase):
 
     def test_account_positional(self):
         action = CMRbacAdd()
-        action.validate_arguments("CORP\\\\admin")
+        action.validate_arguments("CORP\\admin")
         self.assertEqual(action._account_name, "CORP\\admin")
 
     def test_requires_account(self):
