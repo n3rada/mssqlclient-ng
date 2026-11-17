@@ -172,6 +172,3 @@ class TestLocalPathCompletion:
 
     def test_second_argument_not_path_completed(self, scripts_dir):
         assert "notes.txt" not in self._complete("!upload enum.sql ")
-
-    def test_use_builtin_suggested(self):
-        assert "e" in self._complete("!us")

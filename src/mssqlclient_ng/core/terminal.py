@@ -1,6 +1,7 @@
 # mssqlclient_ng/core/terminal.py
 
 # Built-in imports
+import inspect
 import io
 import os
 import shlex
@@ -517,14 +518,8 @@ class Terminal:
                 "Multiline input mode enabled in terminal, use ESC + ENTER to submit."
             )
 
-        # Merge action completer and SQL builtin completer
         combined_completer = merge_completers(
-            [
-                ActionCompleter(
-                    prefix=prefix, chain_loader=self._load_chain_completions
-                ),
-                SQLBuiltinCompleter(),
-            ]
+            [self._make_action_completer(), SQLBuiltinCompleter()]
         )
 
         # Store session kwargs so _switch_history can recreate the session with
@@ -663,21 +658,32 @@ class Terminal:
 
     # ── Built-in Command Handlers ───────────────────────────────────────
 
+    def _builtin_doc_lines(self, name: str) -> list[str]:
+        """Dedented docstring lines of a built-in handler; the first is its summary."""
+        doc = inspect.cleandoc(self._command_handlers[name].__doc__ or "")
+        return doc.splitlines() or ["No description available."]
+
+    def _builtin_aliases(self, name: str) -> list[str]:
+        return [alias for alias, canonical in self._BUILTIN_ALIASES.items() if canonical == name]
+
+    def _make_action_completer(self) -> ActionCompleter:
+        """Completer fed from the built-in handler table, the single source of truth."""
+        return ActionCompleter(
+            prefix=self._prefix,
+            chain_loader=self._load_chain_completions,
+            builtins={name: self._builtin_doc_lines(name)[0] for name in self._command_handlers},
+            aliases=self._BUILTIN_ALIASES,
+        )
+
     def _display_builtin_help(self, cmd_name: str) -> None:
         """Display formatted help for a built-in terminal command."""
-        handler = self._command_handlers.get(cmd_name)
-        if not handler:
+        if cmd_name not in self._command_handlers:
             logger.error(f"Unknown built-in command: {cmd_name}")
             return
 
-        doc = (handler.__doc__ or "No description available.").strip()
-        lines = doc.splitlines()
-        # First line is the summary, remaining lines are detail
-        summary = lines[0]
-        detail = "\n".join(line for line in lines[1:] if line.strip())
-
-        # Find aliases for this command
-        aliases = [k for k, v in self._BUILTIN_ALIASES.items() if v == cmd_name]
+        summary, *rest = self._builtin_doc_lines(cmd_name)
+        detail = "\n".join(line for line in rest if line.strip())
+        aliases = self._builtin_aliases(cmd_name)
 
         print()
         print(f"Command: {cmd_name}")
@@ -742,11 +748,9 @@ class Terminal:
         print()
         print("Built-in commands:")
         for name in sorted(self._command_handlers):
-            doc = (self._command_handlers[name].__doc__ or "").strip().splitlines()
-            summary = doc[0] if doc else ""
-            aliases = [k for k, v in self._BUILTIN_ALIASES.items() if v == name]
+            aliases = self._builtin_aliases(name)
             alias_str = f" [{', '.join(aliases)}]" if aliases else ""
-            print(f"  {self._prefix + name + alias_str:<35}{summary}")
+            print(f"  {self._prefix + name + alias_str:<35}{self._builtin_doc_lines(name)[0]}")
         print()
         logger.info(f"Use {self._prefix}<command> --help for built-in usage")
 
