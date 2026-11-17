@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "mssqlclient-ng"
-version = "0.9.1"
+version = "0.10.0"
 description = "Impacket-based Python client for Microsoft SQL Server (MS SQL / MSSQL) traversing linked-server chains of any depth with cascading login impersonation at every hop."
 authors = [
     {name = "n3rada",email = "72791564+n3rada@users.noreply.github.com"}
