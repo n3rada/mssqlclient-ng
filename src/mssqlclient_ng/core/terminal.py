@@ -232,10 +232,15 @@ class Terminal:
         ctx_hash = state.short_hash
         history_file = self._history_dir / f"{server}_{ctx_hash}_history"
         history_file.touch(exist_ok=True)
-        try:
-            os.chmod(history_file, 0o600)
-        except PermissionError as e:
-            logger.warning(f"⚠️ Could not set secure permissions on history file: {e}")
+        # Windows ignores POSIX modes (chmod only toggles read-only); the file
+        # inherits the per-user ACL of %LOCALAPPDATA% instead.
+        if os.name != "nt":
+            try:
+                os.chmod(history_file, 0o600)
+            except PermissionError as e:
+                logger.warning(
+                    f"⚠️ Could not set secure permissions on history file: {e}"
+                )
         self._history_file = history_file
         self._prompt_session = self._make_session(
             ThreadedHistory(FileHistory(str(history_file)))

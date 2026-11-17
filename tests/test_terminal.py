@@ -2,6 +2,8 @@
 
 """Tests for the Terminal class — alias resolution, command dispatch, prompt building."""
 
+import os
+
 import pytest
 from unittest.mock import MagicMock, patch
 
@@ -475,6 +477,7 @@ class TestTerminalHistorySwitching:
         expected = self._expected_file(tmp_path, "SQL02", "sa", "dbo")
         assert terminal._history_file == expected
 
+    @pytest.mark.skipif(os.name == "nt", reason="POSIX file modes do not apply on Windows")
     def test_history_file_permissions(self, mock_database_context, tmp_path):
         import stat
 
@@ -483,6 +486,18 @@ class TestTerminalHistorySwitching:
         expected = self._expected_file(tmp_path, "SQL04", "sa", "dbo")
         mode = expected.stat().st_mode
         assert stat.S_IMODE(mode) == 0o600
+
+    def test_history_file_chmod_skipped_on_windows(
+        self, mock_database_context, tmp_path
+    ):
+        terminal = self._make_terminal_with_history(mock_database_context, tmp_path)
+        with (
+            patch("mssqlclient_ng.core.terminal.os.name", "nt"),
+            patch("mssqlclient_ng.core.terminal.os.chmod") as mock_chmod,
+        ):
+            terminal._switch_history("SQL04")
+        mock_chmod.assert_not_called()
+        assert self._expected_file(tmp_path, "SQL04", "sa", "dbo").exists()
 
     def test_context_hash_is_deterministic(self):
         state = ServerExecutionState(
