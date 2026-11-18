@@ -1016,12 +1016,13 @@ class Terminal:
             self._log_server_context()
 
     def _handle_impersonate(self, command_line: str) -> None:
-        """Impersonate a SQL login or apply an impmap chain by ID.
-        Usage: !impersonate <login>   — impersonate by login name
+        """List impersonation permissions, impersonate a login, or apply an impmap chain.
+        Usage: !impersonate           — list logins and impersonation status
+               !impersonate <login>   — impersonate by login name
                !impersonate <#id>    — apply chain #id from !impmap"""
         parts = command_line.split(maxsplit=1)
         if len(parts) < 2:
-            logger.error("Usage: !impersonate <login|#id>")
+            self.execute_action("impersonate")
             return
 
         arg = parts[1].strip()
