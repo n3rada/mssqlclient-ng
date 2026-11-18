@@ -6,6 +6,7 @@ import os
 import shlex
 import sys
 from getpass import getpass
+from pathlib import Path
 
 # Third-party imports
 from loguru import logger
@@ -17,7 +18,7 @@ from .core.models.linked_servers import LinkedServers
 from .core.services.authentication import AuthenticationService
 from .core.services.database import DatabaseContext
 from .core.terminal import Terminal
-from .core.utils import logbook
+from .core.utils import command_output, logbook
 from .core.utils.formatters import OutputFormatter
 
 # Import actions package to trigger @ActionFactory.register() decorators
@@ -199,10 +200,20 @@ def build_parser() -> argparse.ArgumentParser:
     actions_groups.add_argument(
         "-o",
         "--output-format",
+        "--format",
         type=str,
         default="markdown",
         choices=["markdown", "md", "csv", "grid", "box", "table", "json"],
         help="Output format for data display (default: markdown). Options: markdown/md, csv, grid/box/table, json.",
+    )
+
+    actions_groups.add_argument(
+        "--save",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="FILE",
+        help="Save command output to FILE, or generate filenames when omitted.",
     )
 
     advanced_group = parser.add_argument_group(
@@ -556,6 +567,7 @@ def main() -> int:
 
         if args.query or args.action:
             # Execute single action/query and exit
+            output_options = command_output.OutputOptions(save=args.save)
             if args.action:
                 # args.action is a list: [action_name, arg1, arg2, ]
                 if isinstance(args.action, list) and len(args.action) > 0:
@@ -565,19 +577,27 @@ def main() -> int:
                     logger.error("No action specified")
                     return 1
 
-                # Handle special case: query action
-                if action_name == "query":
-                    args.query = " ".join(argument_list)
-                else:
-                    # Get and execute the action directly
-                    action_instance = ActionFactory.get_action(action_name)
-                    if action_instance is None:
-                        logger.error(f"Unknown action: {action_name}")
-                        return 1
+                action_instance = ActionFactory.get_action(action_name)
+                if action_instance is None:
+                    logger.error(f"Unknown action: {action_name}")
+                    return 1
+                canonical_name = ActionFactory.resolve_alias(action_name)
+                try:
+                    args_str, action_output = command_output.extract_options(
+                        shlex.join(argument_list),
+                        action=action_instance,
+                        query=canonical_name == "query",
+                        shell_quoted=True,
+                    )
+                    output_options = output_options.override(action_output)
+                except ValueError as exc:
+                    logger.error(f"Argument validation error: {exc}")
+                    return 1
 
+                if canonical_name == "query":
+                    args.query = " ".join(shlex.split(args_str))
+                else:
                     try:
-                        # Use shlex.join to preserve arguments with spaces
-                        args_str = shlex.join(argument_list)
                         action_instance.validate_arguments(args_str)
                     except ValueError as ve:
                         logger.error(f"Argument validation error: {ve}")
@@ -589,7 +609,8 @@ def main() -> int:
                     )
 
                     try:
-                        action_instance.execute(database_context=database_context)
+                        with command_output.apply(output_options, canonical_name):
+                            action_instance.execute(database_context=database_context)
                         return 0
                     except Exception:
                         logger.exception("Action execution failed")
@@ -604,12 +625,16 @@ def main() -> int:
                     logger.error(f"Argument validation error: {ve}")
                     return 1
 
-                query_action.execute(database_context)
+                with command_output.apply(output_options, args.query, query=True):
+                    query_action.execute(database_context)
                 return 0
 
         else:
             # Starting interactive shell - only create Terminal instance here
-            terminal_instance = Terminal(database_context)
+            session_output = command_output.OutputOptions(save=args.save, append=bool(args.save))
+            if args.save:
+                Path(args.save).expanduser().write_text("", encoding="utf-8")
+            terminal_instance = Terminal(database_context, output_options=session_output)
             terminal_instance.start(
                 prefix=args.prefix,
                 multiline=args.multiline,

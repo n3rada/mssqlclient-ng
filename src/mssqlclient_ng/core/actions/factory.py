@@ -5,6 +5,7 @@ from loguru import logger
 
 # Local imports
 from .base import BaseAction
+from ..utils import command_output
 
 class ActionFactory:
     """Registry-based factory for action creation and lookup."""
@@ -234,4 +235,6 @@ class ActionFactory:
                     desc += f" (default: {arg.default})"
                 print(f"  {hint:<{col}}{desc}")
 
+        print()
+        command_output.print_help()
         print()

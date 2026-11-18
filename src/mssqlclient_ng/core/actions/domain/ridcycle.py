@@ -15,7 +15,7 @@ BATCH_SIZE = 1000
 
 @ActionFactory.register(
     "ad-users",
-    "Enumerate domain accounts by iterating RIDs and resolving each to a login name. Accepts a max RID limit and output format: default (plain list), table, bash, or python.",
+    "Enumerate domain accounts by iterating RIDs and resolving each to a login name. Accepts a max RID limit and output style: default (plain list), table, bash, or python.",
     aliases=["rid-brute"],
 )
 class RidCycle(BaseAction):
@@ -25,7 +25,7 @@ class RidCycle(BaseAction):
     """
 
     _max_rid = Arg(position=0, default=10000, description="Maximum RID to enumerate (default: 10000)")
-    _format = Arg(long_name="format", default="", description="Output format: bash, python, table")
+    _style = Arg(long_name="style", default="", description="Output style: bash, python, table")
 
     def __init__(self):
         super().__init__()
@@ -46,9 +46,9 @@ class RidCycle(BaseAction):
         """
         named_args, positional_args = self._parse_action_arguments(additional_arguments)
 
-        # Check for --format flag
-        if "format" in named_args:
-            format_type = named_args["format"].lower()
+        # Check for --style flag
+        if "style" in named_args:
+            format_type = named_args["style"].lower()
             if format_type == "bash":
                 self._bash_output = True
             elif format_type in ("python", "py"):
@@ -57,7 +57,7 @@ class RidCycle(BaseAction):
                 self._table_output = True
             else:
                 raise ValueError(
-                    f"Invalid format: {format_type}. Use 'bash', 'python', or 'table'."
+                    f"Invalid style: {format_type}. Use 'bash', 'python', or 'table'."
                 )
 
         # First positional argument is max RID
@@ -77,7 +77,7 @@ class RidCycle(BaseAction):
 
         if len(positional_args) > 1:
             raise ValueError(
-                "Too many positional arguments. Expected: [maxRid]. Use --format flag for output format."
+                "Too many positional arguments. Expected: [maxRid]. Use --style for output style."
             )
 
     def execute(self, database_context: DatabaseContext) -> dict:
