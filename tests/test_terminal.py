@@ -299,6 +299,29 @@ class TestTerminalHandleRevert:
         mock_database_context.user_service.get_info.assert_called()
 
 
+class TestTerminalRawQuery:
+    @pytest.mark.parametrize("keyword", ["EXEC", "EXECUTE"])
+    def test_stored_procedure_results_are_displayed(
+        self, mock_database_context, capsys, keyword
+    ):
+        statement = f"{keyword} msdb.dbo.rds_task_status;"
+        mock_database_context.query_service.execute_table.return_value = [
+            {"task_id": 42, "lifecycle": "SUCCESS"}
+        ]
+        terminal = Terminal(mock_database_context)
+
+        terminal._execute_raw_query(statement)
+
+        output = capsys.readouterr().out
+        assert "task_id" in output
+        assert "42" in output
+        assert "SUCCESS" in output
+        mock_database_context.query_service.execute_table.assert_called_once_with(
+            statement
+        )
+        mock_database_context.query_service.execute_non_processing.assert_not_called()
+
+
 class TestTerminalHandleUse:
     """Test the !use built-in and raw USE routing."""
 

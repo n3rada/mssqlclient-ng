@@ -15,7 +15,7 @@ class Query(BaseAction):
     """
     Execute a T-SQL query against the SQL Server.
 
-    Supports both queries that return result sets (SELECT) and
+    Supports both queries that return result sets (SELECT, EXEC) and
     non-query commands (INSERT, UPDATE, DELETE, etc.).
 
     Usage:
@@ -154,8 +154,6 @@ class Query(BaseAction):
             "ALTER",
             "CREATE",
             "TRUNCATE",
-            "EXEC",
-            "EXECUTE",
         ]
 
         # Normalize query for comparison
