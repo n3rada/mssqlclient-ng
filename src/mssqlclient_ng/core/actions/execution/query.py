@@ -6,16 +6,21 @@ from typing import Any
 # Third-party imports
 from loguru import logger
 
-from ..base import BaseAction
+# Local imports
+from ..base import Arg, BaseAction
+from ..factory import ActionFactory
 from ...utils.formatters import OutputFormatter
 
-# Not registered via ActionFactory - Query is invoked directly by the shell
-# when no action prefix is matched (any raw SQL input).
+@ActionFactory.register(
+    "query",
+    "Execute T-SQL. Put common output options before the SQL text.",
+    aliases=["sql"],
+)
 class Query(BaseAction):
     """
     Execute a T-SQL query against the SQL Server.
 
-    Supports both queries that return result sets (SELECT) and
+    Supports both queries that return result sets (SELECT, EXEC) and
     non-query commands (INSERT, UPDATE, DELETE, etc.).
 
     Usage:
@@ -23,6 +28,9 @@ class Query(BaseAction):
         query --all SELECT DB_NAME()
         sql SELECT name FROM sys.databases
     """
+
+    _query = Arg(position=0, remainder=True, required=True, description="T-SQL query")
+    _execute_all = Arg(long_name="all", toggle=True, description="Run against all accessible databases")
 
     def __init__(self):
         super().__init__()
@@ -154,8 +162,6 @@ class Query(BaseAction):
             "ALTER",
             "CREATE",
             "TRUNCATE",
-            "EXEC",
-            "EXECUTE",
         ]
 
         # Normalize query for comparison

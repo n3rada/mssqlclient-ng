@@ -235,10 +235,21 @@ Works against Azure SQL Database, Azure Managed Instance, and Amazon RDS for SQL
 
 ## Scripting and JSON Output
 
-All output formats are selected with `-o` / `--output-format`. The default is `markdown`. For scripting, piping to `jq`, or feeding results into an LLM, use `json`:
+`--save [FILE]` and `--format FORMAT` are common command options. Output is written as UTF-8 and remains visible in the terminal. Omit the filename to derive it from the action name or SQL text, with the appropriate extension. Automatically named files get a numbered suffix when necessary; an explicit filename replaces that file. `!format` still sets the interactive session default, while `--format` overrides it for one command. `--output-format` is an alias.
+
+```text
+!databases --save --format csv
+!databases --save "database list.csv" --format csv --force
+!query --save --format json EXEC msdb.dbo.rds_task_status;
+!query --save=tasks.csv --format csv -- EXEC msdb.dbo.rds_task_status;
+```
+
+Put common options before SQL or shell-command payloads; `--` explicitly marks the start of the payload. Plain T-SQL remains unchanged. Use `!query` (or `!sql`) when a SQL statement needs per-command options. The `ad-users` action uses `--style bash|python|table` for its specialized output styles.
+
+The CLI accepts the same options, including after `--action`. Starting an interactive session with bare `--save` saves each command separately; `--save FILE` collects the session's result output in that file. The default format is `markdown`. For scripting, piping to `jq`, or feeding results into an LLM, use `json`:
 
 ```bash
-mssqlclient-ng <host> -u sa -p pass --action <action> -o json
+mssqlclient-ng <host> -u sa -p pass --format json --save --action <action>
 ```
 
 Logs are always written to **stderr**; formatted data goes to **stdout**. The two streams never mix, so piping works cleanly without suppressing anything:

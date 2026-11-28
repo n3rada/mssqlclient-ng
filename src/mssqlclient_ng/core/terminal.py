@@ -25,7 +25,7 @@ from pygments.lexers.sql import SqlLexer
 from pygments.styles import get_style_by_name
 
 # Local imports
-from .utils import logbook
+from .utils import command_output, logbook
 from .utils.common import yes_no_prompt
 from .utils.completions import (
     ActionCompleter,
@@ -43,6 +43,7 @@ from .models.server_execution_state import ServerExecutionState
 from .services.database import DatabaseContext
 
 from .actions.factory import ActionFactory
+from .actions.base import BaseAction
 from .actions.execution import query
 
 SQL_STYLE = style_from_pygments_cls(get_style_by_name("one-dark"))
@@ -82,21 +83,6 @@ class _PrefixAwareLexer(Lexer):
 
         return get_line
 
-class _TeeWriter:
-    """Write to two streams simultaneously (for stdout capture)."""
-
-    def __init__(self, primary, secondary):
-        self._primary = primary
-        self._secondary = secondary
-
-    def write(self, data):
-        self._primary.write(data)
-        self._secondary.write(data)
-
-    def flush(self):
-        self._primary.flush()
-        self._secondary.flush()
-
 class Terminal:
     """Interactive SQL terminal with action dispatch, linked-server navigation, and caching."""
 
@@ -120,9 +106,11 @@ class Terminal:
     def __init__(
         self,
         database_context: DatabaseContext,
+        output_options: command_output.OutputOptions | None = None,
     ) -> None:
 
         self._database_context = database_context
+        self._default_output_options = output_options or command_output.OutputOptions()
 
         # Store original user information for restoration after unlinking
         self._original_mapped_user = database_context.server.mapped_user
@@ -355,6 +343,8 @@ class Terminal:
         self,
         action_name: str,
         raw_args: str = "",
+        *,
+        output_options: command_output.OutputOptions | None = None,
     ) -> object | None:
         """
         Execute an action by its registered name with a raw argument string.
@@ -378,9 +368,34 @@ class Terminal:
             logger.error(f"Unknown action: {action_name}")
             return None
 
+        canonical_name = ActionFactory.resolve_alias(action_name)
+        is_query = canonical_name == "query"
+        try:
+            raw_args, options = command_output.extract_options(
+                raw_args, action=action, query=is_query
+            )
+            if output_options is not None:
+                options = output_options.override(options)
+            with command_output.apply(
+                options, raw_args if is_query else canonical_name, query=is_query
+            ):
+                return self._execute_registered_action(action_name, raw_args, action)
+        except (OSError, ValueError) as exc:
+            logger.error(f"Could not execute '{action_name}': {exc}")
+            return None
+        finally:
+            if is_query:
+                self._database_context.query_service.sync_execution_database()
+
+    def _execute_registered_action(
+        self, action_name: str, raw_args: str, action: BaseAction
+    ) -> object | None:
+        """Execute an action with the existing validation and cache behavior."""
+
         # Check if help is requested (simple token check on the raw string)
         tokens = raw_args.split()
-        if "--help" in tokens or "-h" in tokens:
+        help_tokens = tokens[:1] if ActionFactory.resolve_alias(action_name) == "query" else tokens
+        if "--help" in help_tokens or "-h" in help_tokens:
             ActionFactory.display_action_help(action_name)
             return None
 
@@ -453,7 +468,7 @@ class Terminal:
         try:
             if stdout_capture is not None:
                 # Tee stdout: write to both the real stdout and the capture buffer
-                sys.stdout = _TeeWriter(original_stdout, stdout_capture)
+                sys.stdout = command_output.TeeWriter(original_stdout, stdout_capture)
 
             try:
                 result = action.execute(database_context=self._database_context)
@@ -583,39 +598,52 @@ class Terminal:
                 logger.warning(f"Exception occurred: {exc}")
                 continue
             else:
-                if not user_input.startswith(prefix):
+                self._dispatch_input(user_input)
+
+    def _dispatch_input(self, user_input: str) -> None:
+        """Dispatch SQL, built-in commands, and registered actions."""
+        if not user_input.strip():
+            return
+        if not user_input.startswith(self._prefix):
+            try:
+                with command_output.apply(self._default_output_options, user_input, query=True):
                     self._execute_raw_query(user_input)
-                    continue
+            except (OSError, ValueError) as exc:
+                logger.error(f"Could not execute query: {exc}")
+            return
 
-                # Process action command
-                command_line = user_input[len(prefix) :].strip()
+        command_line = user_input[len(self._prefix) :].strip()
+        if not command_line:
+            return
 
-                if not command_line:
-                    continue
+        parts = command_line.split(maxsplit=1)
+        cmd = self._BUILTIN_ALIASES.get(parts[0], parts[0])
+        command_line = cmd + command_line[len(parts[0]) :]
 
-                # Resolve built-in command aliases
-                parts = command_line.split(maxsplit=1)
-                cmd = self._BUILTIN_ALIASES.get(parts[0], parts[0])
-                command_line = cmd + command_line[len(parts[0]) :]
-
-                # Dispatch to built-in handler if matched
-                handler = self._match_command(command_line)
-                if handler:
-                    # Check for --help / -h before dispatching
-                    _parts = command_line.split()
-                    if len(_parts) > 1 and _parts[1] in ("--help", "-h"):
-                        self._display_builtin_help(_parts[0])
+        handler = self._match_command(command_line)
+        if handler:
+            parts = command_line.split(maxsplit=1)
+            try:
+                raw_args, options = command_output.extract_options(
+                    parts[1] if len(parts) > 1 else ""
+                )
+                options = self._default_output_options.override(options)
+                with command_output.apply(options, cmd):
+                    if raw_args.split()[:1] in (["--help"], ["-h"]):
+                        self._display_builtin_help(cmd)
                     else:
-                        handler(command_line)
-                    continue
+                        handler(cmd + (" " + raw_args if raw_args else ""))
+            except (OSError, ValueError) as exc:
+                logger.error(f"Could not execute '{cmd}': {exc}")
+            return
 
-                # Otherwise dispatch to action system
-                # Split only the action name; pass the rest as a raw string
-                # so that backslashes (e.g. UNC paths) are never mangled.
-                parts = command_line.split(None, 1)
-                action_name = parts[0]
-                raw_args = parts[1] if len(parts) > 1 else ""
-                self.execute_action(action_name, raw_args=raw_args)
+        # Preserve the raw argument string, including SQL and UNC paths.
+        parts = command_line.split(None, 1)
+        self.execute_action(
+            parts[0],
+            raw_args=parts[1] if len(parts) > 1 else "",
+            output_options=self._default_output_options,
+        )
 
     def _match_command(self, command_line: str) -> Callable[[str], None] | None:
         """Match a command line against registered built-in handlers."""
@@ -703,6 +731,8 @@ class Terminal:
         if detail:
             print()
             print(detail)
+        print()
+        command_output.print_help()
         print()
 
     def _handle_help(self, command_line: str) -> None:
@@ -875,7 +905,7 @@ class Terminal:
 
     def _handle_format(self, command_line: str) -> None:
         """Change the output table format.
-        Usage: !format [markdown|csv|grid]
+        Usage: !format [markdown|csv|grid|json]
         Without arguments, shows the current format and available options.
         With a format name, switches output rendering to that format."""
         parts = command_line.split(maxsplit=1)
@@ -1016,12 +1046,13 @@ class Terminal:
             self._log_server_context()
 
     def _handle_impersonate(self, command_line: str) -> None:
-        """Impersonate a SQL login or apply an impmap chain by ID.
-        Usage: !impersonate <login>   — impersonate by login name
+        """List impersonation permissions, impersonate a login, or apply an impmap chain.
+        Usage: !impersonate           — list logins and impersonation status
+               !impersonate <login>   — impersonate by login name
                !impersonate <#id>    — apply chain #id from !impmap"""
         parts = command_line.split(maxsplit=1)
         if len(parts) < 2:
-            logger.error("Usage: !impersonate <login|#id>")
+            self.execute_action("impersonate")
             return
 
         arg = parts[1].strip()

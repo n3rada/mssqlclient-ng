@@ -335,6 +335,22 @@ class ActionCompleter(Completer):
                 cmd = parts[0].lower()
                 arg_prefix = parts[1] if len(parts) == 2 else ""
                 builtin = self.aliases.get(cmd, cmd)
+                words = arg_prefix.split()
+                current = "" if arg_prefix.endswith(" ") else words[-1] if words else ""
+                previous = words[-1] if arg_prefix.endswith(" ") and words else (
+                    words[-2] if len(words) > 1 else ""
+                )
+                if previous in ("--format", "--output-format"):
+                    yield from self._format_completions(current)
+                    return
+                if previous == "--save" and not current.startswith("-"):
+                    yield from self._local_path_completions(current, complete_event)
+                    return
+                if current.startswith("--") and any(
+                    flag.startswith(current) for flag in ("--save", "--format", "--output-format")
+                ):
+                    yield from self._action_arg_completions(cmd, arg_prefix)
+                    return
                 if builtin in self._CHAIN_ID_COMMANDS and self._chain_loader is not None:
                     yield from self._chain_id_completions(arg_prefix)
                     return
@@ -398,6 +414,9 @@ class ActionCompleter(Completer):
             ("-h", "show usage"),
             ("--force", "bypass output cache"),
             ("-f", "bypass output cache"),
+            ("--save", "save output; optional filename"),
+            ("--format", "format this command"),
+            ("--output-format", "format this command"),
         ]
 
         if action is not None:
@@ -412,11 +431,13 @@ class ActionCompleter(Completer):
                 if arg.short_name:
                     candidates.append((f"-{arg.short_name}", meta))
 
-        prefix_lower = arg_prefix.lower()
+        words = arg_prefix.split()
+        current = "" if arg_prefix.endswith(" ") else words[-1] if words else ""
+        prefix_lower = current.lower()
         for flag, desc in candidates:
             if flag.startswith(prefix_lower):
                 yield Completion(
-                    flag[len(arg_prefix) :],
+                    flag[len(current) :],
                     start_position=0,
                     display=flag,
                     display_meta=desc,

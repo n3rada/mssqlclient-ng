@@ -246,10 +246,27 @@ class TestTerminalHandleUnlink:
 class TestTerminalHandleImpersonate:
     """Test impersonate handler."""
 
-    def test_no_login_provided(self, mock_database_context):
+    def test_no_login_lists_impersonation_permissions(
+        self, mock_database_context, capsys
+    ):
+        mock_database_context.query_service.execute_table.return_value = [{
+            "name": "reachable_login",
+            "type_desc": "SQL_LOGIN",
+            "create_date": "2026-01-01",
+            "modify_date": "2026-01-01",
+            "can_impersonate": 1,
+        }]
         terminal = Terminal(mock_database_context)
-        # Should not raise, just log error
+        terminal._output_cache = MagicMock()
+        terminal._output_cache.get_rows.return_value = None
+        terminal._output_cache.get.return_value = None
+
         terminal._handle_impersonate("impersonate")
+
+        output = capsys.readouterr().out
+        assert "reachable_login" in output
+        assert "Yes" in output
+        mock_database_context.user_service.impersonate_user.assert_not_called()
 
     def test_successful_impersonation(self, mock_database_context):
         mock_database_context.user_service.can_impersonate.return_value = True
@@ -280,6 +297,29 @@ class TestTerminalHandleRevert:
         terminal._handle_revert("revert")
         mock_database_context.user_service.revert_impersonation.assert_called_once()
         mock_database_context.user_service.get_info.assert_called()
+
+
+class TestTerminalRawQuery:
+    @pytest.mark.parametrize("keyword", ["EXEC", "EXECUTE"])
+    def test_stored_procedure_results_are_displayed(
+        self, mock_database_context, capsys, keyword
+    ):
+        statement = f"{keyword} msdb.dbo.rds_task_status;"
+        mock_database_context.query_service.execute_table.return_value = [
+            {"task_id": 42, "lifecycle": "SUCCESS"}
+        ]
+        terminal = Terminal(mock_database_context)
+
+        terminal._execute_raw_query(statement)
+
+        output = capsys.readouterr().out
+        assert "task_id" in output
+        assert "42" in output
+        assert "SUCCESS" in output
+        mock_database_context.query_service.execute_table.assert_called_once_with(
+            statement
+        )
+        mock_database_context.query_service.execute_non_processing.assert_not_called()
 
 
 class TestTerminalHandleUse:
