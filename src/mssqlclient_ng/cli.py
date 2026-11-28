@@ -13,6 +13,9 @@ from loguru import logger
 
 # Local imports
 from . import __version__, banner
+from .core import actions  # noqa: F401
+from .core.actions.execution import query
+from .core.actions.factory import ActionFactory
 from .core.models import server
 from .core.models.linked_servers import LinkedServers
 from .core.services.authentication import AuthenticationService
@@ -21,10 +24,7 @@ from .core.terminal import Terminal
 from .core.utils import command_output, logbook
 from .core.utils.formatters import OutputFormatter
 
-# Import actions package to trigger @ActionFactory.register() decorators
-from .core import actions  # noqa: F401
-from .core.actions.factory import ActionFactory
-from .core.actions.execution import query
+logger.enable("mssqlclient_ng")
 
 def _log_identity(server_name: str, system_user: str, mapped_user: str) -> None:
     if mapped_user and mapped_user != system_user:
