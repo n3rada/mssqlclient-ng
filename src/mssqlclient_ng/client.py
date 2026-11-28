@@ -10,6 +10,9 @@ from typing import Any, Self
 from loguru import logger
 
 # Local imports
+from .core import actions as _actions  # noqa: F401 — register all actions
+from .core.actions.base import ActionResult
+from .core.actions.factory import ActionFactory
 from .core.models.server import Server
 from .core.services.authentication import AuthenticationService
 from .core.services.database import DatabaseContext
@@ -174,6 +177,35 @@ class MssqlClient:
             ConnectionError: If no connection is established.
         """
         return self._require_context()
+
+    def action(self, name: str, arguments: str = "") -> ActionResult:
+        """Run a registered mssqlclient-ng action by name.
+
+        Args:
+            name: Action name or alias (e.g. ``"whoami"``, ``"databases"``).
+            arguments: Whitespace-separated argument string as the CLI would receive.
+
+        Returns:
+            Tabular rows, multiple tables, or ``None`` for side-effect actions.
+
+        Raises:
+            QueryError: If the action fails or is unknown.
+            ConnectionError: If no connection is established.
+        """
+        ctx = self._require_context()
+        instance = ActionFactory.get_action(name)
+        if instance is None:
+            raise QueryError(f"Unknown action: {name}")
+        try:
+            instance.validate_arguments(arguments)
+            return instance.execute(database_context=ctx)
+        except Exception as exc:
+            raise QueryError(str(exc)) from exc
+
+    @staticmethod
+    def available_actions() -> list[tuple[str, str, list[str]]]:
+        """List registered actions as ``(name, description, arguments)`` tuples."""
+        return ActionFactory.get_available_actions()
 
     def close(self) -> None:
         """Disconnect from the server and release resources."""

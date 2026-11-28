@@ -12,6 +12,8 @@ from loguru import logger
 
 # Local imports
 from .client import MssqlClient, MssqlConfig
+from .core.actions.base import ActionResult
+from .core.actions.factory import ActionFactory
 from .core.models.server import Server
 from .core.services.authentication import AuthenticationService
 from .core.services.database import DatabaseContext
@@ -31,6 +33,8 @@ except PackageNotFoundError:
 logger.disable("mssqlclient_ng")
 
 __all__ = [
+    "ActionFactory",
+    "ActionResult",
     "AuthenticationService",
     "ConnectionError",
     "DatabaseContext",
